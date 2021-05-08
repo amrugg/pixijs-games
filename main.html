@@ -1,0 +1,448 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Hello World</title>
+</head>
+  <script src="pixi/pixi.min.js"></script>
+<body>
+  <style>* {padding: 0; margin: 0}</style>
+  <script type="text/javascript">
+    PIXI.utils.skipHello();
+    /// Helper functions
+    function randInt(min, max) {
+      if(max === undefined) {
+        max = min
+        min = 1
+      }
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+    function hitTestRectangle(r1, r2) {
+      let hit, combinedHalfWidths, combinedHalfHeights, vx, vy;
+
+      //hit will determine whether there's a collision
+      hit = false;
+
+      //Find the center points of each sprite
+      r1.centerX = r1.x + r1.width / 2;
+      r1.centerY = r1.y + r1.height / 2;
+      r2.centerX = r2.x + r2.width / 2;
+      r2.centerY = r2.y + r2.height / 2;
+
+      //Find the half-widths and half-heights of each sprite
+      r1.halfWidth = r1.width / 2;
+      r1.halfHeight = r1.height / 2;
+      r2.halfWidth = r2.width / 2;
+      r2.halfHeight = r2.height / 2;
+
+      //Calculate the distance vector between the sprites
+      vx = r1.centerX - r2.centerX;
+      vy = r1.centerY - r2.centerY;
+
+      //Figure out the combined half-widths and half-heights
+      combinedHalfWidths = r1.halfWidth + r2.halfWidth;
+      combinedHalfHeights = r1.halfHeight + r2.halfHeight;
+
+      //Check for a collision on the x axis
+      if (Math.abs(vx) < combinedHalfWidths) {
+
+        //A collision might be occurring. Check for a collision on the y axis
+        if (Math.abs(vy) < combinedHalfHeights) {
+
+          //There's definitely a collision happening
+          hit = true;
+        } else {
+
+          //There's no collision on the y axis
+          hit = false;
+        }
+      } else {
+
+        //There's no collision on the x axis
+        hit = false;
+      }
+
+      //`hit` will be either `true` or `false`
+      return hit;
+      };
+    /// Nice handy aliases
+    let Application = PIXI.Application,
+        Container = PIXI.Container,
+        loader = PIXI.loader,
+        resources = PIXI.loader.resources,
+        TextureCache = PIXI.utils.TextureCache,
+        Sprite = PIXI.Sprite,
+        Rectangle = PIXI.Rectangle,
+        Graphics = PIXI.Graphics;
+    let app = new Application({ 
+        width: 800,
+        height: 800,              
+        antialias: true,
+        transparent: true,
+        resolution: 1
+      }
+    );
+    /// Fill the screen 
+    app.renderer.view.style.position = "absolute";
+    app.renderer.view.style.display = "block";
+    app.renderer.autoResize = true;
+    app.renderer.resize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(app.view);
+    loader.add("sprites/treasureHunter.json").load(setup)
+    var dungeon, gameScene, gameLostScene, gameWonScene, gameScene, explorer, id, treasure, door, blobs, healthBar, innerBar, outerBar, gotTreasure, restarted;
+    function setup() {
+      gotTreasure = false;
+      gameScene = new Container();
+      app.stage.addChild(gameScene);
+      gameLostScene = new Container();
+      app.stage.addChild(gameLostScene);
+      gameWonScene = new Container();
+      app.stage.addChild(gameWonScene)
+      gameWonScene.visible = false;
+      gameLostScene.visible = false;
+      let style = new PIXI.TextStyle({
+        fontFamily: "Arial",
+        fontSize: 36,
+        fill: "white",
+        stroke: '#ff3300',
+        strokeThickness: 4,
+        dropShadow: true,
+        dropShadowColor: "#000000",
+        dropShadowBlur: 4,
+        dropShadowAngle: Math.PI / 6,
+        dropShadowDistance: 6,
+      });
+      let message = new PIXI.Text("You lose!", style)
+      message.x = 256
+      message.y = message.x
+      message.height *= 2
+      message.width *= 2
+      gameLostScene.addChild(message)
+      style = new PIXI.TextStyle({
+        fontFamily: "Arial",
+        fontSize: 36,
+        fill: "white",
+        stroke: '#0033ff',
+        strokeThickness: 4,
+        dropShadow: true,
+        dropShadowColor: "#000000",
+        dropShadowBlur: 4,
+        dropShadowAngle: Math.PI / 6,
+        dropShadowDistance: 6,
+      });
+      message = new PIXI.Text("You win!", style)
+      message.x = 256
+      message.y = message.x
+      message.height *= 2
+      message.width *= 2
+      gameWonScene.addChild(message)
+      /// Make general id
+      id = resources["sprites/treasureHunter.json"].textures;
+      /// Make the sprites
+      dungeon = new Sprite(id["dungeon.png"]);
+      gameScene.addChild(dungeon);
+      door = new Sprite(id["door.png"]);
+      door.position.set(32, 0);
+      gameScene.addChild(door);
+      explorer = new Sprite(id["explorer.png"]);
+      explorer.x = 68;
+      explorer.y = gameScene.height / 2 - explorer.height / 2;
+      explorer.vx = 0;
+      explorer.vy = 0;
+      gameScene.addChild(explorer);
+      treasure = new Sprite(id["treasure.png"]);
+      treasure.x = gameScene.width - treasure.width - 48;
+      treasure.y = gameScene.height / 2 - treasure.height / 2;
+      gameScene.addChild(treasure);
+      var blobNum = 7, spacing = 48, startX = 100, startY = 100, direction = 1, speed = 3;
+      blobs = []
+      for(let i = 0; i < blobNum; i++) {
+        let newBlob = new Sprite(id["blob.png"])
+        app.stage.addChild(newBlob)
+        newBlob.x = spacing * i + startX
+        newBlob.y = startY + randInt(0,300)
+        newBlob.vy = speed * direction
+        direction *= -1
+        blobs.push(newBlob)
+        gameScene.addChild(newBlob)
+      }
+      if (!restarted) {
+        app.ticker.add(delta => gameLoop(delta));
+      }
+      explorer.vx = 0
+      explorer.vy = 0
+      let left = keyboard("ArrowLeft")
+      let right = keyboard("ArrowRight")
+      let up = keyboard("ArrowUp")
+      let down = keyboard("ArrowDown")
+      let r = keyboard("r")
+      r.press = () => {
+        restarted = true;
+        app.stage.removeChild(gameScene);
+        app.stage.removeChild(gameWonScene);
+        app.stage.removeChild(gameLostScene);
+        setup();
+      }
+      left.press = () => {
+        explorer.vx = -5
+        explorer.vy = 0
+      }
+      left.release = () => {
+        if (!right.isDown && explorer.vy === 0) {
+          explorer.vx = 0;
+        }
+      };
+      up.press = () => {
+        explorer.vy = -5;
+        explorer.vx = 0;
+      };
+      up.release = () => {
+        if (!down.isDown && explorer.vx === 0) {
+          explorer.vy = 0;
+        }
+      };
+      right.press = () => {
+        explorer.vx = 5;
+        explorer.vy = 0;
+      };
+      right.release = () => {
+        if (!left.isDown && explorer.vy === 0) {
+          explorer.vx = 0;
+        }
+      };
+
+      //Down
+      down.press = () => {
+        explorer.vy = 5;
+        explorer.vx = 0;
+      };
+      down.release = () => {
+        if (!up.isDown && explorer.vx === 0) {
+          explorer.vy = 0;
+        }
+      };
+      healthBar = new Container()
+      healthBar.position.set(512-170, 4)
+      gameScene.addChild(healthBar)
+      let innerBar = new Graphics();
+      innerBar.beginFill(0x000000);
+      innerBar.drawRect(0, 0, 128, 8);
+      innerBar.endFill();
+      healthBar.addChild(innerBar);
+      let outerBar = new Graphics();
+      outerBar.beginFill(0xFF3300) 
+      outerBar.drawRect(0,0,128,8)
+      outerBar.endFill()
+      healthBar.addChild(outerBar)
+      healthBar.outer = outerBar
+    }
+    var state = play
+    function gameLoop(delta) {
+      state(delta)
+    }
+    var explorerHit = false
+    function play(delta) {
+      if(explorer.x > 470 - explorer.width / 2) {
+        explorer.vx = explorer.vx < 0 ? explorer.vx : 0
+      }
+      if(explorer.x < 32) {
+        explorer.vx = explorer.vx > 0 ? explorer.vx : 0
+      }
+      if(explorer.y > 470 - explorer.height / 2) {
+        explorer.vy = explorer.vy < 0 ? explorer.vy : 0
+      } else if(explorer.y < 32) {
+        explorer.vy = explorer.vy > 0? explorer.vy : 0
+      }
+      explorer.x += explorer.vx
+      explorer.y += explorer.vy
+      /*
+      if (explorer.x > 256) {
+        explorer.vx -= 0.01
+      } else {
+        explorer.vx += 0.01
+      } */
+      blobs.forEach(function(newBlob){
+        newBlob.y += newBlob.vy
+        if(newBlob.y < 32 || newBlob.y > 470) {
+          newBlob.vy *= -1
+        }
+        if(hitTestRectangle(explorer,newBlob)) {
+          explorerHit = true
+        }
+        if(hitTestRectangle(treasure, newBlob)) {
+          treasure.x = gameScene.width - treasure.width - 48;
+          treasure.y = gameScene.height / 2 - treasure.height / 2;
+          gotTreasure = false
+        }
+      });
+      if(explorerHit) {
+        healthBar.outer.width -= 1
+        explorer.alpha = 0.5
+        explorerHit = false
+        if(healthBar.outer.width < 1) {
+          state = lose
+        }
+        setTimeout(function (){
+          explorer.alpha = 1;
+          console.log(1000/(healthBar.outer.width/130))
+        },10000/(healthBar.outer.width/13))
+      }
+      if(hitTestRectangle(explorer, treasure)) {
+        treasure.x = explorer.x + 8
+        treasure.y = explorer.y + 8
+        gotTreasure = true
+      }
+      if(hitTestRectangle(explorer, door) && gotTreasure) {
+        state = win
+      }
+    }
+    function keyboard(value) {
+      let key = {};
+      key.value = value;
+      key.isDown = false;
+      key.isUp = true;
+      key.press = undefined;
+      key.release = undefined;
+      //The `downHandler`
+      key.downHandler = event => {
+        if (event.key === key.value) {
+          if (key.isUp && key.press) key.press();
+          key.isDown = true;
+          key.isUp = false;
+          event.preventDefault();
+        }
+      };
+
+      //The `upHandler`
+      key.upHandler = event => {
+        if (event.key === key.value) {
+          if (key.isDown && key.release) key.release();
+          key.isDown = false;
+          key.isUp = true;
+          event.preventDefault();
+        }
+      };
+
+      //Attach event listeners
+      const downListener = key.downHandler.bind(key);
+      const upListener = key.upHandler.bind(key);
+      
+      window.addEventListener(
+        "keydown", downListener, false
+      );
+      window.addEventListener(
+        "keyup", upListener, false
+      );
+      
+      // Detach event listeners
+      key.unsubscribe = () => {
+        window.removeEventListener("keydown", downListener);
+        window.removeEventListener("keyup", upListener);
+      };
+      
+      return key;
+    }
+    function lose() {
+      gameLostScene.visible = true;
+      gameScene.visible = false;
+    }
+    function win() {
+      blobs.forEach(function(newBlob){
+        for(let i = 1; i <= 100; i++) {
+          setTimeout(function() {
+            newBlob.alpha -= 0.01
+          },i*50)
+        }
+      });
+      setTimeout(function () {
+        gameWonScene.visible = true
+        gameScene.visible = false
+      }, 1000)
+    }
+       /*Notes:
+      "sprites/cat.png"
+      Way to make a sprite appear:
+      let sprite = new PIXI.Sprite(PIXI.loader.resources["images/anyImage.png"].texture);
+      app.stage.addChild(sprite)
+      Aliases:
+      let Application = PIXI.Application,
+        Container = PIXI.Container,
+        loader = PIXI.loader,
+        resources = PIXI.loader.resources,
+        TextureCache = PIXI.utils.TextureCache,
+        Sprite = PIXI.Sprite,
+        Rectangle = PIXI.Rectangle,
+        Graphics = PIXI.Graphics;
+      let app = new Application({ 
+        width: 800,
+        height: 800,              
+        antialias: true,
+        transparent: true,
+        resolution: 1
+        }
+      );
+      Make Pixi square:
+      var red = new PIXI.Application({width: 256, height: 256})
+      red.renderer.backgroundColor = 0xFF0000
+      document.body.appendChild(red.view)
+      app.renderer.backgroundColor = 0x0000AF;
+      Show made Pixi object:
+      document.body.appendChild(app.view);
+      FillScreen:
+      app.renderer.view.style.position = "absolute";
+      app.renderer.view.style.display = "block";
+      app.renderer.autoResize = true;
+      app.renderer.resize(window.innerWidth, window.innerHeight);
+      Rectangle Collision detector:
+      function hitTestRectangle(r1, r2) {
+      let hit, combinedHalfWidths, combinedHalfHeights, vx, vy;
+
+      //hit will determine whether there's a collision
+      hit = false;
+
+      //Find the center points of each sprite
+      r1.centerX = r1.x + r1.width / 2;
+      r1.centerY = r1.y + r1.height / 2;
+      r2.centerX = r2.x + r2.width / 2;
+      r2.centerY = r2.y + r2.height / 2;
+
+      //Find the half-widths and half-heights of each sprite
+      r1.halfWidth = r1.width / 2;
+      r1.halfHeight = r1.height / 2;
+      r2.halfWidth = r2.width / 2;
+      r2.halfHeight = r2.height / 2;
+
+      //Calculate the distance vector between the sprites
+      vx = r1.centerX - r2.centerX;
+      vy = r1.centerY - r2.centerY;
+
+      //Figure out the combined half-widths and half-heights
+      combinedHalfWidths = r1.halfWidth + r2.halfWidth;
+      combinedHalfHeights = r1.halfHeight + r2.halfHeight;
+
+      //Check for a collision on the x axis
+      if (Math.abs(vx) < combinedHalfWidths) {
+
+        //A collision might be occurring. Check for a collision on the y axis
+        if (Math.abs(vy) < combinedHalfHeights) {
+
+          //There's definitely a collision happening
+          hit = true;
+        } else {
+
+          //There's no collision on the y axis
+          hit = false;
+        }
+      } else {
+
+        //There's no collision on the x axis
+        hit = false;
+      }
+
+      //`hit` will be either `true` or `false`
+      return hit;
+      };
+    */
+  </script>
+</body>
+</html>

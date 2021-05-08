@@ -1,0 +1,133 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Direction Rocket</title>
+</head>
+    <style>* {padding: 0; margin: 0}</style>
+    <script src="pixi/pixi.min.js"></script>
+<body>
+  <script type="text/javascript">
+    PIXI.utils.skipHello();
+    let Application = PIXI.Application,
+        Container = PIXI.Container,
+        loader = PIXI.loader,
+        resources = PIXI.loader.resources,
+        TextureCache = PIXI.utils.TextureCache,
+        Sprite = PIXI.Sprite,
+        Rectangle = PIXI.Rectangle,
+        Graphics = PIXI.Graphics;
+    let app = new Application({ 
+        width: 800,
+        height: 800,              
+        antialias: true,
+        transparent: true,
+        resolution: 1
+      }
+    );
+    /// Fill the screen 
+    app.renderer.view.style.position = "absolute";
+    app.renderer.view.style.display = "block";
+    app.renderer.autoResize = true;
+    app.renderer.resize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(app.view);
+    function direction(distance,angle) {
+        let directions = [[1,1],[-1,1],[-1,-1],[1,-1]];
+        var dir = 0;
+        while (angle > 90) {
+            angle -= 90;
+            ++dir;
+            if(dir > 3) {
+                dir = 0;
+            }
+        }
+        angle = (angle * Math.PI) / 180;
+        var x = 0;
+        var y = 0;
+        x = Math.sin(angle) * distance;
+        y = Math.cos(angle) * distance;
+        var radianRotation = (angle * Math.PI) / 180
+        return({r:x, u:y, rotation: radianRotation});
+    }
+    loader.add("sprites/tileset.png").load(setup);
+    var rocket;
+    function setup() {
+      let texture = TextureCache["sprites/tileset.png"];
+      let rectangle = new Rectangle(192, 128, 64, 64);
+      texture.frame = rectangle;
+      rocket = new Sprite(texture);
+      app.stage.addChild(rocket);
+      app.renderer.render(app.stage);
+      rocket.vx = 0;
+      rocket.vy = 0;
+      rocket.x = 500
+      rocket.y = 32;
+      rocket.direction = 90;
+      rocket.speed = 1;
+      var left = keyboard("ArrowLeft"), right = keyboard("ArrowRight"), up = keyboard("ArrowUp"), down = keyboard("ArrowDown");
+      left.press = () => {
+        rocket.direction += 0.25;
+      }
+      right.press = () => {
+        rocket.direction -= 0.25;
+      }
+      app.ticker.add(delta => gameLoop(delta))
+    }
+    function gameLoop(delta) {
+      var data = direction(rocket.speed,rocket.direction)
+      rocket.vx = data.r;
+      rocket.vy = data.u;
+      rocket.x += rocket.vx;
+      rocket.y += rocket.vy;
+      rocket.rotation = ((rocket.direction - 90) * Math.PI * -1) / 180;
+      rocket.direction -= 0.25;
+    }
+    function keyboard(value) {
+      let key = {};
+      key.value = value;
+      key.isDown = false;
+      key.isUp = true;
+      key.press = undefined;
+      key.release = undefined;
+      //The `downHandler`
+      key.downHandler = event => {
+        if (event.key === key.value) {
+          if (key.isUp && key.press) key.press();
+          key.isDown = true;
+          key.isUp = false;
+          event.preventDefault();
+        }
+      };
+
+      //The `upHandler`
+      key.upHandler = event => {
+        if (event.key === key.value) {
+          if (key.isDown && key.release) key.release();
+          key.isDown = false;
+          key.isUp = true;
+          event.preventDefault();
+        }
+      };
+
+      //Attach event listeners
+      const downListener = key.downHandler.bind(key);
+      const upListener = key.upHandler.bind(key);
+      
+      window.addEventListener(
+        "keydown", downListener, false
+      );
+      window.addEventListener(
+        "keyup", upListener, false
+      );
+      
+      // Detach event listeners
+      key.unsubscribe = () => {
+        window.removeEventListener("keydown", downListener);
+        window.removeEventListener("keyup", upListener);
+      };
+      
+      return key;
+    }
+  </script>
+</body>
+</html>
