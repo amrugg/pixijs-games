@@ -32,22 +32,13 @@
     app.renderer.resize(window.innerWidth, window.innerHeight);
     document.body.appendChild(app.view);
     function direction(distance,angle) {
-        let directions = [[1,1],[-1,1],[-1,-1],[1,-1]];
-        var dir = 0;
-        while (angle > 90) {
-            angle -= 90;
-            ++dir;
-            if(dir > 3) {
-                dir = 0;
-            }
-        }
         angle = (angle * Math.PI) / 180;
         var x = 0;
         var y = 0;
         x = Math.sin(angle) * distance;
-        y = Math.cos(angle) * distance;
+        y = Math.cos(angle) * distance
         var radianRotation = (angle * Math.PI) / 180
-        return({r:x, u:y, rotation: radianRotation});
+        return({r:x, u:y});
     }
     loader.add("sprites/tileset.png").load(setup);
     var rocket;
@@ -61,26 +52,43 @@
       rocket.vx = 0;
       rocket.vy = 0;
       rocket.x = 500
-      rocket.y = 32;
+      rocket.y = 500;
       rocket.direction = 90;
       rocket.speed = 1;
+      rocket.turn = 0
+      rocket.anchor.set(0.5, 0.5);
       var left = keyboard("ArrowLeft"), right = keyboard("ArrowRight"), up = keyboard("ArrowUp"), down = keyboard("ArrowDown");
       left.press = () => {
-        rocket.direction += 0.25;
+        rocket.turn = 1 * rocket.speed
       }
+      left.release = () => {
+        rocket.turn = 0
+      };
       right.press = () => {
-        rocket.direction -= 0.25;
+        rocket.turn = -1 * rocket.speed
+      }
+      right.release = () => {
+        rocket.turn = 0
+      }
+      up.press = () => {
+        ++rocket.speed
+      }
+      down.press = () => {
+        if(rocket.speed > 1) {
+          --rocket.speed
+        }
       }
       app.ticker.add(delta => gameLoop(delta))
     }
     function gameLoop(delta) {
       var data = direction(rocket.speed,rocket.direction)
+      console.log(data)
       rocket.vx = data.r;
       rocket.vy = data.u;
       rocket.x += rocket.vx;
       rocket.y += rocket.vy;
       rocket.rotation = ((rocket.direction - 90) * Math.PI * -1) / 180;
-      rocket.direction -= 0.25;
+      rocket.direction += rocket.turn;
     }
     function keyboard(value) {
       let key = {};
