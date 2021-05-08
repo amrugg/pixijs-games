@@ -9,6 +9,43 @@
 <body>
   <script type="text/javascript">
     PIXI.utils.skipHello();
+    function hitTestRectangle(r1, r2) {
+      let hit, combinedHalfWidths, combinedHalfHeights, vx, vy;
+      //hit will determine whether there's a collision
+      hit = false;
+      //Find the center points of each sprite
+      r1.centerX = r1.x + r1.width / 2;
+      r1.centerY = r1.y + r1.height / 2;
+      r2.centerX = r2.x + r2.width / 2;
+      r2.centerY = r2.y + r2.height / 2;
+      //Find the half-widths and half-heights of each sprite
+      r1.halfWidth = r1.width / 2;
+      r1.halfHeight = r1.height / 2;
+      r2.halfWidth = r2.width / 2;
+      r2.halfHeight = r2.height / 2;
+      //Calculate the distance vector between the sprites
+      vx = r1.centerX - r2.centerX;
+      vy = r1.centerY - r2.centerY;
+      //Figure out the combined half-widths and half-heights
+      combinedHalfWidths = r1.halfWidth + r2.halfWidth;
+      combinedHalfHeights = r1.halfHeight + r2.halfHeight;
+      //Check for a collision on the x axis
+      if (Math.abs(vx) < combinedHalfWidths) {
+        //A collision might be occurring. Check for a collision on the y axis
+        if (Math.abs(vy) < combinedHalfHeights) {
+          //There's definitely a collision happening
+          hit = true;
+        } else {
+          //There's no collision on the y axis
+          hit = false;
+        }
+      } else {
+        //There's no collision on the x axis
+        hit = false;
+      }
+      //`hit` will be either `true` or `false`
+      return hit;
+      };
     let Application = PIXI.Application,
         Container = PIXI.Container,
         loader = PIXI.loader,
@@ -31,6 +68,16 @@
     app.renderer.autoResize = true;
     app.renderer.resize(window.innerWidth, window.innerHeight);
     document.body.appendChild(app.view);
+    function getDistance(x1,y1,x2,y2) {
+      return Math.sqrt((x1-x2)**2+(y1-y2)**2)
+    }
+    function randInt(min, max) {
+      if(max === undefined) {
+        max = min
+        min = 1
+      }
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
     function direction(distance,angle) {
         angle = (angle * Math.PI) / 180;
         var x = 0;
@@ -40,17 +87,23 @@
         var radianRotation = (angle * Math.PI) / 180
         return({r:x, u:y});
     }
-    loader.add("sprites/tileset.png").load(setup);
-    var rocket;
+    var points = 0;
+    var leftPress, rightPress, upPress;
+    loader.add("sprites/tileset.png").add("sprites/star.png").load(setup);
+    var rocket, star;
+    let message;
     function setup() {
       let texture = TextureCache["sprites/tileset.png"];
       let rectangle = new Rectangle(192, 128, 64, 64);
       texture.frame = rectangle;
+      message = new PIXI.Text("Points: "+points.toString())
+      message.x = app.stage.width+1200
+      app.stage.addChild(message)
       rocket = new Sprite(texture);
-      rectangle = new Rectangle(0,256,64,64)
-      let newTexture = TextureCache["sprites/tileset.png"]
       app.stage.addChild(rocket);
-      app.renderer.render(app.stage);
+      star = new Sprite(resources["sprites/star.png"].texture);
+      app.stage.addChild(star)
+      app.renderer.render(app.stage)
       rocket.vx = 1;
       rocket.vy = 0;
       rocket.x = 600;
@@ -62,45 +115,100 @@
       rocket.anchor.set(0.5, 0.5);
       var left = keyboard("ArrowLeft"), right = keyboard("ArrowRight"), up = keyboard("ArrowUp"), down = keyboard("ArrowDown");
       var r = keyboard("r");
+      leftPress = false;
+      rightPress = leftPress;
+      upPress = rightPress;
       r.press = () => {
         rocket.x = 600;
         rocket.y = 400;
       }
       left.press = () => {
-        rocket.turn = 2 * rocket.speed < 10? 2 * rocket.speed : 10;
+        leftPress = true;
       }
       left.release = () => {
-        if(!right.isDown) {
-          rocket.turn = 0;
-        }
+        leftPress = false
       };
       right.press = () => {
-        rocket.turn = -2 * rocket.speed > -10? -2 * rocket.speed : -10;
+        rightPress = true
       }
       right.release = () => {
-        if(!left.isDown) {
-          rocket.turn = 0;
-        }
+        rightPress = false
       }
       up.press = () => {
-        rocket.acceleration = 0.1;
+        upPress = true;
       }
       up.release = () => {
-        rocket.acceleration = 0;
+        upPress = false;
       }
+      star.x = randInt(200,1000);
+      star.y = randInt(100,700);
       app.ticker.add(delta => gameLoop(delta))
     }
     function gameLoop(delta) {
+      rocket.turn = 0
+      if(leftPress) {
+        if(2 * rocket.speed > 1) {
+          if(2 * rocket.speed < 10) {
+            rocket.turn += 2 * rocket.speed
+          } else {
+            rocket.turn += 10
+          }
+        } else {
+            rocket.turn += 1
+          }
+      }
+      if(rightPress) {
+        if(-2 * rocket.speed < -1) {
+          if(2 * rocket.speed > -10) {
+            rocket.turn += -2 * rocket.speed
+          } else {
+            rocket.turn += -10
+          }
+        } else {
+            rocket.turn += -1
+          }
+      }
+      if(upPress) {
+        rocket.acceleration = 0.1
+      } else {
+        rocket.acceleration = 0
+      }
+      var lastSpeed = rocket.speed;
+      var lx = rocket.vx;
+      var ly = rocket.vy;
       if(rocket.acceleration > 0) {
         var data = direction(rocket.acceleration,rocket.direction)
         rocket.vx += data.r;
         rocket.vy += data.u;
       }
+      rocket.speed = Math.sqrt(rocket.vx**2 + rocket.vy**2)
+      if(rocket.speed > 20) {
+        rocket.vx = lx;
+        rocket.vy = ly;
+      }
       rocket.x += rocket.vx;
       rocket.y += rocket.vy;
-      rocket.speed = Math.sqrt(rocket.vx**2 + rocket.vy**2)
+      if(rocket.x < 0) {
+        rocket.x = 1300
+      }
+      if(rocket.x > 1350) {
+        rocket.x = 50
+      }
+      if(rocket.y < 0) {
+        rocket.y = 700
+      }
+      if(rocket.y > 700) {
+        rocket.y = 50
+      }
       rocket.rotation = ((rocket.direction - 90) * Math.PI * -1) / 180;
       rocket.direction += rocket.turn;
+      if(getDistance(rocket.x,rocket.y,star.x, star.y) <= 75) {
+        ++points;
+        star.x = randInt(200,1000);
+        star.y = randInt(100,700);
+        message.text = "Points: "+points.toString()
+      }
+      console.log(getDistance(rocket.x,rocket.y,star.x,star.y))
     }
     function keyboard(value) {
       let key = {};
