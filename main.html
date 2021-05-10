@@ -90,6 +90,14 @@
     document.body.appendChild(app.view);
     loader.add("sprites/treasureHunter.json").load(setup)
     var dungeon, gameScene, gameLostScene, gameWonScene, gameScene, explorer, id, treasure, door, blobs, healthBar, innerBar, outerBar, gotTreasure, restarted;
+    var level = 0;
+    var levelData = [{explorerX: 68, explorerY: 256, 
+      treasureX: 450, treasureY: 256, blobNum: 1, 
+      blobSpeedMax: 1, blobSpeedMin: 1, blobVX: true, blobVY: false}, {
+        explorerX: 256, explorerY: 68, treasureX: 256,
+        treasureY: 450, blobNum: 2, blobSpeedMax: 2, blobSpeedMin: 1
+      }]
+    var cld = levelData[level];
     function setup() {
       gotTreasure = false;
       gameScene = new Container();
@@ -113,7 +121,7 @@
         dropShadowDistance: 6,
       });
       let message = new PIXI.Text("You lose!", style)
-      message.x = 256
+      message.x = 68
       message.y = message.x
       message.height *= 2
       message.width *= 2
@@ -145,23 +153,28 @@
       door.position.set(32, 0);
       gameScene.addChild(door);
       explorer = new Sprite(id["explorer.png"]);
-      explorer.x = 68;
-      explorer.y = gameScene.height / 2 - explorer.height / 2;
+      explorer.x = cld.explorerX;
+      explorer.y = cld.explorerY;
       explorer.vx = 0;
       explorer.vy = 0;
       gameScene.addChild(explorer);
       treasure = new Sprite(id["treasure.png"]);
-      treasure.x = gameScene.width - treasure.width - 48;
-      treasure.y = gameScene.height / 2 - treasure.height / 2;
+      treasure.x = cld.treasureX;
+      treasure.y = cld.treasureY;
       gameScene.addChild(treasure);
-      var blobNum = 7, spacing = 48, startX = 100, startY = 100, direction = 1, speed = 3;
+      var blobNum = cld.blobNum, spacing = 48, startX = 100, startY = 100, direction = 1;
       blobs = []
       for(let i = 0; i < blobNum; i++) {
         let newBlob = new Sprite(id["blob.png"])
         app.stage.addChild(newBlob)
         newBlob.x = spacing * i + startX
         newBlob.y = startY + randInt(0,300)
-        newBlob.vy = speed * direction
+        newBlob.speed = randInt(cld.blobSpeedMax, cld.blobSpeedMin)
+        if(cld.blobVX) {
+          newBlob.vx = newBlob.speed * direction;
+        } else {
+          newBlob.vy = newBlob.speed * direction
+        }
         direction *= -1
         blobs.push(newBlob)
         gameScene.addChild(newBlob)
@@ -171,19 +184,10 @@
       }
       explorer.vx = 0
       explorer.vy = 0
-      let left = keyboard("ArrowLeft")
-      let right = keyboard("ArrowRight")
-      let up = keyboard("ArrowUp")
-      let down = keyboard("ArrowDown")
-      let r = keyboard("r")
-      r.press = () => {
-        restarted = true;
-        app.stage.removeChild(gameScene);
-        app.stage.removeChild(gameWonScene);
-        app.stage.removeChild(gameLostScene);
-        state = play;
-        setup();
-      }
+      let left = keyboard("ArrowLeft");
+      let right = keyboard("ArrowRight");
+      let up = keyboard("ArrowUp");
+      let down = keyboard("ArrowDown");
       left.press = () => {
         explorer.vx = -5
         explorer.vy = 0
@@ -263,9 +267,16 @@
         explorer.vx += 0.01
       } */
       blobs.forEach(function(newBlob){
-        newBlob.y += newBlob.vy
-        if(newBlob.y < 32 || newBlob.y > 470) {
-          newBlob.vy *= -1
+        if(cld.blobVY) {
+          newBlob.y += newBlob.vy
+          if(newBlob.y < 32 || newBlob.y > 470) {
+            newBlob.vy *= -1
+          }
+        } else {
+          newBlob.x += newBlob.vx
+          if(newBlob.x < 32 || newBlob.x > 470) {
+            newBlob.vx *= -1
+          }
         }
         if(hitTestRectangle(explorer,newBlob)) {
           explorerHit = true
@@ -294,7 +305,7 @@
         gotTreasure = true
       }
       if(hitTestRectangle(explorer, door) && gotTreasure) {
-        state = win
+        state = nextLevelSetup
       }
     }
     function keyboard(value) {
@@ -346,6 +357,24 @@
     function lose() {
       gameLostScene.visible = true;
       gameScene.visible = false;
+    }
+    function nextLevelSetup() {
+      ++level;
+      if(levelData.length > level) {
+        cld = levelData[level];
+        explorer.x = cld.explorerX;
+        explorer.y = cld.explorerY;
+        explorer.vx = 0;
+        explorer.vy = 0;
+        treasure.x = cld.treasureX;
+        treasure.y = cld.treasureY;
+        blobs.forEach(function(newBlob){
+          gameScene.removeChild(newBlob);
+        });
+        state = play;
+      } else {
+        state = win;
+      }
     }
     function win() {
       blobs.forEach(function(newBlob){

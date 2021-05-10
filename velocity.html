@@ -183,8 +183,8 @@
       }
       rocket.speed = Math.sqrt(rocket.vx**2 + rocket.vy**2)
       if(rocket.speed > 20) {
-        rocket.vx = lx;
-        rocket.vy = ly;
+        rocket.vx -= 1
+        rocket.vy -= 1
       }
       rocket.x += rocket.vx;
       rocket.y += rocket.vy;
@@ -202,13 +202,12 @@
       }
       rocket.rotation = ((rocket.direction - 90) * Math.PI * -1) / 180;
       rocket.direction += rocket.turn;
-      if(getDistance(rocket.x,rocket.y,star.x, star.y) <= 75) {
+      if(getDistance(rocket.x,rocket.y,star.x, star.y) <= 60) {
         ++points;
         star.x = randInt(200,1000);
         star.y = randInt(100,700);
         message.text = "Points: "+points.toString()
       }
-      console.log(getDistance(rocket.x,rocket.y,star.x,star.y))
     }
     function keyboard(value) {
       let key = {};
