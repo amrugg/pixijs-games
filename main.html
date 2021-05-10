@@ -91,12 +91,60 @@
     loader.add("sprites/treasureHunter.json").load(setup)
     var dungeon, gameScene, gameLostScene, gameWonScene, gameScene, explorer, id, treasure, door, blobs, healthBar, innerBar, outerBar, gotTreasure, restarted;
     var level = 0;
-    var levelData = [{explorerX: 68, explorerY: 256, 
-      treasureX: 450, treasureY: 256, blobNum: 1, 
-      blobSpeedMax: 1, blobSpeedMin: 1, blobVX: false, blobVY: true, startX: 100, startY: 100}, {
+    var levelData = [
+      {
+        explorerX: 68, explorerY: 256, 
+        treasureX: 450, treasureY: 256, blobNum: 1, 
+        blobSpeedMax: 1, blobSpeedMin: 1, blobVX: false,
+        blobVY: true, startX: 100, startY: 100},
+      {
         explorerX: 256, explorerY: 68, treasureX: 256,
         treasureY: 450, blobNum: 2, blobSpeedMax: 2, blobSpeedMin: 1,
         startX: 100, startY: 100
+      },
+      {
+        explorerX: 68, explorerY: 256, 
+        treasureX: 450, treasureY: 256, blobNum: 3, 
+        blobSpeedMax: 3, blobSpeedMin: 1, blobVX: false,
+        blobVY: true, startX: 100, startY: 100},
+      {
+        explorerX: 256, explorerY: 68, treasureX: 256,
+        treasureY: 450, blobNum: 4, blobSpeedMax: 4, blobSpeedMin: 1,
+        startX: 100, startY: 100, blobVX: true, blobVY: false
+      },
+      {
+        explorerX: 68, explorerY: 256, 
+        treasureX: 450, treasureY: 256, blobNum: 5, 
+        blobSpeedMax: 4, blobSpeedMin: 2, blobVX: false,
+        blobVY: true, startX: 100, startY: 100
+      },
+      {
+        explorerX: 256, explorerY: 68, treasureX: 256,
+        treasureY: 450, blobNum: 6, blobSpeedMax: 4, blobSpeedMin: 3,
+        startX: 100, startY: 100
+      },
+      {
+        explorerX: 68, explorerY: 256, 
+        treasureX: 450, treasureY: 256, blobNum: 1, 
+        blobSpeedMax: 10, blobSpeedMin: 7, blobVX: false,
+        blobVY: true, startX: 100, startY: 100
+      },
+      {
+        explorerX: 256, explorerY: 68, treasureX: 256,
+        treasureY: 450, blobNum: 2, blobSpeedMax: 10, blobSpeedMin: 6,
+        startX: 100, startY: 100
+      },
+      {
+        explorerX: 68, explorerY: 256, 
+        treasureX: 450, treasureY: 256, blobNum: 3, 
+        blobSpeedMax: 10, blobSpeedMin: 10, blobVX: false,
+        blobVY: true, startX: 100, startY: 100
+      },
+      {
+        explorerX: 68, explorerY: 256, 
+        treasureX: 450, treasureY: 256, blobNum: 7, 
+        blobSpeedMax: 10, blobSpeedMin: 5, blobVX: false,
+        blobVY: true, startX: 100, startY: 100
       }]
     var cld = levelData[level];
     function setup() {
@@ -372,8 +420,13 @@
         blobs = [];
         for(let i = 0; i < blobNum; i++) {
           let newBlob = new Sprite(id["blob.png"]);
-          newBlob.x = spacing * i + startX;
-          newBlob.y = startY + randInt(0, 300)
+          if(cld.blobVY) {
+            newBlob.x = spacing * i + startX;
+            newBlob.y = startY + randInt(0, 300);
+          } else {
+            newBlob.x = startX + randInt(0, 300);
+            newBlob.y = (spacing / 2) * i + startY;
+          }
           newBlob.vx = randInt(cld.blobSpeedMin, cld.blobSpeedMax);
           newBlob.vy = randInt(cld.blobSpeedMin, cld.blobSpeedMax);
           newBlob.blobVY = cld.blobVY;
