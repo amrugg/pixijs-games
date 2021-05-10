@@ -93,9 +93,10 @@
     var level = 0;
     var levelData = [{explorerX: 68, explorerY: 256, 
       treasureX: 450, treasureY: 256, blobNum: 1, 
-      blobSpeedMax: 1, blobSpeedMin: 1, blobVX: true, blobVY: false}, {
+      blobSpeedMax: 1, blobSpeedMin: 1, blobVX: false, blobVY: true, startX: 100, startY: 100}, {
         explorerX: 256, explorerY: 68, treasureX: 256,
-        treasureY: 450, blobNum: 2, blobSpeedMax: 2, blobSpeedMin: 1
+        treasureY: 450, blobNum: 2, blobSpeedMax: 2, blobSpeedMin: 1,
+        startX: 100, startY: 100
       }]
     var cld = levelData[level];
     function setup() {
@@ -170,6 +171,8 @@
         newBlob.x = spacing * i + startX
         newBlob.y = startY + randInt(0,300)
         newBlob.speed = randInt(cld.blobSpeedMax, cld.blobSpeedMin)
+        newBlob.blobVY = cld.blobVY;
+        newBlob.blobVX = cld.blobVX;
         if(cld.blobVX) {
           newBlob.vx = newBlob.speed * direction;
         } else {
@@ -260,14 +263,8 @@
       }
       explorer.x += explorer.vx
       explorer.y += explorer.vy
-      /*
-      if (explorer.x > 256) {
-        explorer.vx -= 0.01
-      } else {
-        explorer.vx += 0.01
-      } */
       blobs.forEach(function(newBlob){
-        if(cld.blobVY) {
+        if(newBlob.blobVY) {
           newBlob.y += newBlob.vy
           if(newBlob.y < 32 || newBlob.y > 470) {
             newBlob.vy *= -1
@@ -282,9 +279,9 @@
           explorerHit = true
         }
         if(hitTestRectangle(treasure, newBlob)) {
-          treasure.x = gameScene.width - treasure.width - 48;
-          treasure.y = gameScene.height / 2 - treasure.height / 2;
-          gotTreasure = false
+          treasure.x = cld.treasureX;
+          treasure.y = cld.treasureY;
+          gotTreasure = false;
         }
       });
       if(explorerHit) {
@@ -305,7 +302,7 @@
         gotTreasure = true
       }
       if(hitTestRectangle(explorer, door) && gotTreasure) {
-        state = nextLevelSetup
+        state = nextLevelSetup;
       }
     }
     function keyboard(value) {
@@ -371,6 +368,19 @@
         blobs.forEach(function(newBlob){
           gameScene.removeChild(newBlob);
         });
+        var blobNum = cld.blobNum, spacing = 48, startX = 100, startY = 100, direction = 1;
+        blobs = [];
+        for(let i = 0; i < blobNum; i++) {
+          let newBlob = new Sprite(id["blob.png"]);
+          newBlob.x = spacing * i + startX;
+          newBlob.y = startY + randInt(0, 300)
+          newBlob.vx = randInt(cld.blobSpeedMin, cld.blobSpeedMax);
+          newBlob.vy = randInt(cld.blobSpeedMin, cld.blobSpeedMax);
+          newBlob.blobVY = cld.blobVY;
+          newBlob.blobVX = cld.blobVX;
+          gameScene.addChild(newBlob)
+          blobs.push(newBlob)
+        }
         state = play;
       } else {
         state = win;
