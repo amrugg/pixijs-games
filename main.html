@@ -111,62 +111,81 @@
         explorerX: 68, explorerY: 256, 
         treasureX: 450, treasureY: 256, blobNum: 1, 
         blobSpeedMax: 1, blobSpeedMin: 1, blobVX: false,
-        blobVY: true, startX: 100, startY: 100, time: 20},
+        blobVY: true, startX: 100, startY: 100, time: 20, name: "Easy peasy"
+      },
       {
         explorerX: 256, explorerY: 68, treasureX: 256,
         treasureY: 450, blobNum: 2, blobSpeedMax: 2, blobSpeedMin: 1,
-        startX: 100, startY: 100, time: 30
+        startX: 100, startY: 100, time: 30, name: "Sideways?"
       },
       {
         explorerX: 68, explorerY: 256, 
         treasureX: 450, treasureY: 256, blobNum: 3, 
         blobSpeedMax: 3, blobSpeedMin: 1, blobVX: false,
-        blobVY: true, startX: 100, startY: 100, time: 30
+        blobVY: true, startX: 100, startY: 100, time: 30, name: "Simple still"
       },
       {
         explorerX: 256, explorerY: 68, treasureX: 256,
         treasureY: 450, blobNum: 4, blobSpeedMax: 4, blobSpeedMin: 1,
-        startX: 100, startY: 100, blobVX: true, blobVY: false, time: 30
+        startX: 100, startY: 100, blobVX: true, blobVY: false, time: 30, name: "A little harder"
       },
       {
         explorerX: 68, explorerY: 256, 
         treasureX: 450, treasureY: 256, blobNum: 5, 
         blobSpeedMax: 4, blobSpeedMin: 2, blobVX: false,
-        blobVY: true, startX: 100, startY: 100, time: 40
+        blobVY: true, startX: 100, startY: 100, time: 40, name: "5 is a troop"
       },
       {
         explorerX: 256, explorerY: 68, treasureX: 256,
         treasureY: 450, blobNum: 6, blobSpeedMax: 4, blobSpeedMin: 3,
-        startX: 100, startY: 100, time: 40
+        startX: 100, startY: 100, time: 40, name: "Medium"
       },
       {
         explorerX: 68, explorerY: 256, 
         treasureX: 450, treasureY: 256, blobNum: 1, 
         blobSpeedMax: 10, blobSpeedMin: 7, blobVX: false,
-        blobVY: true, startX: 100, startY: 100, time: 25
+        blobVY: true, startX: 100, startY: 100, time: 25, name: "Fast blobs"
       },
       {
         explorerX: 256, explorerY: 68, treasureX: 256,
         treasureY: 450, blobNum: 2, blobSpeedMax: 10, blobSpeedMin: 6,
-        startX: 100, startY: 100, time: 30
+        startX: 100, startY: 100, time: 30, name: "Multiplication"
       },
       {
         explorerX: 68, explorerY: 256, 
         treasureX: 450, treasureY: 256, blobNum: 3, 
         blobSpeedMax: 10, blobSpeedMin: 10, blobVX: false,
-        blobVY: true, startX: 100, startY: 100, time: 40
+        blobVY: true, startX: 100, startY: 100, time: 40, name: "Hard"
       },
       {
         explorerX: 68, explorerY: 256, 
         treasureX: 450, treasureY: 256, blobNum: 7, 
         blobSpeedMax: 10, blobSpeedMin: 5, blobVX: false,
-        blobVY: true, startX: 100, startY: 100, time: 70
+        blobVY: true, startX: 100, startY: 100, time: 70, name: "Grand Finale"
       },
       {
         explorerX: 68, explorerY: 256, 
         treasureX: 450, treasureY: 256, blobNum: 0, 
         blobSpeedMax: 4, blobSpeedMin: 3, blobVX: false,
-        blobVY: true, startX: 100, startY: 100, savageBlobNum: 1, time: 30
+        blobVY: true, startX: 100, startY: 100, savageBlobNum: 1, time: 20, name: "What happened to Grand-- AAH!"
+      },
+      {
+        explorerX: 68, explorerY: 256, 
+        treasureX: 450, treasureY: 256, blobNum: 0, 
+        blobSpeedMax: 1, blobSpeedMin: 1, blobVX: false,
+        blobVY: true, startX: 100, startY: 100, savageBlobNum: 5, time: 30, name: "Savages team"
+      },
+      {
+        explorerX: 48, explorerY: 48,
+        treasureX: 450, treasureY: 450, blobNum: 3,
+        blobSpeedMax: 2, blobSpeedMin: 1, blobVX: true,
+        blobVY: false, startX: 100, startY: 100, savageBlobNum: 5, time: 60, name: "Bouncers and Savages"
+      }, 
+      {
+        explorerX: 48, explorerY: 48,
+        treasureX: 450, treasureY: 450, blobNum: 0,
+        blobSpeedMax: 4, blobSpeedMin: 2, blobVX: true,
+        blobVY: false, startX: 100, startY: 100, savageBlobNum: 5, time: 60, name: "Savage Team"
       }];
     var cld = levelData[level];
     function setup() {
@@ -315,13 +334,16 @@
       healthBar.outer = outerBar;
     }
     var startTime = Date.now();
-    var state = play
+    var state = play;
+    var levelText = new PIXI.Text("Level: "+(level+1).toString()+' "'+cld.name+'"');
+    levelText.x = 800
+    app.stage.addChild(levelText);
     function gameLoop(delta) {
       state(delta)
     }
     var explorerHit = false
     let time = new PIXI.Text("Time remaining: ");
-    time.x = 700
+    time.x = 550
     app.stage.addChild(time)
     function play(delta) {
       time.text = ("Time remaining: "+(Math.ceil((startTime - (Date.now() - (cld.time*1000)))/1000)))
@@ -364,12 +386,33 @@
         }
       });
       savageBlobs.forEach(function(savageBlob){
-        if(explorer.x > savageBlob.x) {
-          savageBlob.vx = 1;
-        } else if (explorer.x < savageBlob.x) {
-          savageBlob.vx = -1;
+        if(getDistance(explorer.x, explorer.y, savageBlob.x, savageBlob.y) < 250) {
+          if(explorer.x > savageBlob.x) {
+            savageBlob.vx = savageBlob.speed;
+          } else if (explorer.x < savageBlob.x) {
+            savageBlob.vx = savageBlob.speed * -1;
+          }
+          if(explorer.y > savageBlob.y) {
+            savageBlob.vy = savageBlob.speed;
+          } else if(explorer.y < savageBlob.y){
+            savageBlob.vy = savageBlob.speed * -1
+          }
+          var generalDistX = Math.round(Math.abs(explorer.x - savageBlob.x)/5);
+          var generalDistY = Math.round(Math.abs(explorer.y - savageBlob.y)/5);
+          if(generalDistX > generalDistY) {
+            savageBlob.x += savageBlob.vx;
+          } else {
+            savageBlob.y += savageBlob.vy;
+          }
+          if(hitTestRectangle(explorer,savageBlob)) {
+          explorerHit = true
+          }
+          if(hitTestRectangle(treasure, savageBlob)) {
+            treasure.x = cld.treasureX;
+            treasure.y = cld.treasureY;
+            gotTreasure = false;
+          }
         }
-        savageBlob.x += savageBlob.vx
       });
       if(explorerHit) {
         healthBar.outer.width -= 1
@@ -445,7 +488,10 @@
     function nextLevelSetup() {
       ++level;
       if(levelData.length > level) {
+        var newLevelTime = Date.now()
+        while (Date.now() - 1000 < newLevelTime) {}
         cld = levelData[level];
+        levelText.text = "Level: "+(level+1).toString()+' "'+cld.name+'"';
         explorer.x = cld.explorerX;
         explorer.y = cld.explorerY;
         explorer.vx = 0;
@@ -477,13 +523,17 @@
           gameScene.addChild(newBlob)
           blobs.push(newBlob)
         }
+        savageBlobs = []
         if(cld.savageBlobNum) {
-          var blobNum = cld.blobNum, spacing = 48, startX = 100, startY = 100;
-          let savageBlob = new Sprite(id["blob.png"]);
-          savageBlob.x = startX + randInt(0,200);
-          savageBlob.y = startY + randInt(0,200)
-          gameScene.addChild(savageBlob);
-          savageBlobs.push(savageBlob); 
+          var blobNum = cld.savageBlobNum, spacing = 48, startX = 100, startY = 100;
+          for(let i= 0; i < blobNum; i++) {
+            let savageBlob = new Sprite(id["blob.png"]);
+            savageBlob.x = startX + randInt(0,200);
+            savageBlob.y = startY + randInt(0,200);
+            savageBlob.speed = randInt(cld.blobSpeedMin, cld.blobSpeedMax);
+            gameScene.addChild(savageBlob);
+            savageBlobs.push(savageBlob);
+          }
         }
         startTime = Date.now();
         state = play;
@@ -491,7 +541,7 @@
         state = win;
       }
     }
-    function win() {
+    function fadeBlobs() {
       blobs.forEach(function(newBlob){
         for(let i = 1; i <= 100; i++) {
           setTimeout(function() {
@@ -499,6 +549,16 @@
           },i*50)
         }
       });
+      savageBlobs.forEach(function(savageBlob){
+        for(let i = 1; i <= 100; i++) {
+          setTimeout(function() {
+            savageBlob.alpha -= 0.01
+          },i*50)
+        }
+      });
+    }
+    function win() {
+      fadeBlobs();
       setTimeout(function () {
         gameWonScene.visible = true
         gameScene.visible = false
