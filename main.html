@@ -89,8 +89,8 @@
         width: 800,
         height: 800,              
         antialias: true,
-        transparent: true,
-        resolution: 1
+        transparent: false,
+        resolution: 1,
       }
     );
     function getDistance(x1,y1,x2,y2) {
@@ -289,17 +289,18 @@
         gameScene.addChild(newBlob)
       }
       savageBlobs = []
-          if(cld.savageBlobNum) {
-            var blobNum = cld.savageBlobNum, spacing = 48, startX = 100, startY = 100;
-            for(let i= 0; i < blobNum; i++) {
-              let savageBlob = new Sprite(id["blob.png"]);
-              savageBlob.x = startX + randInt(0,200);
-              savageBlob.y = startY + randInt(0,200);
-              savageBlob.speed = randInt(cld.blobSpeedMin, cld.blobSpeedMax);
-              gameScene.addChild(savageBlob);
-              savageBlobs.push(savageBlob);
-            }
+        if(cld.savageBlobNum) {
+          var blobNum = cld.savageBlobNum, spacing = 48, startX = 100, startY = 100;
+          for(let i= 0; i < blobNum; i++) {
+            let savageBlob = new Sprite(id["blob.png"]);
+            savageBlob.x = startX + randInt(0,200);
+            savageBlob.y = startY + randInt(0,200);
+            savageBlob.speed = randInt(cld.blobSpeedMin, cld.blobSpeedMax);
+            gameScene.addChild(savageBlob);
+            savageBlobs.push(savageBlob);
           }
+        }
+      state = beginning;
       app.ticker.add(delta => gameLoop(delta));
       explorer.vx = 0;
       explorer.vy = 0;
@@ -307,6 +308,16 @@
       let right = keyboard("ArrowRight");
       let up = keyboard("ArrowUp");
       let down = keyboard("ArrowDown");
+      let enter = keyboard("Enter");
+      enter.press = () => {
+        if(state === wait) {
+          startText.visible = false;
+          gameScene.visible = true;
+          app.renderer.backgroundColor = 0xFFFFFF;
+          startTime = Date.now();
+          state = play;
+        }
+      }
       left.press = () => {
         leftPress = true;
       }
@@ -645,10 +656,30 @@
         },10000/(healthBar.outer.width/13))
       }
     }
+    
+    var startText;
+    var addNewText = true;
+
+    function wait(){
+
+    }
+    function beginning() {
+      var newStyle = {stroke: "#FF0000", fill: "#FF0000"}
+      if (grandpaMode) {
+        startText = new PIXI.Text("Hello, brave and noble slimebag. If you are wondering why we are slumming it out under a trash can, I will tell you. \nYour king has tasked you with a very important mission.\nRecently, a team of explorers has broken into your noble blob monarch's storehouse... \nand made off with all the treasure!\nYou are the only one able to retrieve them.\nUse the arrow keys to move, get the treasure, and get out the door. Don't touch the humans!\nGood luck, brave slimebag.\nPress Enter to start.", newStyle);
+      } else {
+        startText = new PIXI.Text("Hello, noble explorer. You are wondering why we are speaking under your bed? I will tell you. \nYour king has tasked you with an important task. This of course must be kept in all secrecy.\nIt seems that some slimebag blobs have stolen all the treasure chests of the king! \nYou are the only one able to stop this madness. \nWhy not me? I don't know! I'm just reading off the paper! \nUse the arrow keys to get the treasure and head out the door, and beware of the bloodsucking blobs. \nPress Enter to start.", newStyle);
+      }
+      startText.y = 50;
+      app.stage.addChild(startText);
+      gameScene.visible = false;
+      state = wait;
+    }
     var RSG;
     var waiting = false;
     function nextLevelSetup() {
       if(!waiting){
+        app.renderer.backgroundColor = randInt(0,0xFFFFFF);
         ++level;
         var newLevelTime = Date.now();
         while (Date.now() - 1000 < newLevelTime) {};
