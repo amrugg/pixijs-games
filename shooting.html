@@ -1,0 +1,241 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Direction ship</title>
+</head>
+    <style>* {padding: 0; margin: 0}</style>
+    <script src="pixi/pixi.min.js"></script>
+    <script src="usefulFunctions.js"></script>
+<body>
+  <script type="text/javascript">
+    PIXI.utils.skipHello();
+    PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
+    let Application = PIXI.Application,
+        Container = PIXI.Container,
+        loader = PIXI.loader,
+        resources = PIXI.loader.resources,
+        TextureCache = PIXI.utils.TextureCache,
+        Sprite = PIXI.Sprite,
+        Rectangle = PIXI.Rectangle,
+        Graphics = PIXI.Graphics;
+    let app = new Application({ 
+        width: 800,
+        height: 800,              
+        antialias: true,
+        transparent: false,
+        resolution: 1
+      }
+    );
+    app.renderer.backgroundColor = 0x7777FF;
+    /// Fill the screen 
+    app.renderer.view.style.position = "absolute";
+    app.renderer.view.style.display = "block";
+    app.renderer.autoResize = true;
+    app.renderer.resize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(app.view);
+    var fireCannon = false;
+    loader.add("sprites/topDownShip.png").add("sprites/cannonball.png").add("sprites/pirateshipblack.png").add("sprites/pirateshipred.png").load(setup);
+    var ship, windSpeed, windDirection;
+    var pirateShips = [];
+    var cannonballSpeed = 10;
+    var cannonballs = 41;
+    var HUD = new PIXI.Text("Cannonballs: "+cannonballs.toString());
+    HUD.x = 1100;
+    app.stage.addChild(HUD);
+    var pirateShip;
+    function setup() {
+      pirateShip = new Sprite(resources["sprites/pirateshipblack.png"].texture);
+      pirateShip.scale.x = 10;
+      pirateShip.scale.y = 10;
+      pirateShip.direction = 90;
+      pirateShip.speed = 1;
+      pirateShip.anchor.set(0.5, 0.5);
+      pirateShip.position.set(200,200)
+      pirateShip.rotation = pointInDirection(pirateShip.direction + 90);
+      pirateShips.push(pirateShip)
+      app.stage.addChild(pirateShip);
+      ship = new Sprite(resources["sprites/topDownShip.png"].texture);
+      ship.scale.x = 10;
+      ship.scale.y = 10;
+      app.stage.addChild(ship);
+      app.renderer.render(app.stage);
+      ship.vx = 0;
+      ship.vy = 0;
+      ship.x = 500
+      ship.y = 500;
+      ship.direction = 90;
+      ship.speed = 1;
+      ship.turn = 0
+      ship.anchor.set(0.5, 0.5);
+      var left = keyboard("ArrowLeft"), right = keyboard("ArrowRight"), up = keyboard("ArrowUp"), down = keyboard("ArrowDown");
+      var space = keyboard(" "), a = keyboard("a"), d = keyboard("d");
+      space.press = () => {
+        fireCannon = 2;
+      }
+      a.press = () => {
+        fireCannon = 1;
+      }
+      d.press = () => {
+        fireCannon = -1;
+      }
+      left.press = () => {
+        ship.turn = 1;
+      }
+      left.release = () => {
+        ship.turn = 0;
+      };
+      right.press = () => {
+        ship.turn = -1;
+      }
+      right.release = () => {
+        ship.turn = 0;
+      }
+      up.press = () => {
+        ++ship.speed
+      }
+      down.press = () => {
+        if(ship.speed > 0) {
+          --ship.speed
+        }
+      }
+      app.ticker.add(delta => gameLoop(delta));
+      windSpeed = 1;
+      windDirection = 90;
+      setTimeout(changeWind,30000 + randInt(-10000,10000))
+    }
+    function changeWind() {
+      windSpeed = randInt(0,5);
+      windDirection = randInt(0,360);
+      setTimeout(changeWind,30000 + randInt(-10000,10000));
+    }
+    var shots = []
+    function gameLoop(delta) {
+      var data = direction(ship.speed,ship.direction);
+      ship.vx = data.r;
+      ship.vy = data.u;
+      ship.x += ship.vx;
+      ship.y += ship.vy;
+      ship.anchor.x = 0.5;
+      ship.anchor.y = 0.5;
+      pirateShips.forEach(function(pShip){
+        var badData = direction(pShip.speed, pShip.direction);
+        pShip.vx = badData.r;
+        pShip.vy = badData.u;
+        pShip.x += pShip.vx;
+        pShip.y += pShip.vy;
+        //(pointTowards(pShip.x, pShip.y, ship.x, ship.y));
+        pShip.rotation = pointInDirection(pShip.direction+90);
+      })
+      shots.forEach(function(shot, i){
+        var newData = direction(shot.speed, shot.direction);
+        shot.x += newData.r + shot.offset.r;
+        shot.y += newData.u + shot.offset.u;
+        if(shot.x < -50 || shot.x > 1450 || shot.y < -50 || shot.y > 1000) {
+          app.stage.removeChild(shot);
+          shots.splice(i, 1);
+        }
+        if(hitTestRectangle(shot, pirateShip, 100, 50) && shot.id == 1) {
+          pirateShip.visible = false;
+          app.stage.removeChild(shot);
+          shots.splice(i, 1);
+        }
+        if(hitTestRectangle(shot, ship) && shot.id == 0) {
+          ship.visible = false;
+          app.stage.removeChild(shot);
+          shots.splice(i, 1);
+        }
+      });
+      ship.rotation = ((ship.direction + 90) * Math.PI * -1) / 180;
+      ship.direction += ship.turn;
+      if(fireCannon === 2) {
+        if(cannonballs > 0) {
+          addNewCannonball(90, 1, ship.x, ship.y);
+          --cannonballs;
+        }
+        if(cannonballs > 0) {
+          addNewCannonball(-90, 1, ship.x, ship.y);
+          --cannonballs;
+        }
+        HUD.text = "Cannonballs: "+cannonballs.toString();
+        fireCannon = false;
+      } else if(fireCannon === 1) {
+        if(cannonballs > 0) {
+          addNewCannonball(90, 1, ship.x, ship.y);
+          --cannonballs;
+        }
+        HUD.text = "Cannonballs: "+cannonballs.toString();
+        fireCannon = false;
+      } else if (fireCannon === -1) {
+        if(cannonballs > 0) {
+          addNewCannonball(-90, 1, ship.x, ship.y);
+          --cannonballs;
+        }
+        HUD.text = "Cannonballs: "+cannonballs.toString();
+        fireCannon = false;
+      }
+    }
+    function addNewCannonball(offset, id, x, y) {
+      offset = offset || 0;
+      let cannonball = new Sprite(resources["sprites/cannonball.png"].texture);
+      cannonball.scale.set(0.25,0.25);
+      cannonball.speed = cannonballSpeed;
+      cannonball.direction = ship.direction + offset;
+      cannonball.position.set(x, y);
+      cannonball.offset = direction(ship.speed,ship.direction);
+      let newData = direction(50, cannonball.direction);
+      cannonball.x += newData.r + cannonball.offset.r;
+      cannonball.y += newData.u + cannonball.offset.u;
+      cannonball.id = id;
+      shots.push(cannonball);
+      app.stage.addChild(cannonball);
+    }
+    function keyboard(value) {
+      let key = {};
+      key.value = value;
+      key.isDown = false;
+      key.isUp = true;
+      key.press = undefined;
+      key.release = undefined;
+      //The `downHandler`
+      key.downHandler = event => {
+        if (event.key === key.value) {
+          if (key.isUp && key.press) key.press();
+          key.isDown = true;
+          key.isUp = false;
+          event.preventDefault();
+        }
+      };
+
+      //The `upHandler`
+      key.upHandler = event => {
+        if (event.key === key.value) {
+          if (key.isDown && key.release) key.release();
+          key.isDown = false;
+          key.isUp = true;
+          event.preventDefault();
+        }
+      };
+
+      //Attach event listeners
+      const downListener = key.downHandler.bind(key);
+      const upListener = key.upHandler.bind(key);
+      
+      window.addEventListener(
+        "keydown", downListener, false
+      );
+      window.addEventListener(
+        "keyup", upListener, false
+      );
+      
+      // Detach event listeners
+      key.unsubscribe = () => {
+        window.removeEventListener("keydown", downListener);
+        window.removeEventListener("keyup", upListener);
+      };
+      
+      return key;
+    }
+  </script>
+</body>
+</html>

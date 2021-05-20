@@ -18,6 +18,12 @@
       });
       return params;
     }
+
+    var difficultyThrottling = Number(params.difficultyThrottling) || 1;
+    difficultyThrottling = Math.abs(difficultyThrottling);
+    while(difficultyThrottling < 1) {
+      difficultyThrottling *= 10
+    }
     var grandmaMode = params.grandmaMode || false;
     var grandpaMode = params.grandpaMode || false;
     /// Helper functions
@@ -195,6 +201,11 @@
         blobSpeedMax: 10, blobSpeedMin: 5, blobVX: true,
         blobVY: false, startX: 100, startY: 100, time: 25676, name: "No way to lose"
       }];
+    for(let i = 0; i < levelData.length; i++) {
+      levelData[i].time *= difficultyThrottling;
+      levelData[i].blobSpeedMin /= difficultyThrottling;
+      levelData[i].blobSpeedMax /= difficultyThrottling;
+    }
     var cld = levelData[level];
     function setup() {
       gotTreasure = false;
@@ -369,7 +380,7 @@
     let time = new PIXI.Text("Time remaining: ");
     time.x = 513;
     app.stage.addChild(time);
-    healthBar.outer.width = 120;
+    //healthBar.outer.width = 120;
     function play(delta) {
       time.text = ("Time remaining: "+(Math.ceil((startTime - (Date.now() - (cld.time*1000)))/1000)));
       if(Date.now() - (cld.time*1000) > startTime) {
@@ -535,6 +546,7 @@
     function lose() {
       gameLostScene.visible = true;
       gameScene.visible = false;
+      app.ticker.stop()
     }
     function grandFinale(){
       time.text = ("Time remaining: "+(Math.ceil((startTime - (Date.now() - (cld.time*1000)))/1000)));
@@ -754,7 +766,7 @@
         if(level+1 < levelData.length) {
           state = play;
         } else {
-          healthBar.outer.width = 120;
+          healthBar.outer.width = 130;
           state = grandFinale;
         }
         waiting = false;
@@ -787,6 +799,7 @@
       while(Date.now() - 1000 < delay) {}
       gameScene.visible = false;
       gameWonScene.visible = true;
+      app.ticker.stop();
     }
        /*Notes:
       "sprites/cat.png"
