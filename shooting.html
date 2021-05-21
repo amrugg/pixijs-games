@@ -10,7 +10,7 @@
     <script src ="bump.js"></script>
 <body>
   <script type="text/javascript">
-  //  var b = new Bump(PIXI);
+    var b = new Bump(PIXI);
     PIXI.utils.skipHello();
     PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
     let Application = PIXI.Application,
@@ -198,12 +198,12 @@
           app.stage.removeChild(shot);
           shots.splice(i, 1);
         }
-        if(hitTestRectangle(shot, pirateShips) && shot.id == 1) {
+        if(b.hit(shot, pirateShips) && shot.id == 1) {
           pirateShip.visible = false;
           app.stage.removeChild(shot);
           shots.splice(i, 1);
         }
-        if(hitTestRectangle(shot, ship) && shot.id == 0) {
+        if(b.hit(shot, ship) && shot.id == 0) {
           ship.visible = false;
           app.stage.removeChild(shot);
           shots.splice(i, 1);
