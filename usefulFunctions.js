@@ -1,33 +1,20 @@
 function getDistance(x1,y1,x2,y2) {
+    /// Mine
     return Math.sqrt((x1-x2)**2+(y1-y2)**2);
 }
-function pointInTriangle(point, triangle) {
-    //compute vectors & dot products
-    var cx = point[0], cy = point[1],
-        t0 = triangle[0], t1 = triangle[1], t2 = triangle[2],
-        v0x = t2[0]-t0[0], v0y = t2[1]-t0[1],
-        v1x = t1[0]-t0[0], v1y = t1[1]-t0[1],
-        v2x = cx-t0[0], v2y = cy-t0[1],
-        dot00 = v0x*v0x + v0y*v0y,
-        dot01 = v0x*v1x + v0y*v1y,
-        dot02 = v0x*v2x + v0y*v2y,
-        dot11 = v1x*v1x + v1y*v1y,
-        dot12 = v1x*v2x + v1y*v2y
-
-    // Compute barycentric coordinates
-    var b = (dot00 * dot11 - dot01 * dot01),
-        inv = b === 0 ? 0 : (1 / b),
-        u = (dot11*dot02 - dot01*dot12) * inv,
-        v = (dot00*dot12 - dot01*dot02) * inv
-    return u>=0 && v>=0 && (u+v < 1)
+function rotatePoint(pointX, pointY, originX, originY, angle, degrees) {
+    /// https://stackoverflow.com/questions/4465931/rotate-rectangle-around-a-point
+    if(degrees) {
+        angle = angle * Math.PI / 180.0;
+    }
+    return {
+        x: Math.cos(angle) * (pointX-originX) - Math.sin(angle) * (pointY-originY) + originX,
+        y: Math.sin(angle) * (pointX-originX) + Math.cos(angle) * (pointY-originY) + originY
+    };
 }
-function pointCircleCollision(point, circle, r) {
-    if (r===0) return false
-    var dx = circle[0] - point[0]
-    var dy = circle[1] - point[1]
-    return dx * dx + dy * dy <= r * r
-}
-function lineCircleCollide(a, b, circle, radius, nearest) {
+function lineCollide(a, b, circle, radius, nearest) {
+    /// https://github.com/mattdesl/line-circle-collision/blob/master/index.js
+    var tmp = [0, 0];
     //check to see if start or end points lie within circle 
     if (pointCircleCollide(a, circle, radius)) {
         if (nearest) {
@@ -80,9 +67,15 @@ function lineCircleCollide(a, b, circle, radius, nearest) {
     return pointCircleCollide(nearest, circle, radius)
             && pLen2 <= dLen2 && (px * dx + py * dy) >= 0
 }
-function circleInTriangle(){
-    if (pointInTriangle(circle, triangle))
-        return true
+function pointCircleCollide(point, circle, r) {
+    /// https://github.com/mattdesl/point-circle-collision/blob/master/index.js
+    if (r===0) return false
+    var dx = circle[0] - point[0]
+    var dy = circle[1] - point[1]
+    return dx * dx + dy * dy <= r * r
+}
+function circleInTriangle(triangle, circle, radius) {
+    /// https://github.com/mattdesl/triangle-circle-collision/blob/master/index.js
     if (lineCollide(triangle[0], triangle[1], circle, radius))
         return true
     if (lineCollide(triangle[1], triangle[2], circle, radius))
@@ -91,7 +84,19 @@ function circleInTriangle(){
         return true
     return false
 }
+function circleInRectangle(rectangle, circle, radius){
+    /// Adapted
+    if (lineCollide(rectangle[0], rectangle[1], circle, radius))
+        return true
+    if (lineCollide(rectangle[1], rectangle[2], circle, radius))
+        return true
+    if (lineCollide(rectangle[2], rectangle[3], circle, radius))
+        return true
+    if(lineCollide(rectangle[3], rectangle[0], circle, radius))
+        return false
+}
 function pointTowards(x1,y1,x2,y2) {
+    /// Mine
     var xDiff = x1 - x2;
     var yDiff = y1 - y2;
     var degree = Math.atan(yDiff/xDiff) * (-180/Math.PI);
