@@ -11,6 +11,16 @@
 <body>
   <script type="text/javascript">
     var b = new Bump(PIXI);
+    var params = getParams();
+    function getParams() {
+      var params = {};
+      location.search.substr(1).split("&").forEach(function(el) {
+        var data = el.replace(/\+/g, " ").split("=");
+        params[decodeURIComponent(data[0])] = data[1] ? decodeURIComponent(data[1]) : true;
+      });
+      return params;
+    }
+    var debug = params.debug || false;
     PIXI.utils.skipHello();
     PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
     let Application = PIXI.Application,
@@ -45,7 +55,7 @@
     var HUD = new PIXI.Text("Cannonballs: "+cannonballs.toString());
     HUD.x = 1100;
     app.stage.addChild(HUD);
-    var pirateShip;
+    var pirateShip, graphics;
     function setup() {
       pirateShip = new Sprite(resources["sprites/pirateshipblack.png"].texture);
       pirateShip.scale.x = 10;
@@ -103,6 +113,12 @@
           --ship.speed
         }
       }
+      graphics = new PIXI.Graphics();
+      graphics.beginFill(0xFF0000);
+      graphics.alpha = 0.5;
+      graphics.drawRect((ship.x - ship.width / 2), (ship.y - ship.height / 2), ship.width, ship.height);
+      graphics.drawPolygon([100,100,100,200,200,200,200,100]);
+      app.stage.addChild(graphics);
       app.ticker.add(delta => gameLoop(delta));
       windSpeed = 1;
       windDirection = 90;
@@ -114,14 +130,33 @@
       setTimeout(changeWind,30000 + randInt(-10000,10000));
     }
     var shots = []
+    function drawCollision(){
+      graphics.clear();
+      graphics.beginFill(0xFF0000);
+      graphics.alpha = 0.5;
+      var point1 = rotatePoint((ship.x - ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
+      var point2 = rotatePoint((ship.x - ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
+      var point3 = rotatePoint((ship.x + ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
+      var point4 = rotatePoint((ship.x + ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
+      //var path = [(ship.x - ship.width / 2), (ship.y - ship.height / 2),(ship.x - ship.width / 2), (ship.y + ship.height / 2),(ship.x + ship.width / 2), (ship.y + ship.height / 2),(ship.x + ship.width / 2), (ship.y - ship.height / 2)]
+      var path = [point1.x,point1.y, point2.x,point2.y,point3.x,point3.y,point4.x,point4.y];
+      graphics.drawPolygon(path);
+    }
     function gameLoop(delta) {
       var data = direction(ship.speed,ship.direction);
       ship.vx = data.r;
       ship.vy = data.u;
       ship.x += ship.vx;
       ship.y += ship.vy;
+      ship.point1 = rotatePoint((ship.x - ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
+      ship.point2 = rotatePoint((ship.x - ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
+      ship.point3 = rotatePoint((ship.x + ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
+      ship.point4 = rotatePoint((ship.x + ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
       ship.anchor.x = 0.5;
       ship.anchor.y = 0.5;
+      if(debug){
+        drawCollision();  
+      }
       pirateShips.forEach(function(pShip){
         var badData = direction(pShip.speed, pShip.direction);
         pShip.vx = badData.r;
@@ -203,7 +238,7 @@
           app.stage.removeChild(shot);
           shots.splice(i, 1);
         }
-        if(b.hit(shot, ship) && shot.id == 0) {
+        if(circleInRectangle([[ship.point1.x, ship.point1.y], [ship.point2.x, ship.point2.y], [ship.point3.x, ship.point3.y],[ship.point4.x, ship.point4.y]],[shot.x, shot.y],shot.width/2) && shot.id == 0) {
           ship.visible = false;
           app.stage.removeChild(shot);
           shots.splice(i, 1);
