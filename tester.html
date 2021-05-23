@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Bible Memory Character Tester</title>
+</head>
+  <script src="pixi/pixi.min.js"></script>
+  <script src="usefulFunctions.js"></script>
+  <script src="simpleSetup.js"></script>
+<body>
+  <style>* {padding: 0; margin: 0}</style>
+  <script type="text/javascript">
+    PIXI.utils.skipHello();
+    let Application = PIXI.Application,
+    Container = PIXI.Container,
+    loader = PIXI.loader,
+    resources = PIXI.loader.resources,
+    TextureCache = PIXI.utils.TextureCache,
+    Sprite = PIXI.Sprite,
+    Rectangle = PIXI.Rectangle,
+    Graphics = PIXI.Graphics;
+    let app = new Application({ 
+        width: 800,
+        height: 800,              
+        antialias: true,
+        transparent: true,
+        resolution: 1,
+    }
+    );
+    app.renderer.view.style.position = "absolute";
+    app.renderer.view.style.display = "block";
+    app.renderer.autoResize = true;
+    app.renderer.resize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(app.view);
+    loader.add("sprites/bibmemimgs/goblin.png").add("sprites/map.png").add("sprites/sprites.json").load(setup)
+    var i;
+    var goblinTexture;
+    var map;
+    var id;
+    var bow;
+    function setup(){
+        id = resources["sprites/sprites.json"].textures;
+        map = new Sprite(resources["sprites/map.png"].texture);
+        app.stage.addChild(map);
+        goblinTexture = TextureCache["sprites/bibmemimgs/goblin.png"];
+        let rectangle = new Rectangle(8,8,72,72);
+        goblinTexture.frame = rectangle;
+        let goblin = new Sprite(goblinTexture);
+        console.log(id);
+        goblin.x = 550;
+        goblin.y = 350;
+        app.stage.addChild(goblin);
+        i = 0;
+        app.ticker.add(delta => gameLoop(delta));
+    }
+    function gameLoop(delta){
+    }
+    </script>
+</body>
+</html>

@@ -93,7 +93,8 @@ function circleInRectangle(rectangle, circle, radius){
     if (lineCollide(rectangle[2], rectangle[3], circle, radius))
         return true
     if(lineCollide(rectangle[3], rectangle[0], circle, radius))
-        return false
+        return true;    
+    return false
 }
 function pointTowards(x1,y1,x2,y2) {
     /// Mine
