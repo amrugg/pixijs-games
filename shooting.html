@@ -1,3 +1,6 @@
+<html>
+  <head>
+    <link href="favicon.png" type="image/png" rel="icon">
 <!doctype html>
 <html>
 <head>
@@ -55,22 +58,9 @@
     var HUD = new PIXI.Text("Cannonballs: " + cannonballs.toString() + " Health: " + (10).toString());
     HUD.x = 1000;
     app.stage.addChild(HUD);
-    var pirateShip, graphics;
     function setup() {
-      pirateShip = new Sprite(resources["sprites/pirateshipblack.png"].texture);
-      pirateShip.scale.x = 10;
-      pirateShip.scale.y = 10;
-      pirateShip.direction = 90;
-      pirateShip.speed = 1;
-      pirateShip.lastFire = Date.now() - 25000;
-      pirateShip.shouldFire = true;
-      pirateShip.anchor.set(0.5, 0.5);
-      pirateShip.position.set(200,200)
-      pirateShip.hit = false;
-      pirateShip.health = 10;
-      pirateShip.rotation = pointInDirection(pirateShip.direction + 90);
-      pirateShips.push(pirateShip)
-      app.stage.addChild(pirateShip);
+      spawnNewPirateShip();
+      spawnNewPirateShip();
       ship = new Sprite(resources["sprites/topDownShip.png"].texture);
       ship.scale.x = 10;
       ship.scale.y = 10;
@@ -78,8 +68,8 @@
       app.renderer.render(app.stage);
       ship.vx = 0;
       ship.vy = 0;
-      ship.x = 500
-      ship.y = 500;
+      ship.x = 750;
+      ship.y = 350;
       ship.direction = 90;
       ship.speed = 1;
       ship.turn = 0;
@@ -127,14 +117,33 @@
       app.ticker.add(delta => gameLoop(delta));
       windSpeed = 1;
       windDirection = 90;
-      setTimeout(changeWind,30000 + randInt(-10000,10000))
+  //    setTimeout(changeWind,20000 + randInt(-10000,10000))
     }
     function changeWind() {
       windSpeed = randInt(0,5);
       windDirection = randInt(0,360);
-      setTimeout(changeWind,30000 + randInt(-10000,10000));
+      for(let i = 0; i < randInt(1,3); i++) {
+        spawnNewPirateShip();
+      }
+      setTimeout(changeWind,20000 + randInt(-10000,10000));
     }
     var shots = []
+    function spawnNewPirateShip(){
+      var pirateShip = new Sprite(resources["sprites/pirateshipblack.png"].texture);
+      pirateShip.scale.x = 10;
+      pirateShip.scale.y = 10;
+      pirateShip.direction = 90;
+      pirateShip.speed = 1;
+      pirateShip.lastFire = Date.now() - 25000;
+      pirateShip.shouldFire = true;
+      pirateShip.anchor.set(0.5, 0.5);
+      pirateShip.position.set(randInt(100,700),randInt(100,700))
+      pirateShip.hit = false;
+      pirateShip.health = 10;
+      pirateShip.rotation = pointInDirection(pirateShip.direction + 90);
+      pirateShips.push(pirateShip)
+      app.stage.addChild(pirateShip);
+    }
     function drawCollision(){
       graphics.clear();
       graphics.beginFill(0xFF0000);
@@ -263,6 +272,8 @@
             pShip.visible = false;
             app.stage.removeChild(pShip);
             pirateShips.splice(i,1);
+            cannonballs += 20;
+            ship.health += 5;
             return;
           }
         }
@@ -281,7 +292,7 @@
         var fireRotation1 = pointTowards(pShip.x, pShip.y, ship.x, ship.y);
         var fireRotation2 = pointTowards(pShip.x, pShip.y, ship.x, ship.y) + 180;
         if((Math.abs(fireRotation1-(pShip.direction + 90)) < 20 || Math.abs(fireRotation2-(pShip.direction+90)) < 20)&& pShip.lastFire + 2500 < Date.now()) {
-          pirateShip.lastFire = Date.now();
+          pShip.lastFire = Date.now();
           addNewCannonball(90, 0, pShip);
           addNewCannonball(-90, 0, pShip);
         } else if (getDistance(pShip.x, pShip.y, ship.x, ship.y) > 850 && true) {
