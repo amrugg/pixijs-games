@@ -52,8 +52,8 @@
     var pirateShips = [];
     var cannonballSpeed = 10;
     var cannonballs = 41;
-    var HUD = new PIXI.Text("Cannonballs: "+cannonballs.toString());
-    HUD.x = 1100;
+    var HUD = new PIXI.Text("Cannonballs: " + cannonballs.toString() + " Health: " + (10).toString());
+    HUD.x = 1000;
     app.stage.addChild(HUD);
     var pirateShip, graphics;
     function setup() {
@@ -66,6 +66,8 @@
       pirateShip.shouldFire = true;
       pirateShip.anchor.set(0.5, 0.5);
       pirateShip.position.set(200,200)
+      pirateShip.hit = false;
+      pirateShip.health = 10;
       pirateShip.rotation = pointInDirection(pirateShip.direction + 90);
       pirateShips.push(pirateShip)
       app.stage.addChild(pirateShip);
@@ -80,7 +82,8 @@
       ship.y = 500;
       ship.direction = 90;
       ship.speed = 1;
-      ship.turn = 0
+      ship.turn = 0;
+      ship.health = 10;
       ship.anchor.set(0.5, 0.5);
       var left = keyboard("ArrowLeft"), right = keyboard("ArrowRight"), up = keyboard("ArrowUp"), down = keyboard("ArrowDown");
       var space = keyboard(" "), a = keyboard("a"), d = keyboard("d");
@@ -144,7 +147,22 @@
       var path = [point1.x,point1.y, point2.x,point2.y,point3.x,point3.y,point4.x,point4.y];
       graphics.drawPolygon(path);
     }
+    function drawPirateCollision(){
+      graphics.beginFill(0xFF0000);
+      graphics.alpha = 0.5;
+      var point1 = rotatePoint((pirateShip.x - pirateShip.width / 2), (pirateShip.y - pirateShip.height / 2),pirateShip.x,pirateShip.y,pirateShip.rotation);
+      var point2 = rotatePoint((pirateShip.x - pirateShip.width / 2), (pirateShip.y + pirateShip.height / 2),pirateShip.x,pirateShip.y,pirateShip.rotation);
+      var point3 = rotatePoint((pirateShip.x + pirateShip.width / 2), (pirateShip.y + pirateShip.height / 2),pirateShip.x,pirateShip.y,pirateShip.rotation);
+      var point4 = rotatePoint((pirateShip.x + pirateShip.width / 2), (pirateShip.y - pirateShip.height / 2),pirateShip.x,pirateShip.y,pirateShip.rotation);
+      //var path = [(ship.x - ship.width / 2), (ship.y - ship.height / 2),(ship.x - ship.width / 2), (ship.y + ship.height / 2),(ship.x + ship.width / 2), (ship.y + ship.height / 2),(ship.x + ship.width / 2), (ship.y - ship.height / 2)]
+      var path = [point1.x,point1.y, point2.x,point2.y,point3.x,point3.y,point4.x,point4.y];
+      graphics.drawPolygon(path);
+    }
+    var state = play;
     function gameLoop(delta) {
+      state(delta);
+    }
+    function play(){
       var data = direction(ship.speed,ship.direction);
       ship.vx = data.r;
       ship.vy = data.u;
@@ -159,8 +177,103 @@
       if(debug){
         drawCollision();  
       }
-      pirateShips.forEach(function(pShip){
+      handlePirates();
+      handleShots();
+      ship.rotation = ((ship.direction + 90) * Math.PI * -1) / 180;
+      ship.direction += ship.turn;
+      if(fireCannon === 2) {
+        if(cannonballs > 0) {
+          addNewCannonball(90, 1, ship);
+          --cannonballs;
+        }
+        if(cannonballs > 0) {
+          addNewCannonball(-90, 1, ship);
+          --cannonballs;
+        }
+        HUD.text = "Cannonballs: "+cannonballs.toString()+" Health: "+ship.health.toString();
+        fireCannon = false;
+      } else if(fireCannon === 1) {
+        if(cannonballs > 0) {
+          addNewCannonball(90, 1, ship);
+          --cannonballs;
+        }
+        HUD.text = "Cannonballs: "+cannonballs.toString()+" Health: "+ship.health.toString();
+        fireCannon = false;
+      } else if (fireCannon === -1) {
+        if(cannonballs > 0) {
+          addNewCannonball(-90, 1, ship);
+          --cannonballs;
+        }
+        HUD.text = "Cannonballs: "+cannonballs.toString()+" Health: "+ship.health.toString();
+        fireCannon = false;
+      }
+    }
+    function addNewCannonball(offset, id, launcher) {
+      offset = offset || 0;
+      let cannonball = new Sprite(resources["sprites/cannonball.png"].texture);
+      cannonball.scale.set(0.25,0.25);
+      cannonball.speed = cannonballSpeed;
+      cannonball.direction = launcher.direction + offset;
+      cannonball.position.set(launcher.x, launcher.y);
+      cannonball.offset = direction(launcher.speed,launcher.direction);
+      let newData = direction(50, cannonball.direction);
+      cannonball.x += newData.r + cannonball.offset.r;
+      cannonball.y += newData.u + cannonball.offset.u;
+      cannonball.id = id;
+      cannonball.delete = false;
+      shots.push(cannonball);
+      app.stage.addChild(cannonball);
+    }
+    function handleShots(){
+      shots.forEach(function(shot, i){
+        if(shot.delete) {
+          shot.visible = false;
+          app.stage.removeChild(shot);
+          shots.splice(i, 1);
+          return;
+        }
+        var newData = direction(shot.speed, shot.direction);
+        shot.x += newData.r + shot.offset.r;
+        shot.y += newData.u + shot.offset.u;
+        if(shot.x < -50 || shot.x > 1450 || shot.y < -50 || shot.y > 1000) {
+          shot.delete = true;
+        }
+        pirateShips.forEach(function(pShip){
+          if(circleInRectangle([[pShip.point1.x, pShip.point1.y], [pShip.point2.x, pShip.point2.y], [pShip.point3.x, pShip.point3.y],[pShip.point4.x, pShip.point4.y]],[shot.x, shot.y],shot.width/2) && shot.id == 1) {
+            shot.delete = true;
+            pShip.hit = true;
+          }
+        });
+        if(circleInRectangle([[ship.point1.x, ship.point1.y], [ship.point2.x, ship.point2.y], [ship.point3.x, ship.point3.y],[ship.point4.x, ship.point4.y]],[shot.x, shot.y],shot.width/2) && shot.id == 0) {
+          shot.delete = true;
+          --ship.health;
+          HUD.text = "Cannonballs: "+cannonballs.toString()+" Health: "+ship.health.toString();
+          if(ship.health < 1) {
+            ship.visible = false;
+          }
+        }
+      });
+    }
+    function handlePirates(){
+      pirateShips.forEach(function(pShip, i){
+        if(pShip.hit){
+          pShip.hit = false;
+          --pShip.health;
+          if(pShip.health < 1) {
+            pShip.visible = false;
+            app.stage.removeChild(pShip);
+            pirateShips.splice(i,1);
+            return;
+          }
+        }
         var badData = direction(pShip.speed, pShip.direction);
+        pShip.point1 = rotatePoint((pShip.x - pShip.width / 2), (pShip.y - pShip.height / 2),pShip.x,pShip.y,pShip.rotation);
+        pShip.point2 = rotatePoint((pShip.x - pShip.width / 2), (pShip.y + pShip.height / 2),pShip.x,pShip.y,pShip.rotation);
+        pShip.point3 = rotatePoint((pShip.x + pShip.width / 2), (pShip.y + pShip.height / 2),pShip.x,pShip.y,pShip.rotation);
+        pShip.point4 = rotatePoint((pShip.x + pShip.width / 2), (pShip.y - pShip.height / 2),pShip.x,pShip.y,pShip.rotation);
+        if(debug){
+          drawPirateCollision();
+        }
         pShip.vx = badData.r;
         pShip.vy = badData.u;
         pShip.x += pShip.vx;
@@ -171,7 +284,6 @@
           pirateShip.lastFire = Date.now();
           addNewCannonball(90, 0, pShip);
           addNewCannonball(-90, 0, pShip);
-          pShip.shouldFire = false;
         } else if (getDistance(pShip.x, pShip.y, ship.x, ship.y) > 850 && true) {
           var pointTowardsShip = pointTowards(pShip.x, pShip.y, ship.x, ship.y) - 180;
           if(pointTowardsShip < 0) {
@@ -227,68 +339,6 @@
         }
         pShip.rotation = pointInDirection(pShip.direction+90); 
       });
-      shots.forEach(function(shot, i){
-        var newData = direction(shot.speed, shot.direction);
-        shot.x += newData.r + shot.offset.r;
-        shot.y += newData.u + shot.offset.u;
-        if(shot.x < -50 || shot.x > 1450 || shot.y < -50 || shot.y > 1000) {
-          app.stage.removeChild(shot);
-          shots.splice(i, 1);
-        }
-        if(b.hit(shot, pirateShips) && shot.id == 1) {
-          pirateShip.visible = false;
-          app.stage.removeChild(shot);
-          shots.splice(i, 1);
-        }
-        if(circleInRectangle([[ship.point1.x, ship.point1.y], [ship.point2.x, ship.point2.y], [ship.point3.x, ship.point3.y],[ship.point4.x, ship.point4.y]],[shot.x, shot.y],shot.width/2) && shot.id == 0) {
-          ship.visible = false;
-          app.stage.removeChild(shot);
-          shots.splice(i, 1);
-        }
-      });
-      ship.rotation = ((ship.direction + 90) * Math.PI * -1) / 180;
-      ship.direction += ship.turn;
-      if(fireCannon === 2) {
-        if(cannonballs > 0) {
-          addNewCannonball(90, 1, ship);
-          --cannonballs;
-        }
-        if(cannonballs > 0) {
-          addNewCannonball(-90, 1, ship);
-          --cannonballs;
-        }
-        HUD.text = "Cannonballs: "+cannonballs.toString();
-        fireCannon = false;
-      } else if(fireCannon === 1) {
-        if(cannonballs > 0) {
-          addNewCannonball(90, 1, ship);
-          --cannonballs;
-        }
-        HUD.text = "Cannonballs: "+cannonballs.toString();
-        fireCannon = false;
-      } else if (fireCannon === -1) {
-        if(cannonballs > 0) {
-          addNewCannonball(-90, 1, ship);
-          --cannonballs;
-        }
-        HUD.text = "Cannonballs: "+cannonballs.toString();
-        fireCannon = false;
-      }
-    }
-    function addNewCannonball(offset, id, launcher) {
-      offset = offset || 0;
-      let cannonball = new Sprite(resources["sprites/cannonball.png"].texture);
-      cannonball.scale.set(0.25,0.25);
-      cannonball.speed = cannonballSpeed;
-      cannonball.direction = launcher.direction + offset;
-      cannonball.position.set(launcher.x, launcher.y);
-      cannonball.offset = direction(launcher.speed,launcher.direction);
-      let newData = direction(50, cannonball.direction);
-      cannonball.x += newData.r + cannonball.offset.r;
-      cannonball.y += newData.u + cannonball.offset.u;
-      cannonball.id = id;
-      shots.push(cannonball);
-      app.stage.addChild(cannonball);
     }
     function keyboard(value) {
       let key = {};
