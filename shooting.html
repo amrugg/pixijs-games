@@ -49,18 +49,24 @@
     app.renderer.autoResize = true;
     app.renderer.resize(window.innerWidth, window.innerHeight);
     document.body.appendChild(app.view);
+    gameScene = new Container();
+    var gameScene;
+    app.stage.addChild(gameScene);
     var fireCannon = false;
-    loader.add("sprites/topDownShip.png").add("sprites/cannonball.png").add("sprites/pirateshipblack.png").add("sprites/pirateshipred.png").load(setup);
+    loader.add("sprites/topDownShip.png").add("sprites/pirateBlob.png").add("sprites/cannonball.png").add("sprites/treasureHunter.json").add("sprites/pirateshipblack.png").add("sprites/pirateshipred.png").load(setup);
     var ship, windSpeed, windDirection;
     var pirateShips = [];
     var cannonballSpeed = 10;
     var cannonballs = 41;
     var HUD = new PIXI.Text("Cannonballs: " + cannonballs.toString() + " Health: " + (10).toString());
     HUD.x = 1000;
-    app.stage.addChild(HUD);
+    gameScene.addChild(HUD);
     var globalX = 0;
     var globalY = 0;
+    var explorer;
+    var id, introScene;
     function setup() {
+      id = resources["sprites/treasureHunter.json"].textures;
       spawnNewPirateShip();
       spawnNewPirateShip();
       for(let i = 0; i < randInt(3,7); i++) {
@@ -69,12 +75,12 @@
         testIsland.myY = randInt(100,700);
         testIsland.scale.set(0.75);
         islands.push(testIsland)
-        app.stage.addChild(testIsland);
+        gameScene.addChild(testIsland);
       }
       ship = new Sprite(resources["sprites/topDownShip.png"].texture);
       ship.scale.x = 10;
       ship.scale.y = 10;
-      app.stage.addChild(ship);
+      gameScene.addChild(ship);
       app.renderer.render(app.stage);
       ship.vx = 0;
       ship.vy = 0;
@@ -86,8 +92,18 @@
       ship.health = 10;
       ship.anchor.x = 0.5;
       ship.anchor.y = 0.5;
+      explorer = new Sprite(id["explorer.png"]);
+      gameScene.addChild(explorer);
+      explorer.x = ship.x;
+      explorer.y = ship.y;
       var left = keyboard("ArrowLeft"), right = keyboard("ArrowRight"), up = keyboard("ArrowUp"), down = keyboard("ArrowDown");
       var space = keyboard(" "), a = keyboard("a"), d = keyboard("d");
+      var enter = keyboard("Enter");
+      enter.press = () => {
+        if(state = intro) {
+          state = play;
+        }
+      }
       space.press = () => {
         fireCannon = 2;
       }
@@ -123,7 +139,7 @@
         graphics.alpha = 0.5;
         graphics.drawRect((ship.x - ship.width / 2), (ship.y - ship.height / 2), ship.width, ship.height);
         graphics.drawPolygon([100,100,100,200,200,200,200,100]);
-        app.stage.addChild(graphics);
+        gameScene.addChild(graphics);
       }
       app.ticker.add(delta => gameLoop(delta));
       windSpeed = 1;
@@ -154,8 +170,12 @@
       pirateShip.hit = false;
       pirateShip.health = 10;
       pirateShip.rotation = pointInDirection(pirateShip.direction + 90);
-      pirateShips.push(pirateShip)
-      app.stage.addChild(pirateShip);
+      pirateShip.pilot = new Sprite(resources["sprites/pirateBlob.png"].texture);
+      pirateShip.pilot.x = pirateShip.x;
+      pirateShip.pilot.y = pirateShip.y;
+      pirateShips.push(pirateShip);
+      gameScene.addChild(pirateShip);
+      gameScene.addChild(pirateShip.pilot);
     }
     function drawCollision(){
       graphics.clear();
@@ -170,10 +190,18 @@
       graphics.drawPolygon(path);
     }
     var state = play;
+    gameScene.visible = true;
+    function introSetup(){
+      gameScene.visible = false;
+      introScene = new Container();
+      var introMessage = new PIXI.Text("");
+      introMessage.text = 'Hello, brave explorer. We meet again.\nI assume you are back from Blob Adventures I?\nWell. You completed that mission well. Almost.\nI assume you remembered what happened after that?\nWhat? Is your memory so short? Alright, I will tell you.\nYou proudly brought in the chests before the king, and then left.\nWhat happened after that was the king opened them up.\nAnd then he found that they were stuffed with stinky socks.\nAt first he suspected you of treason, but then...\nhe remembered that the blobs use the treasure chests for hampers.\nThen he sent your superior to get them. He proudly grabbed all the hampers...\nand then it turned out that the blobs had "hidden" the socks in the hampers.\nIt seems that the blobs prize the stinky socks as antiques, even more than the treasures.\nThen the king would have sent you to go retrieve both the chests and the hampers...\nBut the blobs had moved their treasure overseas.\nSo, he sends you to swim across the ocean to go retrieve the treasure.\nFortunately, the queen doubted your swimming abilities and sent you a ship and crew.\nShe also provided food for the journey.\nUnfortunately, she may have counted on your speed a lot, because she only sent 3 barrels of food and water.\nSo you may have to find some more later..' 
+    }
     function gameLoop(delta) {
       state(delta);
     }
     function play(){
+      explorer.rotation = pointInDirection(ship.direction - 180);
       var data = direction(ship.speed,ship.direction);
       ship.vx = data.r;
       ship.vy = data.u;
@@ -227,28 +255,38 @@
       cannonball.scale.set(0.25,0.25);
       cannonball.speed = cannonballSpeed;
       cannonball.direction = launcher.direction + offset;
-      cannonball.position.set(launcher.x, launcher.y);
+      /// The goal of the myX and myY settings are to try to make it appear at the launching ship's position
+      /// How do we do that?
+      /// The cannonball's X will be set to globalX + myX
+      /// So globalX + myX will have to equal the launcher's x
+      /// In other words, globalX + myX = launcher.x
+      /// Therefore, myX will have to equal launcher.x - globalX
+      /// Same for Y
+      cannonball.myX = launcher.x - globalX;
+      cannonball.myY = launcher.y - globalY;
+      cannonball.x = globalX + cannonball.myX;
+      cannonball.y = globalY + cannonball.myY;
       cannonball.offset = direction(launcher.speed,launcher.direction);
-      let newData = direction(50, cannonball.direction);
-      cannonball.x += newData.r + cannonball.offset.r;
-      cannonball.y += newData.u + cannonball.offset.u;
       cannonball.id = id;
       cannonball.delete = false;
+      cannonball.launchTime = Date.now();
       shots.push(cannonball);
-      app.stage.addChild(cannonball);
+      gameScene.addChild(cannonball);
     }
     function handleShots(){
       shots.forEach(function(shot, i){
         if(shot.delete) {
           shot.visible = false;
-          app.stage.removeChild(shot);
+          gameScene.removeChild(shot);
           shots.splice(i, 1);
           return;
         }
         var newData = direction(shot.speed, shot.direction);
-        shot.x += newData.r + shot.offset.r;
-        shot.y += newData.u + shot.offset.u;
-        if(shot.x < -50 || shot.x > 1450 || shot.y < -50 || shot.y > 1000) {
+        shot.myX += newData.r + shot.offset.r;
+        shot.myY += newData.u + shot.offset.u;
+        shot.x = globalX + shot.myX;
+        shot.y = globalY + shot.myY;
+        if(shot.x < -50 || shot.x > 1450 || shot.y < -50 || shot.y > 1000 && Date.now() - 5000 > shot.launchTime) {
           shot.delete = true;
         }
         pirateShips.forEach(function(pShip){
@@ -274,7 +312,8 @@
           --pShip.health;
           if(pShip.health < 1) {
             pShip.visible = false;
-            app.stage.removeChild(pShip);
+            gameScene.removeChild(pShip);
+            gameScene.removeChild(pShip.pilot);
             pirateShips.splice(i,1);
             cannonballs += 20;
             ship.health += 5;
@@ -295,6 +334,10 @@
         pShip.myY += pShip.vy;
         pShip.x = globalX + pShip.myX;
         pShip.y = globalY + pShip.myY;
+        pShip.z = 0;
+        pShip.pilot.x = pShip.x;
+        pShip.pilot.y = pShip.y;
+        pShip.pilot.z = 1;
         var fireRotation1 = pointTowards(pShip.x, pShip.y, ship.x, ship.y);
         var fireRotation2 = pointTowards(pShip.x, pShip.y, ship.x, ship.y) + 180;
         if((Math.abs(fireRotation1-(pShip.direction + 90)) < 20 || Math.abs(fireRotation2-(pShip.direction+90)) < 20)&& pShip.lastFire + 2500 < Date.now()) {
