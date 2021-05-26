@@ -76,7 +76,7 @@
         islands.push(testIsland)
         gameScene.addChild(testIsland);
       }
-      ship = new Sprite(resources["sprites/topDownShiphurt.png"].texture);
+      ship = new Sprite(resources["sprites/topDownShip.png"].texture);
       ship.scale.x = 10;
       ship.scale.y = 10;
       gameScene.addChild(ship);
@@ -224,10 +224,7 @@
       ship.point3 = rotatePoint((ship.x + ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
       ship.point4 = rotatePoint((ship.x + ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
       if(debug){
-        drawCollision();  
-      }
-      if(ship.health < 3){
-        ship.texture = id["explorer.png"]
+        drawCollision();
       }
       handlePirates();
       handleShots();
