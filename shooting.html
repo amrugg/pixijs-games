@@ -42,7 +42,6 @@
         resolution: 1
       }
     );
-    app.renderer.backgroundColor = 0x7777FF;
     /// Fill the screen 
     app.renderer.view.style.position = "absolute";
     app.renderer.view.style.display = "block";
@@ -53,7 +52,7 @@
     var gameScene;
     app.stage.addChild(gameScene);
     var fireCannon = false;
-    loader.add("sprites/topDownShip.png").add("sprites/pirateBlob.png").add("sprites/cannonball.png").add("sprites/treasureHunter.json").add("sprites/pirateshipblack.png").add("sprites/pirateshipred.png").load(setup);
+    loader.add("sprites/pirateBlob.png").add("sprites.topDownShiphurt.png").add("sprites.topDownShiphurt2.png").add("sprites.topDownShiphurt3.png").add("sprites/topDownShip.png").add("sprites/cannonball.png").add("sprites/treasureHunter.json").add("sprites/pirateshipblack.png").add("sprites/pirateshipred.png").load(setup);
     var ship, windSpeed, windDirection;
     var pirateShips = [];
     var cannonballSpeed = 10;
@@ -77,7 +76,7 @@
         islands.push(testIsland)
         gameScene.addChild(testIsland);
       }
-      ship = new Sprite(resources["sprites/topDownShip.png"].texture);
+      ship = new Sprite(resources["sprites/topDownShiphurt.png"].texture);
       ship.scale.x = 10;
       ship.scale.y = 10;
       gameScene.addChild(ship);
@@ -101,7 +100,10 @@
       var enter = keyboard("Enter");
       enter.press = () => {
         if(state = intro) {
+          introScene.visible = false;
           state = play;
+          gameScene.visible = true;
+          app.renderer.backgroundColor = 0x7777FF;
         }
       }
       space.press = () => {
@@ -149,9 +151,6 @@
     function changeWind() {
       windSpeed = randInt(0,5);
       windDirection = randInt(0,360);
-      for(let i = 0; i < randInt(1,3); i++) {
-        spawnNewPirateShip();
-      }
       setTimeout(changeWind,20000 + randInt(-10000,10000));
     }
     var shots = [];
@@ -173,6 +172,7 @@
       pirateShip.pilot = new Sprite(resources["sprites/pirateBlob.png"].texture);
       pirateShip.pilot.x = pirateShip.x;
       pirateShip.pilot.y = pirateShip.y;
+      pirateShip.pilot.rotation = pirateShip.rotation;
       pirateShips.push(pirateShip);
       gameScene.addChild(pirateShip);
       gameScene.addChild(pirateShip.pilot);
@@ -189,13 +189,21 @@
       var path = [point1.x,point1.y, point2.x,point2.y,point3.x,point3.y,point4.x,point4.y];
       graphics.drawPolygon(path);
     }
-    var state = play;
+    var state = introSetup;
     gameScene.visible = true;
     function introSetup(){
       gameScene.visible = false;
       introScene = new Container();
-      var introMessage = new PIXI.Text("");
-      introMessage.text = 'Hello, brave explorer. We meet again.\nI assume you are back from Blob Adventures I?\nWell. You completed that mission well. Almost.\nI assume you remembered what happened after that?\nWhat? Is your memory so short? Alright, I will tell you.\nYou proudly brought in the chests before the king, and then left.\nWhat happened after that was the king opened them up.\nAnd then he found that they were stuffed with stinky socks.\nAt first he suspected you of treason, but then...\nhe remembered that the blobs use the treasure chests for hampers.\nThen he sent your superior to get them. He proudly grabbed all the hampers...\nand then it turned out that the blobs had "hidden" the socks in the hampers.\nIt seems that the blobs prize the stinky socks as antiques, even more than the treasures.\nThen the king would have sent you to go retrieve both the chests and the hampers...\nBut the blobs had moved their treasure overseas.\nSo, he sends you to swim across the ocean to go retrieve the treasure.\nFortunately, the queen doubted your swimming abilities and sent you a ship and crew.\nShe also provided food for the journey.\nUnfortunately, she may have counted on your speed a lot, because she only sent 3 barrels of food and water.\nSo you may have to find some more later..' 
+      var introText = 'Hello, brave explorer. We meet again.\nI assume you are back from Blob Adventures I?\nWell. You completed that mission well. Almost.\nI assume you remembered what happened after that?\nWhat? Is your memory so short? Alright, I will tell you.\nYou proudly brought in the chests before the king, and then left.\nWhat happened after that was the king opened them up.\nAnd then he found that they were stuffed with stinky socks.\nAt first he suspected you of treason, but then...\nhe remembered that the blobs use the treasure chests for hampers.\nThen he sent your superior to get them. He proudly grabbed all the hampers...\nand then it turned out that the blobs had "hidden" the socks in the hampers.\nIt seems that the blobs prize the stinky socks as antiques, even more than the treasures.\nThen the king would have sent you to go retrieve both the chests and the hampers...\nBut the blobs had moved their treasure overseas.\nSo, he sends you to swim across the ocean to go retrieve the treasure.\nFortunately, the queen doubted your swimming abilities and sent you a ship and crew.\nShe also provided food for the journey.\nUnfortunately, she may have counted on your speed a lot, because she only sent 3 barrels of food and water.\nSo you may have to find some more later...\nWell, Godspeed! Oh, right. Sailing the boat. Don'+"'"+"t you just want to wing it?\nNo? Okay. Up speeds up, down slows down. You can't reverse.\nLeft and right turn, and space fires a double broadside.\nOh, and A and D fire the black and gray cannons. Have fun!"
+      var style = new PIXI.TextStyle({stroke:"#0000ff", fill:"blue"});
+      var introMessage = new PIXI.Text(introText,style);
+      app.renderer.backgroundColor = 0x000000;
+      introScene.addChild(introMessage);
+      app.stage.addChild(introScene);
+      state = intro;
+    }
+    function intro(){
+
     }
     function gameLoop(delta) {
       state(delta);
@@ -217,6 +225,9 @@
       ship.point4 = rotatePoint((ship.x + ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
       if(debug){
         drawCollision();  
+      }
+      if(ship.health < 3){
+        ship.texture = id["explorer.png"]
       }
       handlePirates();
       handleShots();
@@ -252,7 +263,7 @@
     function addNewCannonball(offset, id, launcher) {
       offset = offset || 0;
       let cannonball = new Sprite(resources["sprites/cannonball.png"].texture);
-      cannonball.scale.set(0.25,0.25);
+      cannonball.scale.set(5,5);
       cannonball.speed = cannonballSpeed;
       cannonball.direction = launcher.direction + offset;
       /// The goal of the myX and myY settings are to try to make it appear at the launching ship's position
