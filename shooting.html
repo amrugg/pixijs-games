@@ -13,7 +13,7 @@
     <script src ="bump.js"></script>
 <body>
   <script type="text/javascript">
-    var b = new Bump(PIXI);
+    var BUMP = new Bump(PIXI);
     var params = getParams();
     function getParams() {
       var params = {};
@@ -52,7 +52,9 @@
     var gameScene;
     app.stage.addChild(gameScene);
     var fireCannon = false;
-    loader.add("sprites/pirateBlob.png").add("sprites.topDownShiphurt.png").add("sprites.topDownShiphurt2.png").add("sprites.topDownShiphurt3.png").add("sprites/topDownShip.png").add("sprites/cannonball.png").add("sprites/treasureHunter.json").add("sprites/pirateshipblack.png").add("sprites/pirateshipred.png").load(setup);
+    var files = ["pirateshipblackhurt","pirateshipblackhurt2","pirateshipblackhurt3","cannonball","island","pirateBlob","pirateshipblack","pirateshipred","topDownShip","topDownShipdeath","topDownShiphurt","topDownShiphurt2","topDownShiphurt3"]
+    loadArray(files, "sprites", "png");
+    loader.add("sprites/treasureHunter.json").load(setup);
     var ship, windSpeed, windDirection;
     var pirateShips = [];
     var cannonballSpeed = 10;
@@ -64,18 +66,19 @@
     var globalY = 0;
     var explorer;
     var id, introScene;
+    var wPress, sPress;
     function setup() {
       id = resources["sprites/treasureHunter.json"].textures;
       spawnNewPirateShip();
       spawnNewPirateShip();
-      for(let i = 0; i < randInt(3,7); i++) {
-        let testIsland = new Sprite(resources["sprites/cannonball.png"].texture);
-        testIsland.myX = randInt(100,1000);
-        testIsland.myY = randInt(100,700);
-        testIsland.scale.set(0.75);
+      /*for(let i = 0; i < randInt(3,7); i++) {
+        let testIsland = new Sprite(resources["sprites/island.png"].texture);
+        testIsland.myX = randInt(-2500,2500);
+        testIsland.myY = randInt(-2500,2500);
+        testIsland.scale.set(50, 50);
         islands.push(testIsland)
         gameScene.addChild(testIsland);
-      }
+      }*/
       ship = new Sprite(resources["sprites/topDownShip.png"].texture);
       ship.scale.x = 10;
       ship.scale.y = 10;
@@ -98,10 +101,31 @@
       var left = keyboard("ArrowLeft"), right = keyboard("ArrowRight"), up = keyboard("ArrowUp"), down = keyboard("ArrowDown");
       var space = keyboard(" "), a = keyboard("a"), d = keyboard("d");
       var enter = keyboard("Enter");
+      var s = keyboard("s");
+      var w = keyboard("w");
+      var b = keyboard("b");
+      wPress = false, sPress = false;
+      b.press = () => {
+        if(state === sail) {
+          
+        }
+      }
+      w.press = () => {
+        wPress = true;
+      }
+      w.release = () => {
+        wPress = false;
+      }
+      s.press = () => {
+        sPress = true;
+      }
+      s.release = () => {
+        sPress = false;
+      }
       enter.press = () => {
-        if(state = intro) {
+        if(state === intro) {
           introScene.visible = false;
-          state = play;
+          state = sail;
           gameScene.visible = true;
           app.renderer.backgroundColor = 0x7777FF;
         }
@@ -154,7 +178,7 @@
       setTimeout(changeWind,20000 + randInt(-10000,10000));
     }
     var shots = [];
-    var islands = [];
+   // var islands = [];
     function spawnNewPirateShip(){
       var pirateShip = new Sprite(resources["sprites/pirateshipblack.png"].texture);
       pirateShip.scale.x = 10;
@@ -194,31 +218,76 @@
     function introSetup(){
       gameScene.visible = false;
       introScene = new Container();
-      var introText = 'Hello, brave explorer. We meet again.\nI assume you are back from Blob Adventures I?\nWell. You completed that mission well. Almost.\nI assume you remembered what happened after that?\nWhat? Is your memory so short? Alright, I will tell you.\nYou proudly brought in the chests before the king, and then left.\nWhat happened after that was the king opened them up.\nAnd then he found that they were stuffed with stinky socks.\nAt first he suspected you of treason, but then...\nhe remembered that the blobs use the treasure chests for hampers.\nThen he sent your superior to get them. He proudly grabbed all the hampers...\nand then it turned out that the blobs had "hidden" the socks in the hampers.\nIt seems that the blobs prize the stinky socks as antiques, even more than the treasures.\nThen the king would have sent you to go retrieve both the chests and the hampers...\nBut the blobs had moved their treasure overseas.\nSo, he sends you to swim across the ocean to go retrieve the treasure.\nFortunately, the queen doubted your swimming abilities and sent you a ship and crew.\nShe also provided food for the journey.\nUnfortunately, she may have counted on your speed a lot, because she only sent 3 barrels of food and water.\nSo you may have to find some more later...\nWell, Godspeed! Oh, right. Sailing the boat. Don'+"'"+"t you just want to wing it?\nNo? Okay. Up speeds up, down slows down. You can't reverse.\nLeft and right turn, and space fires a double broadside.\nOh, and A and D fire the black and gray cannons. Have fun!"
+      var introText = 'Press Enter to skip. Press S to speed up. Press W to slow down.\n\n\nHello, brave explorer. We meet again.\n\n\nI assume you are back from Blob Adventures I?\n\n\nWell. You completed that mission well. Almost.\n\n\nI assume you remembered what happened after that?\n\n\nWhat? Is your memory so short? Alright, I will tell you.\n\n\nYou proudly brought in the chests before the king, and then left.\n\n\nWhat happened after that was the king opened them up.\n\n\nAnd then he found that they were stuffed with stinky socks.\n\n\nAt first he suspected you of treason, but then...\n\n\nhe remembered that the blobs use the treasure chests for hampers.\n\n\nThen he sent your superior to get them. He proudly grabbed all the hampers...\n\n\nand then it turned out that the blobs had "hidden" the socks in the hampers.\n\n\nIt seems that the blobs prize the stinky socks as antiques, even more than the treasures.\n\n\nThen the king would have sent you to go retrieve both the chests and the hampers...\n\n\nBut the blobs had moved their treasure overseas.\n\n\nSo, he sends you to swim across the ocean to go retrieve the treasure.\n\n\nFortunately, the queen doubted your swimming abilities and sent you a ship and crew.\n\n\nShe also provided food for the journey.\n\n\nWell, Godspeed! Oh, right. Sailing the boat. Don'+"'"+"t you just want to wing it?\n\n\nNo? Okay. Up speeds up, down slows down. You can't reverse.\n\n\nLeft and right turn, and space fires a double broadside.\n\n\nOh, and A and D fire the black and gray cannons. Have fun!"
       var style = new PIXI.TextStyle({stroke:"#0000ff", fill:"blue"});
       var introMessage = new PIXI.Text(introText,style);
       app.renderer.backgroundColor = 0x000000;
       introScene.addChild(introMessage);
       app.stage.addChild(introScene);
+      introScene.y = 250;
       state = intro;
     }
     function intro(){
-
+      var scroll = 0.5;
+      if(sPress) {
+        scroll *= 4;
+      }
+      if(wPress) {
+        scroll = 0;
+      }
+      introScene.y -= scroll;
+    }
+    function loadArray(array, folder, type){
+      /// Loop through the array
+      for(let i = 0; i < array.length; i++) {
+          /// Make a string that we will change and eventually load with the loader
+          let newString = "";
+          /// If you give it a folder to load stuff from, so that you don't have to type it all yourself
+          if(folder) {
+          /// Start with that
+          newString += folder;
+          if(newString[newString.length - 1] != "/") {
+              /// Make sure there's a slash at the end
+              newString += "/"
+          }
+          }
+          /// Then add that element
+          newString += array[i];
+          /// If you want to give it a type and not type that as well
+          if(type){
+            /// Make sure there's a dot at the end
+            if(type[0] != ".") {
+                newString += ".";
+            }
+            /// Add the type
+            newString += type;
+          }
+          /// Load it!
+          // Console.log what has been loaded console.log(newString,"has been loaded")
+          PIXI.loader.add(newString);
+      }
     }
     function gameLoop(delta) {
       state(delta);
     }
-    function play(){
+    function sail(){
+      if(ship.health < 4) {
+        ship.texture = resources["sprites/topDownShiphurt3.png"].texture;
+      } else if (ship.health < 7) {
+        ship.texture = resources["sprites/topDownShiphurt2.png"].texture;
+      } else if (ship.health < 10) {
+        ship.texture = resources["sprites/topDownShiphurt.png"].texture;
+      }
       explorer.rotation = pointInDirection(ship.direction - 180);
       var data = direction(ship.speed,ship.direction);
       ship.vx = data.r;
       ship.vy = data.u;
       globalX -= ship.vx;
       globalY -= ship.vy;
-      islands.forEach(function(testIsland){
+   /*   islands.forEach(function(testIsland){
         testIsland.x = globalX + testIsland.myX;
         testIsland.y = globalY + testIsland.myY;
-      })
+      })*/
       ship.point1 = rotatePoint((ship.x - ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
       ship.point2 = rotatePoint((ship.x - ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
       ship.point3 = rotatePoint((ship.x + ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
@@ -315,6 +384,13 @@
     }
     function handlePirates(){
       pirateShips.forEach(function(pShip, i){
+        if(pShip.health < 4) {
+          pShip.texture = resources["sprites/pirateshipblackhurt3.png"].texture;
+        } else if (pShip.health < 7) {
+          pShip.texture = resources["sprites/pirateshipblackhurt2.png"].texture;
+        } else if (pShip.health < 10) {
+          pShip.texture = resources["sprites/pirateshipblackhurt.png"].texture;
+        }
         if(pShip.hit){
           pShip.hit = false;
           --pShip.health;
