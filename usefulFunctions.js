@@ -182,3 +182,43 @@ function hitTestRectangle(r1, r2, offsetX, offsetY) {
     //`hit` will be either `true` or `false`
     return hit;
 };
+function lineDirection(a,b,c){
+    var val = (b.y-a.y)*(c.x-b.x)-(b.x-a.x)*(c.y-b.y);
+    if(val == 0) {
+        return 0;
+    } else if(val < 0) {
+        return 2;
+    }
+    return 1;
+}
+function pointOnLine(l1, p) {   //check whether p is on the line or not
+    if(p.x <= Math.max(l1.p1.x, l1.p2.x) && p.x <= Math.min(l1.p1.x, l1.p2.x) && (p.y <= Math.max(l1.p1.y, l1.p2.y) && p.y <= Math.min(l1.p1.y, l1.p2.y)))
+       return true;
+    return false;
+ }
+ function lineCollideLine(l1,l2){
+    var dir1 = lineDirection(l1.p1, l1.p2, l2.p1);
+    var dir2 = lineDirection(l1.p1, l1.p2, l2.p2);
+    var dir3 = lineDirection(l2.p1, l2.p2, l1.p1);
+    var dir4 = lineDirection(l2.p1, l2.p2, l1.p2);
+    if(dir1 != dir2 && dir3 != dir4) {
+        return true;
+    }
+    if(dir1 != dir2 && dir3 != dir4)
+        return true; //they are intersecting
+    if(dir1==0 && pointOnLine(l1, l2.p1)) //when p2 of line2 are on the line1
+        return true;
+    if(dir2==0 && pointOnLine(l1, l2.p2)) //when p1 of line2 are on the line1
+        return true;
+    if(dir3==0 && pointOnLine(l2, l1.p1)) //when p2 of line1 are on the line2
+        return true;
+    if(dir4==0 && pointOnLine(l2, l1.p2)) //when p1 of line1 are on the line2
+        return true;
+    return false;
+}
+var line1, line2;
+line1 = {p1:{x:0,y:0},p2:{x:5,y:5}};
+line2 = {p1:{x:2,y:-10},p2:{x:3,y:10}};
+line1 = {p1:{x:0,y:0},p2:{x:1,y:0}}
+line2 = {p1:{x:1,y:1},p2:{x:1,y:-1}}
+console.log(lineCollideLine(line1,line2))
