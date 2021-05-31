@@ -42,7 +42,7 @@
         resolution: 1
       }
     );
-    /// Fill the screen 
+    /// Fill the screen
     app.renderer.view.style.position = "absolute";
     app.renderer.view.style.display = "block";
     app.renderer.autoResize = true;
@@ -67,6 +67,9 @@
     var explorer;
     var id, introScene;
     var wPress, sPress;
+    var divideScale = params.divideScale || 1;
+    var islandPositions = [[-50,10], [-50,85], [100,200], [500,-200], [-500,300], [-410, 210],[-320,120],[-320,30],[-370,-40],[-450, -120]]
+    var islands = [];
     function setup() {
       id = resources["sprites/treasureHunter.json"].textures;
       spawnNewPirateShip();
@@ -80,8 +83,8 @@
         gameScene.addChild(testIsland);
       }*/
       ship = new Sprite(resources["sprites/topDownShip.png"].texture);
-      ship.scale.x = 10;
-      ship.scale.y = 10;
+      ship.scale.x = 10/divideScale;
+      ship.scale.y = 10/divideScale;
       gameScene.addChild(ship);
       app.renderer.render(app.stage);
       ship.vx = 0;
@@ -98,6 +101,15 @@
       gameScene.addChild(explorer);
       explorer.x = ship.x;
       explorer.y = ship.y;
+      for(let i = 0; i < islandPositions.length; i++) {
+        let newIsland = new Sprite(resources["sprites/island.png"].texture);
+        newIsland.scale.set(50/divideScale);
+        newIsland.myX = (islandPositions[i][0] * (10/divideScale)) + 650;
+        newIsland.myY = (islandPositions[i][1] * -1 * (10/divideScale)) + 350;
+        console.log(islandPositions[i][0],islandPositions[i][1])
+        islands.push(newIsland);
+        gameScene.addChild(newIsland);
+      }
       var left = keyboard("ArrowLeft"), right = keyboard("ArrowRight"), up = keyboard("ArrowUp"), down = keyboard("ArrowDown");
       var space = keyboard(" "), a = keyboard("a"), d = keyboard("d");
       var enter = keyboard("Enter");
@@ -181,8 +193,8 @@
    // var islands = [];
     function spawnNewPirateShip(){
       var pirateShip = new Sprite(resources["sprites/pirateshipblack.png"].texture);
-      pirateShip.scale.x = 10;
-      pirateShip.scale.y = 10;
+      pirateShip.scale.x = 10/divideScale;
+      pirateShip.scale.y = 10/divideScale;
       pirateShip.direction = 90;
       pirateShip.speed = 1;
       pirateShip.lastFire = Date.now() - 25000;
@@ -190,6 +202,8 @@
       pirateShip.anchor.set(0.5, 0.5);
       pirateShip.myX = randInt(100,700);
       pirateShip.myY = randInt(100,700);
+      pirateShip.myX = 2000;
+      pirateShip.myY = 2000;
       pirateShip.hit = false;
       pirateShip.health = 10;
       pirateShip.rotation = pointInDirection(pirateShip.direction + 90);
@@ -270,7 +284,11 @@
     function gameLoop(delta) {
       state(delta);
     }
+    function wait(){
+
+    }
     function sail(){
+      // state = wait;
       if(ship.health < 4) {
         ship.texture = resources["sprites/topDownShiphurt3.png"].texture;
       } else if (ship.health < 7) {
@@ -284,10 +302,10 @@
       ship.vy = data.u;
       globalX -= ship.vx;
       globalY -= ship.vy;
-   /*   islands.forEach(function(testIsland){
+      islands.forEach(function(testIsland){
         testIsland.x = globalX + testIsland.myX;
         testIsland.y = globalY + testIsland.myY;
-      })*/
+      });
       ship.point1 = rotatePoint((ship.x - ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
       ship.point2 = rotatePoint((ship.x - ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
       ship.point3 = rotatePoint((ship.x + ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
@@ -329,7 +347,7 @@
     function addNewCannonball(offset, id, launcher) {
       offset = offset || 0;
       let cannonball = new Sprite(resources["sprites/cannonball.png"].texture);
-      cannonball.scale.set(5,5);
+      cannonball.scale.set(5/divideScale,5/divideScale);
       cannonball.speed = cannonballSpeed;
       cannonball.direction = launcher.direction + offset;
       /// The goal of the myX and myY settings are to try to make it appear at the launching ship's position
@@ -390,6 +408,10 @@
           pShip.texture = resources["sprites/pirateshipblackhurt2.png"].texture;
         } else if (pShip.health < 10) {
           pShip.texture = resources["sprites/pirateshipblackhurt.png"].texture;
+        }
+        if(nearestIsland(pShip) < 300) {
+          pShip.visible = false;
+          console.log(nearestIsland(pShip));
         }
         if(pShip.hit){
           pShip.hit = false;
@@ -483,6 +505,15 @@
         }
         pShip.rotation = pointInDirection(pShip.direction+90); 
       });
+    }
+    function nearestIsland(sprite) {
+      var distance = Infinity;
+      for(let i = 0; i < islands.length; i++) {
+        if(getDistance(sprite.x, sprite.y, islands[i].x, islands[i].y) < distance) {
+          distance = getDistance(sprite.x, sprite.y, islands[i].x, islands[i].y)
+        }
+      }
+      return distance;
     }
     function keyboard(value) {
       let key = {};
