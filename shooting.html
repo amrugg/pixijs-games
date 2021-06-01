@@ -62,7 +62,7 @@
     var HUD = new PIXI.Text("Cannonballs: " + cannonballs.toString() + " Health: " + (10).toString());
     HUD.x = 1000;
     gameScene.addChild(HUD);
-    var globalX = 0;
+    var globalX = -200;
     var globalY = 0;
     var explorer;
     var id, introScene;
@@ -106,7 +106,7 @@
         newIsland.scale.set(50/divideScale);
         newIsland.myX = (islandPositions[i][0] * (10/divideScale)) + 650;
         newIsland.myY = (islandPositions[i][1] * -1 * (10/divideScale)) + 350;
-        console.log(islandPositions[i][0],islandPositions[i][1])
+        // console.log(islandPositions[i][0],islandPositions[i][1])
         islands.push(newIsland);
         gameScene.addChild(newIsland);
       }
@@ -202,8 +202,6 @@
       pirateShip.anchor.set(0.5, 0.5);
       pirateShip.myX = randInt(100,700);
       pirateShip.myY = randInt(100,700);
-      pirateShip.myX = 2000;
-      pirateShip.myY = 2000;
       pirateShip.hit = false;
       pirateShip.health = 10;
       pirateShip.rotation = pointInDirection(pirateShip.direction + 90);
@@ -224,8 +222,49 @@
       var point3 = rotatePoint((ship.x + ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
       var point4 = rotatePoint((ship.x + ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
       //var path = [(ship.x - ship.width / 2), (ship.y - ship.height / 2),(ship.x - ship.width / 2), (ship.y + ship.height / 2),(ship.x + ship.width / 2), (ship.y + ship.height / 2),(ship.x + ship.width / 2), (ship.y - ship.height / 2)]
-      var path = [point1.x,point1.y, point2.x,point2.y,point3.x,point3.y,point4.x,point4.y];
+      //var path = [point1.x,point1.y, point2.x,point2.y,point3.x,point3.y,point4.x,point4.y];
+      var path = [ship.l1.p1.x,ship.l1.p1.y,ship.l2.p1.x,ship.l2.p1.y,ship.l3.p1.x,ship.l3.p1.y,ship.l4.p1.x,ship.l4.p1.y,ship.l1.p1.x,ship.l1.p1.y]
+      //console.log(path)
       graphics.drawPolygon(path);
+      parseIslandCollision();
+      islands.forEach(function(island){
+        path = [island.p1.x,island.p1.y,island.p2.x,island.p2.y,island.p3.x,island.p3.y,island.p4.x,island.p4.y,island.p5.x,island.p5.y,island.p6.x,island.p6.y,island.p7.x,island.p7.y,island.p8.x,island.p8.y,island.p9.x,island.p9.y,island.p10.x,island.p10.y,island.p11.x,island.p11.y,island.p12.x,island.p12.y,island.p13.x,island.p13.y,island.p14.x,island.p14.y,island.p1.x,island.p1.y];
+        path = [island.l1.p1.x,island.l1.p1.y,island.l2.p1.x,island.l2.p1.y, island.l3.p1.x,island.l3.p1.y, island.l4.p1.x, island.l4.p1.y,island.l5.p1.x,island.l5.p1.y,island.l6.p1.x,island.l6.p1.y,island.l7.p1.x,island.l7.p1.y,island.l8.p1.x,island.l8.p1.y,island.l9.p1.x,island.l9.p1.y,island.l10.p1.x,island.l10.p1.y,island.l11.p1.x,island.l11.p1.y,island.l12.p1.x,island.l12.p1.y,island.l13.p1.x,island.l13.p1.y,island.l14.p1.x,island.l14.p1.y,island.l1.p1.x,island.l1.p1.y];
+        graphics.drawPolygon(path);
+      })
+    }
+    function parseIslandCollision(){
+      islands.forEach(function(island) {
+        island.p1 = {x:island.x + 75, y: island.y + 25};
+        island.p2 = {x:island.x + 410,y: island.y + 25};
+        island.p3 = {x:island.x + 550,y:island.y + 125};
+        island.p4 = {x:island.x + 625,y:island.y + 200};
+        island.p5 = {x:island.x + 625,y:island.y + 300};
+        island.p6 = {x:island.x + 775,y:island.y + 475};
+        island.p7 = {x:island.x + 925,y:island.y + 475};
+        island.p8 = {x:island.x + 925,y:island.y + 675};
+        island.p9 = {x:island.x + 725,y:island.y + 675};
+        island.p10 = {x:island.x + 725,y:island.y + 625};
+        island.p11 = {x:island.x + 500,y:island.y + 625};
+        island.p12 = {x:island.x + 300,y:island.y + 525};
+        island.p13 = {x: island.x + 150,y:island.y + 525};
+        island.p14 = {x: island.x + 50,y:island.y + 100};
+        island.l1 = {p1:island.p1,p2:island.p2};
+        island.l2 = {p1:island.p2,p2:island.p3};
+        island.l3 = {p1:island.p3,p2:island.p4};
+        island.l4 = {p1:island.p4,p2:island.p5};
+        island.l5 = {p1:island.p5,p2:island.p6};
+        island.l6 = {p1:island.p6,p2:island.p7};
+        island.l7 = {p1:island.p7,p2:island.p8};
+        island.l8 = {p1:island.p8,p2:island.p9};
+        island.l9 = {p1:island.p7,p2:island.p10};
+        island.l10 = {p1:island.p10,p2:island.p11};
+        island.l11 = {p1:island.p11,p2:island.p12};
+        island.l12 = {p1:island.p12,p2:island.p13};
+        island.l13 = {p1:island.p13,p2:island.p14};
+        island.l14 = {p1:island.p14,p2:island.p1};
+        console.log(island.l1);
+      })
     }
     var state = introSetup;
     gameScene.visible = true;
@@ -287,8 +326,9 @@
     function wait(){
 
     }
+//    var gapLine = {p1:{x:750,y:300},p2:{x:750,y:500}}
     function sail(){
-      // state = wait;
+      //  state = wait;
       if(ship.health < 4) {
         ship.texture = resources["sprites/topDownShiphurt3.png"].texture;
       } else if (ship.health < 7) {
@@ -310,9 +350,6 @@
       ship.point2 = rotatePoint((ship.x - ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
       ship.point3 = rotatePoint((ship.x + ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
       ship.point4 = rotatePoint((ship.x + ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
-      if(debug){
-        drawCollision();
-      }
       handlePirates();
       handleShots();
       ship.rotation = ((ship.direction + 90) * Math.PI * -1) / 180;
@@ -343,6 +380,34 @@
         HUD.text = "Cannonballs: "+cannonballs.toString()+" Health: "+ship.health.toString();
         fireCannon = false;
       }
+      ship.l1 = {p1:ship.point1,p2:ship.point2};
+      ship.l2 = {p1:ship.point2,p2:ship.point3};
+      ship.l3 = {p1:ship.point3,p2:ship.point4};
+      ship.l4 = {p1:ship.point4,p2:ship.point1};
+      // if(lineCollideLine(ship.l1,gapLine) || lineCollideLine(ship.l2,gapLine) || lineCollideLine(ship.l3,gapLine) || lineCollideLine(ship.l4,gapLine)) {
+        // ship.visible = false;
+      // }
+      parseIslandCollision();
+      if(shipIntersectingIslands()){
+        ship.visible = false;
+      }
+      if(debug){
+        drawCollision();
+      }
+    }
+    function shipIntersectingIslands(){
+      var v = false;
+      var l = lineCollideLine
+      islands.forEach(function(island){
+        if(getDistance(island.x,island.y,ship.x,ship.y > 1000)){
+          //return;
+        }
+        if(l(ship.l1,island.l1)||l(ship.l1,island.l2)||l(ship.l1,island.l3)||l(ship.l1,island.l4||l(ship.l1,island.l5)||l(ship.l1,island.l6)||l(ship.l1,island.l7)||l(ship.l1,island.l8)||l(ship.l1,island.l9)||l(ship.l1,island.l10)||l(ship.l1,island.l11)||l(ship.l1,island.l12)||l(ship.l1,island.l13)||l(ship.l1,island.l14))){
+          v=true;
+        }
+      }
+      );
+      return v;
     }
     function addNewCannonball(offset, id, launcher) {
       offset = offset || 0;
@@ -411,7 +476,7 @@
         }
         if(nearestIsland(pShip) < 300) {
           pShip.visible = false;
-          console.log(nearestIsland(pShip));
+          // console.log(nearestIsland(pShip));
         }
         if(pShip.hit){
           pShip.hit = false;
