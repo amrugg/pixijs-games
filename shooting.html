@@ -70,6 +70,7 @@
     var divideScale = params.divideScale || 1;
     var islandPositions = [[-50,10], [-50,85], [100,200], [500,-200], [-500,300], [-410, 210],[-320,120],[-320,30],[-370,-40],[-450, -120]]
     var islands = [];
+    graphics = new PIXI.Graphics();
     function setup() {
       id = resources["sprites/treasureHunter.json"].textures;
       spawnNewPirateShip();
@@ -91,7 +92,7 @@
       ship.vy = 0;
       ship.x = 750;
       ship.y = 350;
-      ship.direction = 90;
+      ship.direction = 89.9999999;
       ship.speed = 0;
       ship.turn = 0;
       ship.health = 10;
@@ -110,6 +111,7 @@
         islands.push(newIsland);
         gameScene.addChild(newIsland);
       }
+      gameScene.addChild(graphics);
       var left = keyboard("ArrowLeft"), right = keyboard("ArrowRight"), up = keyboard("ArrowUp"), down = keyboard("ArrowDown");
       var space = keyboard(" "), a = keyboard("a"), d = keyboard("d");
       var enter = keyboard("Enter");
@@ -172,7 +174,6 @@
         }
       }
       if(debug) {
-        graphics = new PIXI.Graphics();
         graphics.beginFill(0xFF0000);
         graphics.alpha = 0.5;
         graphics.drawRect((ship.x - ship.width / 2), (ship.y - ship.height / 2), ship.width, ship.height);
@@ -216,7 +217,7 @@
     function drawCollision(){
       graphics.clear();
       graphics.beginFill(0xFF0000);
-      graphics.alpha = 0.5;
+      graphics.alpha = 0;
       var point1 = rotatePoint((ship.x - ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
       var point2 = rotatePoint((ship.x - ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
       var point3 = rotatePoint((ship.x + ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
@@ -263,7 +264,6 @@
         island.l12 = {p1:island.p12,p2:island.p13};
         island.l13 = {p1:island.p13,p2:island.p14};
         island.l14 = {p1:island.p14,p2:island.p1};
-        console.log(island.l1);
       })
     }
     var state = introSetup;
@@ -385,11 +385,11 @@
       ship.l3 = {p1:ship.point3,p2:ship.point4};
       ship.l4 = {p1:ship.point4,p2:ship.point1};
       // if(lineCollideLine(ship.l1,gapLine) || lineCollideLine(ship.l2,gapLine) || lineCollideLine(ship.l3,gapLine) || lineCollideLine(ship.l4,gapLine)) {
-        // ship.visible = false;
+        // state = die;
       // }
       parseIslandCollision();
       if(shipIntersectingIslands()){
-        ship.visible = false;
+        state = die;
       }
       if(debug){
         drawCollision();
@@ -397,17 +397,66 @@
     }
     function shipIntersectingIslands(){
       var v = false;
-      var l = lineCollideLine
+      var l = lineCollideLine;
       islands.forEach(function(island){
         if(getDistance(island.x,island.y,ship.x,ship.y > 1000)){
           //return;
         }
-        if(l(ship.l1,island.l1)||l(ship.l1,island.l2)||l(ship.l1,island.l3)||l(ship.l1,island.l4||l(ship.l1,island.l5)||l(ship.l1,island.l6)||l(ship.l1,island.l7)||l(ship.l1,island.l8)||l(ship.l1,island.l9)||l(ship.l1,island.l10)||l(ship.l1,island.l11)||l(ship.l1,island.l12)||l(ship.l1,island.l13)||l(ship.l1,island.l14))){
+        /*if(l(ship.l1,island.l1)||l(ship.l1,island.l2)||l(ship.l1,island.l3)||l(ship.l1,island.l4||l(ship.l1,island.l5)||l(ship.l1,island.l6)||l(ship.l1,island.l7)||l(ship.l1,island.l8)||l(ship.l1,island.l9)||l(ship.l1,island.l10)||l(ship.l1,island.l11)||l(ship.l1,island.l12)||l(ship.l1,island.l13)||l(ship.l1,island.l14))){
           v=true;
+        }*/
+        if(l(ship.l1,island.l1)||l(ship.l1,island.l2)||l(ship.l1,island.l3)||l(ship.l1,island.l4)||l(ship.l1,island.l5)||l(ship.l1,island.l6)){
+          v = true;
         }
+        if(l(ship.l1,island.l7)||l(ship.l1,island.l8)||l(ship.l1,island.l9)||l(ship.l1,island.l10)||l(ship.l1,island.l11)||l(ship.l1,island.l12)||l(ship.l1,island.l13)||l(ship.l1,island.l14)) {
+          v = true;
+        }
+        if(l(ship.l2,island.l1)||l(ship.l2,island.l2)||l(ship.l2,island.l3)||l(ship.l2,island.l4)||l(ship.l2,island.l5)||l(ship.l2,island.l6)){
+          v = true;
+        }
+        if(l(ship.l2,island.l7)||l(ship.l2,island.l8)||l(ship.l2,island.l9)||l(ship.l2,island.l10)||l(ship.l2,island.l11)||l(ship.l2,island.l12)||l(ship.l2,island.l13)||l(ship.l2,island.l14)) {
+          v = true;
+        }
+        if(l(ship.l3,island.l1)||l(ship.l3,island.l2)||l(ship.l3,island.l3)||l(ship.l3,island.l4)||l(ship.l3,island.l5)||l(ship.l3,island.l6)){
+          v = true;
+        }
+        if(l(ship.l3,island.l7)||l(ship.l3,island.l8)||l(ship.l3,island.l9)||l(ship.l3,island.l10)||l(ship.l3,island.l11)||l(ship.l3,island.l12)||l(ship.l3,island.l13)||l(ship.l3,island.l14)) {
+          v = true;
+        }
+        if(l(ship.l4,island.l1)||l(ship.l4,island.l2)||l(ship.l4,island.l3)||l(ship.l4,island.l4)||l(ship.l4,island.l5)||l(ship.l4,island.l6)){
+          v = true;
+        }
+        if(l(ship.l4,island.l7)||l(ship.l4,island.l8)||l(ship.l4,island.l9)||l(ship.l4,island.l10)||l(ship.l4,island.l11)||l(ship.l4,island.l12)||l(ship.l4,island.l13)||l(ship.l4,island.l14)) {
+          v = true;
+        }
+        /*if(l(ship.l1,island.l2)){
+          v = true;
+        }
+        if(l(ship.l1,island.l3)){
+          v = true;
+        }
+        if(l(ship.l1,island.l4)){
+          v = true;
+        } */
       }
       );
       return v;
+    }
+    function die(){
+      setTimeout(function() {
+      ship.texture = resources["sprites/topDownShipdeath.png"].texture;
+      graphics.beginFill(0x000000);
+      graphics.alpha = 0;
+      graphics.drawRect(0,0,window.innerWidth,window.innerHeight);
+      state = dying;
+      },1000);
+      state = wait;
+    }
+    function dying(){
+      if(graphics.alpha > 0.999){
+        state = wait;
+      }
+      graphics.alpha += 0.01;
     }
     function addNewCannonball(offset, id, launcher) {
       offset = offset || 0;
@@ -460,7 +509,7 @@
           --ship.health;
           HUD.text = "Cannonballs: "+cannonballs.toString()+" Health: "+ship.health.toString();
           if(ship.health < 1) {
-            ship.visible = false;
+            state = die;
           }
         }
       });
