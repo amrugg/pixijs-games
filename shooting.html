@@ -134,6 +134,8 @@
           state = mountTelescope;
         } else if(state === telescope){
           telescopeHole.visible = false;
+          globalX = mountX;
+          globalY = mountY;
           state = sail;
         }
       }
@@ -368,12 +370,15 @@
 
     }
 //    var gapLine = {p1:{x:750,y:300},p2:{x:750,y:500}}
+    var mountX,mountY;
     function mountTelescope() {
       telescopeHole.visible = true;
       state = telescope;
       // Ship.myX + globalX needs to equal ship.x
       ship.myX = ship.x - globalX;
       ship.myY = ship.y - globalY;
+      mountX = globalX;
+      mountY = globalY;
     }
     function telescope(){
       if(debug){
@@ -427,7 +432,6 @@
       if(keys.downPress) {
         globalY -= 25;
       }
-      HUD.text = "X:"+ship.x.toString()+" Y:"+ship.y.toString();
       explorer.rotation = pointInDirection(ship.direction - 180);
       explorer.x = ship.x;
       explorer.y = ship.y;
