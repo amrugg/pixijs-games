@@ -634,6 +634,14 @@
           if(ship.health < 1) {
             state = die;
           }
+          if(state === telescope) {
+            telescopeHole.visible = false;
+            globalX = mountX;
+            globalY = mountY;
+            ship.x = 750;
+            ship.y = 350;
+            state = sail;
+          }
         }
       });
     }
