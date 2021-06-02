@@ -70,11 +70,21 @@
     var divideScale = params.divideScale || 1;
     var islandPositions = [[-50,10], [-50,85], [100,200], [500,-200], [-500,300], [-410, 210],[-320,120],[-320,30],[-370,-40],[-450, -120]]
     var islands = [];
-    graphics = new PIXI.Graphics();
+    var creditsScene;
+    var telescopeHole = new PIXI.Graphics();
+    var keys = {};
     function setup() {
+      telescopeHole.lineStyle(1000*(window.innerWidth/1000),0x000000,1);
+      telescopeHole.drawCircle(window.innerWidth/2,window.innerHeight/2,800*(window.innerWidth/1200));
+      telescopeHole.endFill();
+      telescopeHole.visible = false;
+      app.stage.addChild(telescopeHole);
+      creditsScene = new PIXI.Container();
+      app.stage.addChild(creditsScene);
+      creditsScene.visible = false;
+      graphics = new PIXI.Graphics();
       id = resources["sprites/treasureHunter.json"].textures;
-      spawnNewPirateShip();
-      spawnNewPirateShip();
+      spawnNewPirateShip(20);
       /*for(let i = 0; i < randInt(3,7); i++) {
         let testIsland = new Sprite(resources["sprites/island.png"].texture);
         testIsland.myX = randInt(-2500,2500);
@@ -118,6 +128,15 @@
       var s = keyboard("s");
       var w = keyboard("w");
       var b = keyboard("b");
+      var t = keyboard("t");
+      t.press = () => {
+        if(state === sail) {
+          state = mountTelescope;
+        } else if(state === telescope){
+          telescopeHole.visible = false;
+          state = sail;
+        }
+      }
       wPress = false, sPress = false;
       b.press = () => {
         if(state === sail) {
@@ -155,30 +174,35 @@
       }
       left.press = () => {
         ship.turn = 1;
+        keys.leftPress = true;
       }
       left.release = () => {
         ship.turn = 0;
+        keys.leftPress = false;
       };
       right.press = () => {
         ship.turn = -1;
+        keys.rightPress = true;
       }
       right.release = () => {
         ship.turn = 0;
+        keys.rightPress = false;
       }
       up.press = () => {
-        ++ship.speed
+        ++ship.speed;
+        keys.upPress = true;
+      }
+      up.release = () => {
+        keys.upPress = false;
       }
       down.press = () => {
         if(ship.speed > 0) {
           --ship.speed
         }
+        keys.downPress = true;
       }
-      if(debug) {
-        graphics.beginFill(0xFF0000);
-        graphics.alpha = 0.5;
-        graphics.drawRect((ship.x - ship.width / 2), (ship.y - ship.height / 2), ship.width, ship.height);
-        graphics.drawPolygon([100,100,100,200,200,200,200,100]);
-        gameScene.addChild(graphics);
+      down.release = () => {
+        keys.downPress = false;
       }
       app.ticker.add(delta => gameLoop(delta));
       windSpeed = 1;
@@ -192,32 +216,35 @@
     }
     var shots = [];
    // var islands = [];
-    function spawnNewPirateShip(){
-      var pirateShip = new Sprite(resources["sprites/pirateshipblack.png"].texture);
-      pirateShip.scale.x = 10/divideScale;
-      pirateShip.scale.y = 10/divideScale;
-      pirateShip.direction = 90;
-      pirateShip.speed = 1;
-      pirateShip.lastFire = Date.now() - 25000;
-      pirateShip.shouldFire = true;
-      pirateShip.anchor.set(0.5, 0.5);
-      pirateShip.myX = randInt(100,700);
-      pirateShip.myY = randInt(100,700);
-      pirateShip.hit = false;
-      pirateShip.health = 10;
-      pirateShip.rotation = pointInDirection(pirateShip.direction + 90);
-      pirateShip.pilot = new Sprite(resources["sprites/pirateBlob.png"].texture);
-      pirateShip.pilot.x = pirateShip.x;
-      pirateShip.pilot.y = pirateShip.y;
-      pirateShip.pilot.rotation = pirateShip.rotation;
-      pirateShips.push(pirateShip);
-      gameScene.addChild(pirateShip);
-      gameScene.addChild(pirateShip.pilot);
+    function spawnNewPirateShip(amount){
+      amount = amount || 1;
+      for(let i = 0; i < amount; i++) {
+        let pirateShip = new Sprite(resources["sprites/pirateshipblack.png"].texture);
+        pirateShip.scale.x = 10/divideScale;
+        pirateShip.scale.y = 10/divideScale;
+        pirateShip.direction = 90;
+        pirateShip.speed = 1;
+        pirateShip.lastFire = Date.now() - 25000;
+        pirateShip.shouldFire = true;
+        pirateShip.anchor.set(0.5, 0.5);
+        pirateShip.myX = randInt(-5000,2000);
+        pirateShip.myY = randInt(-5000,2000);
+        pirateShip.hit = false;
+        pirateShip.health = 10;
+        pirateShip.rotation = pointInDirection(pirateShip.direction + 90);
+        pirateShip.pilot = new Sprite(resources["sprites/pirateBlob.png"].texture);
+        pirateShip.pilot.x = pirateShip.x;
+        pirateShip.pilot.y = pirateShip.y;
+        pirateShip.pilot.rotation = pirateShip.rotation;
+        pirateShips.push(pirateShip);
+        gameScene.addChild(pirateShip);
+        gameScene.addChild(pirateShip.pilot);
+      }
     }
     function drawCollision(){
       graphics.clear();
       graphics.beginFill(0xFF0000);
-      graphics.alpha = 0;
+      graphics.alpha = 0.5;
       var point1 = rotatePoint((ship.x - ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
       var point2 = rotatePoint((ship.x - ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
       var point3 = rotatePoint((ship.x + ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
@@ -230,9 +257,23 @@
       parseIslandCollision();
       islands.forEach(function(island){
         path = [island.p1.x,island.p1.y,island.p2.x,island.p2.y,island.p3.x,island.p3.y,island.p4.x,island.p4.y,island.p5.x,island.p5.y,island.p6.x,island.p6.y,island.p7.x,island.p7.y,island.p8.x,island.p8.y,island.p9.x,island.p9.y,island.p10.x,island.p10.y,island.p11.x,island.p11.y,island.p12.x,island.p12.y,island.p13.x,island.p13.y,island.p14.x,island.p14.y,island.p1.x,island.p1.y];
-        path = [island.l1.p1.x,island.l1.p1.y,island.l2.p1.x,island.l2.p1.y, island.l3.p1.x,island.l3.p1.y, island.l4.p1.x, island.l4.p1.y,island.l5.p1.x,island.l5.p1.y,island.l6.p1.x,island.l6.p1.y,island.l7.p1.x,island.l7.p1.y,island.l8.p1.x,island.l8.p1.y,island.l9.p1.x,island.l9.p1.y,island.l10.p1.x,island.l10.p1.y,island.l11.p1.x,island.l11.p1.y,island.l12.p1.x,island.l12.p1.y,island.l13.p1.x,island.l13.p1.y,island.l14.p1.x,island.l14.p1.y,island.l1.p1.x,island.l1.p1.y];
+        //path = [island.l1.p1.x,island.l1.p1.y,island.l2.p1.x,island.l2.p1.y, island.l3.p1.x,island.l3.p1.y, island.l4.p1.x, island.l4.p1.y,island.l5.p1.x,island.l5.p1.y,island.l6.p1.x,island.l6.p1.y,island.l7.p1.x,island.l7.p1.y,island.l8.p1.x,island.l8.p1.y,island.l9.p1.x,island.l9.p1.y,island.l10.p1.x,island.l10.p1.y,island.l11.p1.x,island.l11.p1.y,island.l12.p1.x,island.l12.p1.y,island.l13.p1.x,island.l13.p1.y,island.l14.p1.x,island.l14.p1.y,island.l1.p1.x,island.l1.p1.y];
         graphics.drawPolygon(path);
       })
+    }
+    function credits(){
+      gameScene.visible = false;
+      app.renderer.backgroundColor = 0x000000
+      creditsScene.visible = true;
+      var creditsText = "Thank you for playing Blob Adventures II!\n\n\n\nProgramming done by Aaron Rugg.\n\n\n\nFavicon done by Alexander Rugg.\n\n\n\nBlobs and explorer were found for free by Lanea Zimmerman.\n\n\n\nFavicon and all other graphics were done by Alexander Rugg."
+      var style = new PIXI.TextStyle({stroke:"#0000ff", fill:"blue"});
+      var creditsMessage = new PIXI.Text(creditsText,style);
+      creditsScene.addChild(creditsMessage);
+      creditsScene.y = 500;
+      state = creditsScroll;
+    }
+    function creditsScroll() {
+      creditsScene.y -= 0.5
     }
     function parseIslandCollision(){
       islands.forEach(function(island) {
@@ -271,7 +312,7 @@
     function introSetup(){
       gameScene.visible = false;
       introScene = new Container();
-      var introText = 'Press Enter to skip. Press S to speed up. Press W to slow down.\n\n\nHello, brave explorer. We meet again.\n\n\nI assume you are back from Blob Adventures I?\n\n\nWell. You completed that mission well. Almost.\n\n\nI assume you remembered what happened after that?\n\n\nWhat? Is your memory so short? Alright, I will tell you.\n\n\nYou proudly brought in the chests before the king, and then left.\n\n\nWhat happened after that was the king opened them up.\n\n\nAnd then he found that they were stuffed with stinky socks.\n\n\nAt first he suspected you of treason, but then...\n\n\nhe remembered that the blobs use the treasure chests for hampers.\n\n\nThen he sent your superior to get them. He proudly grabbed all the hampers...\n\n\nand then it turned out that the blobs had "hidden" the socks in the hampers.\n\n\nIt seems that the blobs prize the stinky socks as antiques, even more than the treasures.\n\n\nThen the king would have sent you to go retrieve both the chests and the hampers...\n\n\nBut the blobs had moved their treasure overseas.\n\n\nSo, he sends you to swim across the ocean to go retrieve the treasure.\n\n\nFortunately, the queen doubted your swimming abilities and sent you a ship and crew.\n\n\nShe also provided food for the journey.\n\n\nWell, Godspeed! Oh, right. Sailing the boat. Don'+"'"+"t you just want to wing it?\n\n\nNo? Okay. Up speeds up, down slows down. You can't reverse.\n\n\nLeft and right turn, and space fires a double broadside.\n\n\nOh, and A and D fire the black and gray cannons. Have fun!"
+      var introText = 'Press Enter to skip. Press S to speed up. Press W to slow down.\n\n\nHello, brave explorer. We meet again.\n\n\nI assume you are back from Blob Adventures I?\n\n\nWell. You completed that mission well. Almost.\n\n\nI assume you remembered what happened after that?\n\n\nWhat? Is your memory so short? Alright, I will tell you.\n\n\nYou proudly brought in the chests before the king, and then left.\n\n\nWhat happened after that was the king opened them up.\n\n\nAnd then he found that they were stuffed with stinky socks.\n\n\nAt first he suspected you of treason, but then...\n\n\nhe remembered that the blobs use the treasure chests for hampers.\n\n\nThen he sent your superior to get them. He proudly grabbed all the hampers...\n\n\nand then it turned out that the blobs had "hidden" the socks in the hampers.\n\n\nIt seems that the blobs prize the stinky socks as antiques, even more than the treasures.\n\n\nThen the king would have sent you to go retrieve both the chests and the hampers...\n\n\nBut the blobs had moved their treasure overseas.\n\n\nSo, he sends you to swim across the ocean to go retrieve the treasure.\n\n\nFortunately, the queen doubted your swimming abilities and sent you a ship and crew.\n\n\nBeware of the islands while you'+"'"+'re sailing! You may wreck just hitting their sand banks.\n\n\nThe treasure seems to be hoarded by the haughty red sail ships.\n\n\nWell, Godspeed! Oh, right. Sailing the boat. Don'+"'"+"t you just want to wing it?\n\n\nNo? Okay. Up speeds up, down slows down. You can't reverse.\n\n\nLeft and right turn, and space fires a double broadside.\n\n\nOh, and A and D fire the black and gray cannons.\n\n\nT goes into Telescope mode, where you can look about the islands and see things.\n\n\nBut you still might be creamed while you're not looking. Have fun!"
       var style = new PIXI.TextStyle({stroke:"#0000ff", fill:"blue"});
       var introMessage = new PIXI.Text(introText,style);
       app.renderer.backgroundColor = 0x000000;
@@ -327,14 +368,95 @@
 
     }
 //    var gapLine = {p1:{x:750,y:300},p2:{x:750,y:500}}
+    function mountTelescope() {
+      telescopeHole.visible = true;
+      state = telescope;
+      // Ship.myX + globalX needs to equal ship.x
+      ship.myX = ship.x - globalX;
+      ship.myY = ship.y - globalY;
+    }
+    function telescope(){
+      if(debug){
+        drawCollision();
+      }
+      if(ship.health < 4) {
+        ship.texture = resources["sprites/topDownShiphurt3.png"].texture;
+        ship.point1 = rotatePoint((ship.x - ship.width / 2), (ship.y - ship.height / 4),ship.x,ship.y,ship.rotation);
+        ship.point2 = rotatePoint((ship.x - ship.width / 2), (ship.y + ship.height / 4),ship.x,ship.y,ship.rotation);
+        ship.point3 = rotatePoint((ship.x + ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
+        ship.point4 = rotatePoint((ship.x + ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
+      } else if (ship.health < 7) {
+        ship.texture = resources["sprites/topDownShiphurt2.png"].texture;
+        ship.point1 = rotatePoint((ship.x - ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
+        ship.point2 = rotatePoint((ship.x - ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
+        ship.point3 = rotatePoint((ship.x + ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
+        ship.point4 = rotatePoint((ship.x + ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
+      } else if (ship.health < 10) {
+        ship.texture = resources["sprites/topDownShiphurt.png"].texture;
+        ship.point1 = rotatePoint((ship.x - ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
+        ship.point2 = rotatePoint((ship.x - ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
+        ship.point3 = rotatePoint((ship.x + ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
+        ship.point4 = rotatePoint((ship.x + ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
+      } else {
+        ship.point1 = rotatePoint((ship.x - ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
+        ship.point2 = rotatePoint((ship.x - ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
+        ship.point3 = rotatePoint((ship.x + ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
+        ship.point4 = rotatePoint((ship.x + ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
+      }
+      ship.l1 = {p1:ship.point1,p2:ship.point2};
+      ship.l2 = {p1:ship.point2,p2:ship.point3};
+      ship.l3 = {p1:ship.point3,p2:ship.point4};
+      ship.l4 = {p1:ship.point4,p2:ship.point1};
+      handlePirates();
+      handleShots();
+      islands.forEach(function(testIsland){
+        testIsland.x = globalX + testIsland.myX;
+        testIsland.y = globalY + testIsland.myY;
+      });
+      ship.x = ship.myX + globalX;
+      ship.y = ship.myY + globalY;
+      if(keys.leftPress) {
+        globalX += 25;
+      }
+      if(keys.rightPress) {
+        globalX -= 25;
+      }
+      if(keys.upPress) {
+        globalY += 25;
+      }
+      if(keys.downPress) {
+        globalY -= 25;
+      }
+      HUD.text = "X:"+ship.x.toString()+" Y:"+ship.y.toString();
+      explorer.rotation = pointInDirection(ship.direction - 180);
+      explorer.x = ship.x;
+      explorer.y = ship.y;
+    }
     function sail(){
       //  state = wait;
       if(ship.health < 4) {
         ship.texture = resources["sprites/topDownShiphurt3.png"].texture;
+        ship.point1 = rotatePoint((ship.x - ship.width / 2), (ship.y - ship.height / 4),ship.x,ship.y,ship.rotation);
+        ship.point2 = rotatePoint((ship.x - ship.width / 2), (ship.y + ship.height / 4),ship.x,ship.y,ship.rotation);
+        ship.point3 = rotatePoint((ship.x + ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
+        ship.point4 = rotatePoint((ship.x + ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
       } else if (ship.health < 7) {
         ship.texture = resources["sprites/topDownShiphurt2.png"].texture;
+        ship.point1 = rotatePoint((ship.x - ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
+        ship.point2 = rotatePoint((ship.x - ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
+        ship.point3 = rotatePoint((ship.x + ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
+        ship.point4 = rotatePoint((ship.x + ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
       } else if (ship.health < 10) {
         ship.texture = resources["sprites/topDownShiphurt.png"].texture;
+        ship.point1 = rotatePoint((ship.x - ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
+        ship.point2 = rotatePoint((ship.x - ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
+        ship.point3 = rotatePoint((ship.x + ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
+        ship.point4 = rotatePoint((ship.x + ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
+      } else {
+        ship.point1 = rotatePoint((ship.x - ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
+        ship.point2 = rotatePoint((ship.x - ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
+        ship.point3 = rotatePoint((ship.x + ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
+        ship.point4 = rotatePoint((ship.x + ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
       }
       explorer.rotation = pointInDirection(ship.direction - 180);
       var data = direction(ship.speed,ship.direction);
@@ -346,10 +468,6 @@
         testIsland.x = globalX + testIsland.myX;
         testIsland.y = globalY + testIsland.myY;
       });
-      ship.point1 = rotatePoint((ship.x - ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
-      ship.point2 = rotatePoint((ship.x - ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
-      ship.point3 = rotatePoint((ship.x + ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
-      ship.point4 = rotatePoint((ship.x + ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
       handlePirates();
       handleShots();
       ship.rotation = ((ship.direction + 90) * Math.PI * -1) / 180;
@@ -384,11 +502,8 @@
       ship.l2 = {p1:ship.point2,p2:ship.point3};
       ship.l3 = {p1:ship.point3,p2:ship.point4};
       ship.l4 = {p1:ship.point4,p2:ship.point1};
-      // if(lineCollideLine(ship.l1,gapLine) || lineCollideLine(ship.l2,gapLine) || lineCollideLine(ship.l3,gapLine) || lineCollideLine(ship.l4,gapLine)) {
-        // state = die;
-      // }
       parseIslandCollision();
-      if(shipIntersectingIslands()){
+      if(divideScale < 2 && shipIntersectingIslands()){
         state = die;
       }
       if(debug){
@@ -454,7 +569,7 @@
     }
     function dying(){
       if(graphics.alpha > 0.999){
-        state = wait;
+        state = credits;
       }
       graphics.alpha += 0.01;
     }
@@ -524,7 +639,6 @@
           pShip.texture = resources["sprites/pirateshipblackhurt.png"].texture;
         }
         if(nearestIsland(pShip) < 300) {
-          pShip.visible = false;
           // console.log(nearestIsland(pShip));
         }
         if(pShip.hit){
@@ -560,7 +674,7 @@
         pShip.pilot.z = 1;
         var fireRotation1 = pointTowards(pShip.x, pShip.y, ship.x, ship.y);
         var fireRotation2 = pointTowards(pShip.x, pShip.y, ship.x, ship.y) + 180;
-        if((Math.abs(fireRotation1-(pShip.direction + 90)) < 20 || Math.abs(fireRotation2-(pShip.direction+90)) < 20)&& pShip.lastFire + 2500 < Date.now()) {
+        if((Math.abs(fireRotation1-(pShip.direction + 90)) < 20 || Math.abs(fireRotation2-(pShip.direction+90)) < 20)&& pShip.lastFire + 500 < Date.now()) {
           pShip.lastFire = Date.now();
           addNewCannonball(90, 0, pShip);
           addNewCannonball(-90, 0, pShip);
