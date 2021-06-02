@@ -508,6 +508,8 @@
       ship.l2 = {p1:ship.point2,p2:ship.point3};
       ship.l3 = {p1:ship.point3,p2:ship.point4};
       ship.l4 = {p1:ship.point4,p2:ship.point1};
+      explorer.x = ship.x
+      explorer.y = ship.y
       parseIslandCollision();
       if(divideScale < 2 && shipIntersectingIslands()){
         state = die;
