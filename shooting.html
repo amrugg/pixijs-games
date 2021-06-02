@@ -682,7 +682,56 @@
         pShip.pilot.z = 1;
         var fireRotation1 = pointTowards(pShip.x, pShip.y, ship.x, ship.y);
         var fireRotation2 = pointTowards(pShip.x, pShip.y, ship.x, ship.y) + 180;
-        if((Math.abs(fireRotation1-(pShip.direction + 90)) < 20 || Math.abs(fireRotation2-(pShip.direction+90)) < 20)&& pShip.lastFire + 500 < Date.now()) {
+        /// Order of priorites:
+        /// 1. Flee islands.
+        /// 2. Execute a good shot.
+        /// 3. Set up a good shot if close enough.
+        /// 4. Search for the ship.
+
+        if(nearestIsland(pShip).distance < 2000){
+          /// Land ho! Turn away!
+          var dangerIsland = nearestIsland(pShip);
+          var correctDirection = pointTowards(pShip.x,pShip.y,dangerIsland.x,dangerIsland.y);
+          //pShip.direction = correctDirection;
+          if(correctDirection < 0) {
+            correctDirection += 360;
+          } else if (correctDirection > 360) {
+            correctDirection -= 360;
+          }
+          var calcDirection = pShip.direction;
+          var turnLeftDistance = 0;
+          for(let i = 0; i < 360; i++) {
+            calcDirection++;
+            if(calcDirection > 359) {
+              calcDirection = 0;
+            }
+            if(Math.abs(correctDirection - calcDirection)<10) {
+              turnLeftDistance = i+1;
+              calcDirection = pShip.direction;
+              break;
+            }
+          }
+          var turnRightDistance = 0;
+          calcDirection = pShip.direction;
+          var rightData = [];
+          for(let i = 0; i < 360; i++) {
+            calcDirection--;
+            if(calcDirection < 0) {
+              calcDirection = 359;
+            }
+            rightData.push(calcDirection, pointTowardsShip);
+            if(Math.abs(correctDirection - calcDirection)<10) {
+              turnRightDistance = i+1;
+              calcDirection = pShip.direction;
+              break;
+            }
+          }
+          if(turnLeftDistance < turnRightDistance) {
+            pShip.direction += 0.25
+          } else if (turnRightDistance < turnLeftDistance){
+            pShip.direction -= 0.25
+          }
+        } else if((Math.abs(fireRotation1-(pShip.direction + 90)) < 20 || Math.abs(fireRotation2-(pShip.direction+90)) < 20)&& pShip.lastFire + 500 < Date.now()) {
           pShip.lastFire = Date.now();
           addNewCannonball(90, 0, pShip);
           addNewCannonball(-90, 0, pShip);
@@ -744,12 +793,16 @@
     }
     function nearestIsland(sprite) {
       var distance = Infinity;
+      var x = 0;
+      var y = 0;
       for(let i = 0; i < islands.length; i++) {
         if(getDistance(sprite.x, sprite.y, islands[i].x, islands[i].y) < distance) {
-          distance = getDistance(sprite.x, sprite.y, islands[i].x, islands[i].y)
+          distance = getDistance(sprite.x, sprite.y, islands[i].x, islands[i].y);
+          x = islands[i].x;
+          y = islands[i].y;
         }
       }
-      return distance;
+      return {distance:distance,x:x,y:y};
     }
     function keyboard(value) {
       let key = {};
