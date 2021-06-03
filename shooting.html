@@ -59,9 +59,6 @@
     var pirateShips = [];
     var cannonballSpeed = 10;
     var cannonballs = 41;
-    var HUD = new PIXI.Text("Cannonballs: " + cannonballs.toString() + " Health: " + (10).toString());
-    HUD.x = 1000;
-    gameScene.addChild(HUD);
     var globalX = -200;
     var globalY = 0;
     var explorer;
@@ -73,6 +70,14 @@
     var creditsScene;
     var telescopeHole = new PIXI.Graphics();
     var keys = {};
+    var arrow;
+    var HUD;
+    var windArrow;
+    var layerOfClouds;
+    var frigates = [];
+    var treasures = [];
+    var markArrow;
+    var treasuresLeft = 1;
     function setup() {
       telescopeHole.lineStyle(1000*(window.innerWidth/1000),0x000000,1);
       telescopeHole.drawCircle(window.innerWidth/2,window.innerHeight/2,800*(window.innerWidth/1200));
@@ -84,7 +89,6 @@
       creditsScene.visible = false;
       graphics = new PIXI.Graphics();
       id = resources["sprites/treasureHunter.json"].textures;
-      spawnNewPirateShip(20);
       /*for(let i = 0; i < randInt(3,7); i++) {
         let testIsland = new Sprite(resources["sprites/island.png"].texture);
         testIsland.myX = randInt(-2500,2500);
@@ -105,13 +109,20 @@
       ship.direction = 89.9999999;
       ship.speed = 0;
       ship.turn = 0;
-      ship.health = 10;
+      ship.health = params.health || 10;
       ship.anchor.x = 0.5;
       ship.anchor.y = 0.5;
       explorer = new Sprite(id["explorer.png"]);
       gameScene.addChild(explorer);
       explorer.x = ship.x;
       explorer.y = ship.y;
+      let spawn = spawnNewPirateShip
+      spawnRedPirateShip(2000,0);
+      spawnRedPirateShip(-2000,0);
+      spawn(1400,350);
+      spawn(750,-700);
+      spawn(750,1100);
+      spawn(-300,350)
       for(let i = 0; i < islandPositions.length; i++) {
         let newIsland = new Sprite(resources["sprites/island.png"].texture);
         newIsland.scale.set(50/divideScale);
@@ -121,6 +132,10 @@
         islands.push(newIsland);
         gameScene.addChild(newIsland);
       }
+      
+      HUD = new PIXI.Text("Cannonballs: " + cannonballs.toString() + " Health: " + (10).toString());
+      HUD.x = innerWidth - 400;
+      gameScene.addChild(HUD);
       gameScene.addChild(graphics);
       var left = keyboard("ArrowLeft"), right = keyboard("ArrowRight"), up = keyboard("ArrowUp"), down = keyboard("ArrowDown");
       var space = keyboard(" "), a = keyboard("a"), d = keyboard("d");
@@ -193,14 +208,16 @@
         keys.rightPress = false;
       }
       up.press = () => {
-        ++ship.speed;
+        if(state === sail) {
+          ++ship.speed;
+        }
         keys.upPress = true;
       }
       up.release = () => {
         keys.upPress = false;
       }
       down.press = () => {
-        if(ship.speed > 0) {
+        if(ship.speed > 0 && state === sail) {
           --ship.speed
         }
         keys.downPress = true;
@@ -208,42 +225,64 @@
       down.release = () => {
         keys.downPress = false;
       }
+
       app.ticker.add(delta => gameLoop(delta));
       windSpeed = 1;
       windDirection = 90;
-      setTimeout(changeWind,20000 + randInt(-10000,10000))
+      arrow = new Sprite(resources["sprites/topDownShip.png"].texture);
+      arrow.scale.set(3,3);
+      arrow.x = 100;
+      arrow.y = window.innerHeight - 100;
+      arrow.anchor.set(0.5,0.5);
+      gameScene.addChild(arrow);
+      windArrow = new Sprite(resources["sprites/pirateshipblack.png"].texture);
+      windArrow.scale.set(3,3);
+      windArrow.x = 200;
+      windArrow.y = window.innerHeight - 100;
+      windArrow.anchor.set(0.5,0.5);
+      gameScene.addChild(windArrow);
+      markArrow = new Sprite(resources["sprites/pirateshipred.png"].texture);
+      markArrow.y = innerHeight - 100;
+      markArrow.x = 300;
+      markArrow.scale.set(3);
+      markArrow.anchor.set(0.5);
+      gameScene.addChild(markArrow);
+      layerOfClouds = new PIXI.Graphics();
+      layerOfClouds.beginFill(0x000000);
+      layerOfClouds.drawRect(0,0,innerWidth,innerHeight);
+      layerOfClouds.alpha = windSpeed / 10;
+      gameScene.addChild(layerOfClouds);
+    //  setTimeout(changeWind,20000 + randInt(-10000,10000))
     }
     function changeWind() {
       windSpeed = randInt(0,5);
       windDirection = randInt(0,360);
+      layerOfClouds.alpha = windSpeed / 10;
       setTimeout(changeWind,20000 + randInt(-10000,10000));
     }
     var shots = [];
    // var islands = [];
-    function spawnNewPirateShip(amount){
-      amount = amount || 1;
-      for(let i = 0; i < amount; i++) {
-        let pirateShip = new Sprite(resources["sprites/pirateshipblack.png"].texture);
-        pirateShip.scale.x = 10/divideScale;
-        pirateShip.scale.y = 10/divideScale;
-        pirateShip.direction = 90;
-        pirateShip.speed = 1;
-        pirateShip.lastFire = Date.now() - 25000;
-        pirateShip.shouldFire = true;
-        pirateShip.anchor.set(0.5, 0.5);
-        pirateShip.myX = randInt(-5000,2000);
-        pirateShip.myY = randInt(-5000,2000);
-        pirateShip.hit = false;
-        pirateShip.health = 10;
-        pirateShip.rotation = pointInDirection(pirateShip.direction + 90);
-        pirateShip.pilot = new Sprite(resources["sprites/pirateBlob.png"].texture);
-        pirateShip.pilot.x = pirateShip.x;
-        pirateShip.pilot.y = pirateShip.y;
-        pirateShip.pilot.rotation = pirateShip.rotation;
-        pirateShips.push(pirateShip);
-        gameScene.addChild(pirateShip);
-        gameScene.addChild(pirateShip.pilot);
-      }
+    function spawnNewPirateShip(x,y){
+      let pirateShip = new Sprite(resources["sprites/pirateshipblack.png"].texture);
+      pirateShip.scale.x = 10/divideScale;
+      pirateShip.scale.y = 10/divideScale;
+      pirateShip.direction = 90;
+      pirateShip.speed = 1;
+      pirateShip.lastFire = Date.now() - 25000;
+      pirateShip.anchor.set(0.5, 0.5);
+      pirateShip.myX = x;
+      pirateShip.myY = y;
+      pirateShip.start = true;
+      pirateShip.hit = false;
+      pirateShip.health = 10;
+      pirateShip.rotation = pointInDirection(pirateShip.direction + 90);
+      pirateShip.pilot = new Sprite(resources["sprites/pirateBlob.png"].texture);
+      pirateShip.pilot.x = pirateShip.x;
+      pirateShip.pilot.y = pirateShip.y;
+      pirateShip.pilot.rotation = pirateShip.rotation;
+      pirateShips.push(pirateShip);
+      gameScene.addChild(pirateShip);
+      gameScene.addChild(pirateShip.pilot);
     }
     function drawCollision(){
       graphics.clear();
@@ -310,6 +349,37 @@
         island.l13 = {p1:island.p13,p2:island.p14};
         island.l14 = {p1:island.p14,p2:island.p1};
       })
+    }
+    function spawnRedPirateShip(x,y) {
+      if(x === undefined) {
+        x = randInt(-5000,2000);
+      }
+      if(y === undefined) {
+        y = randInt(-5000,2000);
+      }
+      var frigate = new Sprite(resources["sprites/pirateshipred.png"].texture);
+      frigate.scale.set(20/divideScale);
+      frigate.direction = 90;
+      frigate.speed = 2;
+      frigate.lastFire = Date.now() - 50000;
+      frigate.myX = x;
+      frigate.myY = y;
+      console.log(frigate.myY)
+      frigate.anchor.set(0.5);
+      frigate.hit = false;
+      frigate.health = 20;
+      frigate.rotation = pointInDirection(frigate.direction + 90);
+      frigate.pilot = new Sprite(resources["sprites/pirateBlob.png"].texture);
+      frigate.pilot.x = frigate.x;
+      frigate.pilot.y = frigate.y;
+      frigate.pilot.rotation = frigate.rotation;
+      frigate.treasure = new Sprite(id["treasure.png"]);
+      frigate.treasure.rotation = frigate.rotation;
+      frigate.start = true;
+      frigates.push(frigate);
+      gameScene.addChild(frigate);
+      gameScene.addChild(frigate.pilot);
+      gameScene.addChild(frigate.treasure);
     }
     var state = introSetup;
     gameScene.visible = true;
@@ -420,6 +490,12 @@
         testIsland.x = globalX + testIsland.myX;
         testIsland.y = globalY + testIsland.myY;
       });
+      var data = direction(ship.speed,ship.direction);
+      var windData = direction(windSpeed * Math.abs(1-(Math.abs(windDirection - ship.direction)/100)),windDirection);
+      ship.vx = data.r + windData.r;
+      ship.vy = data.u + windData.u;
+      ship.myX += ship.vx;
+      ship.myY += ship.vy;
       ship.x = ship.myX + globalX;
       ship.y = ship.myY + globalY;
       if(keys.leftPress) {
@@ -444,8 +520,8 @@
         ship.texture = resources["sprites/topDownShiphurt3.png"].texture;
         ship.point1 = rotatePoint((ship.x - ship.width / 2), (ship.y - ship.height / 4),ship.x,ship.y,ship.rotation);
         ship.point2 = rotatePoint((ship.x - ship.width / 2), (ship.y + ship.height / 4),ship.x,ship.y,ship.rotation);
-        ship.point3 = rotatePoint((ship.x + ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
-        ship.point4 = rotatePoint((ship.x + ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
+        ship.point3 = rotatePoint((ship.x + ship.width / 2), (ship.y + ship.height / 4),ship.x,ship.y,ship.rotation);
+        ship.point4 = rotatePoint((ship.x + ship.width / 2), (ship.y - ship.height / 4),ship.x,ship.y,ship.rotation);
       } else if (ship.health < 7) {
         ship.texture = resources["sprites/topDownShiphurt2.png"].texture;
         ship.point1 = rotatePoint((ship.x - ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
@@ -459,6 +535,7 @@
         ship.point3 = rotatePoint((ship.x + ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
         ship.point4 = rotatePoint((ship.x + ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
       } else {
+        ship.texture = resources["sprites/topDownShip.png"].texture;
         ship.point1 = rotatePoint((ship.x - ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
         ship.point2 = rotatePoint((ship.x - ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
         ship.point3 = rotatePoint((ship.x + ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
@@ -466,8 +543,9 @@
       }
       explorer.rotation = pointInDirection(ship.direction - 180);
       var data = direction(ship.speed,ship.direction);
-      ship.vx = data.r;
-      ship.vy = data.u;
+      var windData = direction(windSpeed * Math.abs(1-(Math.abs(windDirection - ship.direction)/100)),windDirection);
+      ship.vx = data.r + windData.r;
+      ship.vy = data.u + windData.u;
       globalX -= ship.vx;
       globalY -= ship.vy;
       islands.forEach(function(testIsland){
@@ -475,7 +553,9 @@
         testIsland.y = globalY + testIsland.myY;
       });
       handlePirates();
+      handleFrigates();
       handleShots();
+      handleTreasures();
       ship.rotation = ((ship.direction + 90) * Math.PI * -1) / 180;
       ship.direction += ship.turn;
       if(fireCannon === 2) {
@@ -508,8 +588,14 @@
       ship.l2 = {p1:ship.point2,p2:ship.point3};
       ship.l3 = {p1:ship.point3,p2:ship.point4};
       ship.l4 = {p1:ship.point4,p2:ship.point1};
-      explorer.x = ship.x
-      explorer.y = ship.y
+      explorer.x = ship.x;
+      explorer.y = ship.y;
+      data = direction(ship.speed,ship.direction);
+      windData = direction(windSpeed * Math.abs(1-(Math.abs(windDirection - ship.direction)/100)),windDirection);
+      arrow.rotation = pointInDirection(findVectorFromImpulse((data.r + windData.r),(data.u + windData.u)*-1).direction + 180);
+      windArrow.rotation = pointInDirection(windDirection+90);
+      var nearFrigate = nearestFrigate(ship);
+      markArrow.rotation = pointInDirection(pointTowards(ship.x,ship.y,nearFrigate.x,nearFrigate.y) - 90);
       parseIslandCollision();
       if(divideScale < 2 && shipIntersectingIslands()){
         state = die;
@@ -581,7 +667,7 @@
       }
       graphics.alpha += 0.01;
     }
-    function addNewCannonball(offset, id, launcher) {
+    function addNewCannonball(offset, id, launcher,x,y) {
       offset = offset || 0;
       let cannonball = new Sprite(resources["sprites/cannonball.png"].texture);
       cannonball.scale.set(5/divideScale,5/divideScale);
@@ -594,8 +680,16 @@
       /// In other words, globalX + myX = launcher.x
       /// Therefore, myX will have to equal launcher.x - globalX
       /// Same for Y
-      cannonball.myX = launcher.x - globalX;
-      cannonball.myY = launcher.y - globalY;
+      if(x == undefined) { 
+        cannonball.myX = launcher.x - globalX;
+      } else {
+        cannonball.myX = x - globalX;
+      }
+      if(y === undefined) {
+        cannonball.myY = launcher.y - globalY;
+      } else {
+        cannonball.myY = y - globalY;
+      }
       cannonball.x = globalX + cannonball.myX;
       cannonball.y = globalY + cannonball.myY;
       cannonball.offset = direction(launcher.speed,launcher.direction);
@@ -618,10 +712,16 @@
         shot.myY += newData.u + shot.offset.u;
         shot.x = globalX + shot.myX;
         shot.y = globalY + shot.myY;
-        if(shot.x < -50 || shot.x > 1450 || shot.y < -50 || shot.y > 1000 && Date.now() - 5000 > shot.launchTime) {
+        if(shot.x < -50 || shot.x > 1450 || shot.y < -50 || shot.y > 1000 && Date.now() - 1500 > shot.launchTime) {
           shot.delete = true;
         }
         pirateShips.forEach(function(pShip){
+          if(circleInRectangle([[pShip.point1.x, pShip.point1.y], [pShip.point2.x, pShip.point2.y], [pShip.point3.x, pShip.point3.y],[pShip.point4.x, pShip.point4.y]],[shot.x, shot.y],shot.width/2) && shot.id == 1) {
+            shot.delete = true;
+            pShip.hit = true;
+          }
+        });
+        frigates.forEach(function(pShip){
           if(circleInRectangle([[pShip.point1.x, pShip.point1.y], [pShip.point2.x, pShip.point2.y], [pShip.point3.x, pShip.point3.y],[pShip.point4.x, pShip.point4.y]],[shot.x, shot.y],shot.width/2) && shot.id == 1) {
             shot.delete = true;
             pShip.hit = true;
@@ -653,9 +753,6 @@
           pShip.texture = resources["sprites/pirateshipblackhurt2.png"].texture;
         } else if (pShip.health < 10) {
           pShip.texture = resources["sprites/pirateshipblackhurt.png"].texture;
-        }
-        if(nearestIsland(pShip) < 300) {
-          // console.log(nearestIsland(pShip));
         }
         if(pShip.hit){
           pShip.hit = false;
@@ -696,7 +793,7 @@
         /// 3. Set up a good shot if close enough.
         /// 4. Search for the ship.
 
-        if(nearestIsland(pShip).distance < 2000){
+        if(nearestIsland(pShip).distance < 1200){
           /// Land ho! Turn away!
           var dangerIsland = nearestIsland(pShip);
           var correctDirection = pointTowards(pShip.x,pShip.y,dangerIsland.x,dangerIsland.y);
@@ -777,22 +874,187 @@
             }
           }
           if(turnLeftDistance < turnRightDistance) {
-            pShip.direction += 0.25
+            pShip.direction += 0.25 * 3
           } else if (turnRightDistance < turnLeftDistance){
-            pShip.direction -= 0.25
+            pShip.direction -= 0.25 * 3
           }
         } else {
             if(Math.abs(fireRotation1-(pShip.direction + 90)) < Math.abs(fireRotation2-(pShip.direction+90))) {
               if((Math.abs(fireRotation1-(pShip.direction + 91)) < Math.abs(fireRotation1-(pShip.direction + 89)))) {
-                pShip.direction += 0.25;
+                pShip.direction += 0.25 * 3;
               } else {
-                pShip.direction -= 0.25;
+                pShip.direction -= 0.25 * 3;
               }
             } else {
               if((Math.abs(fireRotation2-(pShip.direction + 91)) < Math.abs(fireRotation2-(pShip.direction + 89)))) {
-                pShip.direction += 0.25;
+                pShip.direction += 0.25 * 3;
               } else {
-                pShip.direction -= 0.25;
+                pShip.direction -= 0.25 * 3;
+              }
+            } 
+        }
+        pShip.rotation = pointInDirection(pShip.direction+90); 
+      });
+    }
+    function handleFrigates(){
+      frigates.forEach(function(pShip, i){
+        if(pShip.health < 4) {
+          pShip.texture = resources["sprites/pirateshipblackhurt3.png"].texture;
+        } else if (pShip.health < 7) {
+          pShip.texture = resources["sprites/pirateshipblackhurt2.png"].texture;
+        } else if (pShip.health < 10) {
+          pShip.texture = resources["sprites/pirateshipblackhurt.png"].texture;
+        }
+        if(nearestIsland(pShip) < 300) {
+          // console.log(nearestIsland(pShip));
+        }
+        if(pShip.hit){
+          pShip.hit = false;
+          --pShip.health;
+          if(pShip.health < 1) {
+            pShip.visible = false;
+            gameScene.removeChild(pShip);
+            gameScene.removeChild(pShip.pilot);
+            spawnNewTreasureChest(pShip.treasure.x,pShip.treasure.y);
+            gameScene.removeChild(pShip.treasure);
+            frigates.splice(i,1);
+            cannonballs += 20;
+            ship.health += 5;
+            return;
+          }
+        }
+        var badData = direction(pShip.speed, pShip.direction);
+        pShip.point1 = rotatePoint((pShip.x - pShip.width / 2), (pShip.y - pShip.height / 2),pShip.x,pShip.y,pShip.rotation);
+        pShip.point2 = rotatePoint((pShip.x - pShip.width / 2), (pShip.y + pShip.height / 2),pShip.x,pShip.y,pShip.rotation);
+        pShip.point3 = rotatePoint((pShip.x + pShip.width / 2), (pShip.y + pShip.height / 2),pShip.x,pShip.y,pShip.rotation);
+        pShip.point4 = rotatePoint((pShip.x + pShip.width / 2), (pShip.y - pShip.height / 2),pShip.x,pShip.y,pShip.rotation);
+        if(debug){
+       //   drawPirateCollision();
+        }
+        pShip.vx = badData.r;
+        pShip.vy = badData.u;
+        pShip.myX += pShip.vx;
+        pShip.myY += pShip.vy;
+        pShip.x = globalX + pShip.myX;
+        pShip.y = globalY + pShip.myY;
+        pShip.z = 0;
+        pShip.pilot.x = pShip.x;
+        pShip.pilot.y = pShip.y;
+        var forwardData = direction(100,pShip.direction);
+        pShip.treasure.x = pShip.x + forwardData.r;
+        pShip.treasure.y = pShip.y + forwardData.u;
+        pShip.treasure.rotation = pShip.rotation;
+        pShip.pilot.z = 1;
+        var fireRotation1 = pointTowards(pShip.x, pShip.y, ship.x, ship.y);
+        var fireRotation2 = pointTowards(pShip.x, pShip.y, ship.x, ship.y) + 180;
+        /// Order of priorites:
+        /// 1. Flee islands.
+        /// 2. Execute a good shot.
+        /// 3. Set up a good shot if close enough.
+        /// 4. Search for the ship.
+        if(nearestIsland(pShip).distance < 2000){
+          /// Land ho! Turn away!
+          var dangerIsland = nearestIsland(pShip);
+          var correctDirection = pointTowards(pShip.x,pShip.y,dangerIsland.x,dangerIsland.y);
+          //pShip.direction = correctDirection;
+          if(correctDirection < 0) {
+            correctDirection += 360;
+          } else if (correctDirection > 360) {
+            correctDirection -= 360;
+          }
+          var calcDirection = pShip.direction;
+          var turnLeftDistance = 0;
+          for(let i = 0; i < 360; i++) {
+            calcDirection++;
+            if(calcDirection > 359) {
+              calcDirection = 0;
+            }
+            if(Math.abs(correctDirection - calcDirection)<10) {
+              turnLeftDistance = i+1;
+              calcDirection = pShip.direction;
+              break;
+            }
+          }
+          var turnRightDistance = 0;
+          calcDirection = pShip.direction;
+          var rightData = [];
+          for(let i = 0; i < 360; i++) {
+            calcDirection--;
+            if(calcDirection < 0) {
+              calcDirection = 359;
+            }
+            rightData.push(calcDirection, pointTowardsShip);
+            if(Math.abs(correctDirection - calcDirection)<10) {
+              turnRightDistance = i+1;
+              calcDirection = pShip.direction;
+              break;
+            }
+          }
+          if(turnLeftDistance < turnRightDistance) {
+            pShip.direction += 0.25 * pShip.speed;
+          } else if (turnRightDistance < turnLeftDistance){
+            pShip.direction -= 0.25 * pShip.speed;
+          }
+        } else if((Math.abs(fireRotation1-(pShip.direction + 90)) < 90 || Math.abs(fireRotation2-(pShip.direction+90)) < 90)&& pShip.lastFire + 500 < Date.now()) {
+          pShip.lastFire = Date.now();
+          addNewCannonball(90, 0, pShip);
+          addNewCannonball(90, 0, pShip,direction(100,pShip.direction).r + pShip.x,direction(100,pShip.direction).u + pShip.y);
+          addNewCannonball(90, 0, pShip,direction(-100,pShip.direction).r + pShip.x,direction(-100,pShip.direction).u + pShip.y);
+          addNewCannonball(90, 0, pShip,direction(-200,pShip.direction).r + pShip.x,direction(-200,pShip.direction).u + pShip.y);
+          addNewCannonball(-90, 0, pShip);
+          addNewCannonball(-90, 0, pShip,direction(100,pShip.direction).r + pShip.x,direction(100,pShip.direction).u + pShip.y);
+          addNewCannonball(-90, 0, pShip,direction(-100,pShip.direction).r + pShip.x,direction(-100,pShip.direction).u + pShip.y);
+          addNewCannonball(-90, 0, pShip,direction(-200,pShip.direction).r + pShip.x,direction(-200,pShip.direction).u + pShip.y);
+        } else if (getDistance(pShip.x, pShip.y, ship.x, ship.y) > 850 && true) {
+          var pointTowardsShip = pointTowards(pShip.x, pShip.y, ship.x, ship.y) - 180;
+          if(pointTowardsShip < 0) {
+            pointTowardsShip += 360;
+          }
+          var calcDirection = pShip.direction;
+          var turnLeftDistance = 0;
+          for(let i = 0; i < 360; i++) {
+            calcDirection++;
+            if(calcDirection > 359) {
+              calcDirection = 0;
+            }
+            if(Math.abs(pointTowardsShip - calcDirection)<10) {
+              turnLeftDistance = i+1;
+              calcDirection = pShip.direction;
+              break;
+            }
+          }
+          var turnRightDistance = 0;
+          calcDirection = pShip.direction;
+          var rightData = [];
+          for(let i = 0; i < 360; i++) {
+            calcDirection--;
+            if(calcDirection < 0) {
+              calcDirection = 359;
+            }
+            rightData.push(calcDirection, pointTowardsShip);
+            if(Math.abs(pointTowardsShip - calcDirection)<10) {
+              turnRightDistance = i+1;
+              calcDirection = pShip.direction;
+              break;
+            }
+          }
+          if(turnLeftDistance < turnRightDistance) {
+            pShip.direction += 0.25 * pShip.speed;
+          } else if (turnRightDistance < turnLeftDistance){
+            pShip.direction -= 0.25 * pShip.speed;
+          }
+        } else {
+            if(Math.abs(fireRotation1-(pShip.direction + 90)) < Math.abs(fireRotation2-(pShip.direction+90))) {
+              if((Math.abs(fireRotation1-(pShip.direction + 91)) < Math.abs(fireRotation1-(pShip.direction + 89)))) {
+                pShip.direction += 0.25 * pShip.speed;
+              } else {
+                pShip.direction -= 0.25 * pShip.speed;
+              }
+            } else {
+              if((Math.abs(fireRotation2-(pShip.direction + 91)) < Math.abs(fireRotation2-(pShip.direction + 89)))) {
+                pShip.direction += 0.25 * pShip.speed;
+              } else {
+                pShip.direction -= 0.25 * pShip.speed;
               }
             } 
         }
@@ -811,6 +1073,75 @@
         }
       }
       return {distance:distance,x:x,y:y};
+    }
+    function nearestFrigate(sprite) {
+      var distance = 10**10;
+      var x = 0;
+      var y = 0;
+      frigates.forEach(function(frigate){
+        var currentDist = getDistance(sprite.x,sprite.y,frigate.x,frigate.y);
+        if(currentDist < distance) {
+          distance = currentDist;
+          x = frigate.x;
+          y = frigate.y;
+        }
+      });
+      return {distance:distance,x:x,y:y};
+    }
+    function handleTreasures(){
+      treasures.forEach(function(treasure, i){
+        treasure.x = globalX + treasure.myX;
+        treasure.y = globalY + treasure.myY;
+        treasure.point1 = {x:treasure.x - treasure.width / 8,y:treasure.y - treasure.height / 8};
+        treasure.point2 = {x:treasure.x - treasure.width / 8,y:treasure.y + treasure.height / 8};
+        treasure.point3 = {x:treasure.x + treasure.width / 8,y:treasure.y + treasure.height / 8};
+        treasure.point4 = {x:treasure.x + treasure.width / 8,y:treasure.y - treasure.height / 8};
+        treasure.l1 = {p1:treasure.point1,p2:treasure.point2};
+        treasure.l2 = {p1:treasure.point2,p2:treasure.point3};
+        treasure.l3 = {p1:treasure.point3,p2:treasure.point4};
+        treasure.l4 = {p1:treasure.point4,p2:treasure.point1};
+        let l = lineCollideLine;
+        var collided = false;
+        if(l(treasure.l1,ship.l1)||l(treasure.l1,ship.l2)||l(treasure.l1,ship.l3)||l(treasure.l1,ship.l4)) {
+          collided = true;
+        } else if(l(treasure.l2,ship.l1)||l(treasure.l2,ship.l2)||l(treasure.l2,ship.l3)||l(treasure.l2,ship.l4)) {
+          collided = true;
+        } else if(l(treasure.l3,ship.l1)||l(treasure.l3,ship.l2)||l(treasure.l3,ship.l3)||l(treasure.l3,ship.l4)) {
+          collided = true;
+        } else if(l(treasure.l4,ship.l1)||l(treasure.l4,ship.l2)||l(treasure.l4,ship.l3)||l(treasure.l4,ship.l4)) {
+          collided = true;
+        }
+        if(collided) {
+          gameScene.removeChild(treasure);
+          treasures.splice(i,1)
+          --treasuresLeft;
+          if(treasuresLeft < 1) {
+            state = win;
+          }
+        }
+      });
+    }
+    var winningText;
+    function win(){
+      var textStyle = new PIXI.TextStyle({stroke: "#ffff00",fill:"yellow"})
+      winningText = new PIXI.Text("You win!",textStyle);
+      winningText.scale.set(10);
+      app.stage.addChild(winningText);
+      state = wait;
+      setTimeout(function() {
+      graphics.beginFill(0x000000);
+      graphics.alpha = 0;
+      graphics.drawRect(0,0,window.innerWidth,window.innerHeight);
+      state = dying;
+      winningText.visible = false;
+      },1000);
+    }
+    function spawnNewTreasureChest(x,y){
+      let newTreasure = new Sprite(id["treasure.png"]);
+      newTreasure.myX = x - globalX;
+      newTreasure.myY = y - globalY;
+      gameScene.addChild(newTreasure);
+      treasures.push(newTreasure);
     }
     function keyboard(value) {
       let key = {};
