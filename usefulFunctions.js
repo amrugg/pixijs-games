@@ -2,6 +2,20 @@ function getDistance(x1,y1,x2,y2) {
     /// Mine
     return Math.sqrt((x1-x2)**2+(y1-y2)**2);
 }
+function findVectorFromImpulse(x,y) {
+    var distance = Math.sqrt(x**2+y**2);
+    var direction = Math.atan(y/x) * 180/Math.PI;
+    if(x < 0 && y >= 0) {
+        direction += 180;
+    }
+    if(x < 0 && y < 0) {
+        direction += 180;
+    }
+    if(y < 0 && x >= 0) {
+        direction += 360;
+    }
+    return {force:distance,direction:direction}
+}
 function rotatePoint(pointX, pointY, originX, originY, angle, degrees) {
     /// https://stackoverflow.com/questions/4465931/rotate-rectangle-around-a-point
     if(degrees) {
@@ -221,4 +235,4 @@ line1 = {p1:{x:0,y:0},p2:{x:5,y:5}};
 line2 = {p1:{x:2,y:-10},p2:{x:3,y:10}};
 line1 = {p1:{x:0,y:0},p2:{x:1,y:0}}
 line2 = {p1:{x:1,y:1},p2:{x:1,y:-1}}
-console.log(lineCollideLine(line1,line2))
+console.log(findVectorFromImpulse(1,-1))
