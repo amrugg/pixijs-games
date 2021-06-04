@@ -13,6 +13,7 @@
     <script src ="bump.js"></script>
 <body>
   <script type="text/javascript">
+    "use strict";
     var BUMP = new Bump(PIXI);
     var params = getParams();
     function getParams() {
@@ -48,37 +49,29 @@
     app.renderer.autoResize = true;
     app.renderer.resize(window.innerWidth, window.innerHeight);
     document.body.appendChild(app.view);
-    gameScene = new Container();
-    var gameScene;
+    var gameScene = new Container();
     app.stage.addChild(gameScene);
+    var mountX,mountY,knots, knots2, winningText, ship, windSpeed, windDirection, markArrow, creditsScene, arrow, explorer, graphics, data, windOffset, windData, layerOfClouds, windArrow, HUD, id, introScene, wPress, sPress;
     var fireCannon = false;
     var files = ["knot5","knot4","knot3","knot2","knot1","pirateshipblackhurt","pirateshipblackhurt2","pirateshipblackhurt3","cannonball","island","pirateBlob","pirateshipblack","pirateshipred","topDownShip","topDownShipdeath","topDownShiphurt","topDownShiphurt2","topDownShiphurt3"]
     loadArray(files, "sprites", "png");
     loader.add("sprites/treasureHunter.json").load(setup);
-    var ship, windSpeed, windDirection;
     var pirateShips = [];
     var cannonballSpeed = 10;
     var cannonballs = 41;
     var globalX = -200;
     var globalY = 0;
-    var explorer;
-    var id, introScene;
-    var wPress, sPress;
     var divideScale = params.divideScale || 1;
     var islandPositions = [[-50,10], [-50,85], [100,200], [500,-200], [-500,300], [-410, 210],[-320,120],[-320,30],[-370,-40],[-450, -120]]
     var islands = [];
-    var creditsScene;
     var telescopeHole = new PIXI.Graphics();
     var keys = {};
-    var arrow;
-    var HUD;
-    var windArrow;
-    var layerOfClouds;
     var frigates = [];
     var treasures = [];
-    var markArrow;
     var treasuresLeft = 2;
-    var knots, knots2;
+    var state = introSetup;
+    gameScene.visible = true;
+    var shots = [];
     function setup() {
       telescopeHole.lineStyle(1000*(window.innerWidth/1000),0x000000,1);
       telescopeHole.drawCircle(window.innerWidth/2,window.innerHeight/2,800*(window.innerWidth/1200));
@@ -255,8 +248,8 @@
       knots.scale.set(5);
       gameScene.addChild(knots);
       knots2 = new Sprite(resources["sprites/knot1.png"].texture);
-      knots2.y = innerHeight - 190;
-      knots2.x = 400;
+      knots2.y = innerHeight - 100;
+      knots2.x = 500;
       knots2.anchor.set(0.5);
       knots2.scale.set(5);
       gameScene.addChild(knots2);
@@ -271,10 +264,8 @@
       windSpeed = randInt(0,5);
       windDirection = randInt(0,360);
       layerOfClouds.alpha = windSpeed / 10;
-      setTimeout(changeWind,5000 + randInt(-10000 * 0 ,10000*0));
+      setTimeout(changeWind,30000 + randInt(-10000 * 0 ,10000*0));
     }
-    var shots = [];
-   // var islands = [];
     function spawnNewPirateShip(x,y){
       let pirateShip = new Sprite(resources["sprites/pirateshipblack.png"].texture);
       pirateShip.scale.x = 10/divideScale;
@@ -394,8 +385,6 @@
       gameScene.addChild(frigate.pilot);
       gameScene.addChild(frigate.treasure);
     }
-    var state = introSetup;
-    gameScene.visible = true;
     function introSetup(){
       gameScene.visible = false;
       introScene = new Container();
@@ -454,8 +443,6 @@
     function wait(){
 
     }
-//    var gapLine = {p1:{x:750,y:300},p2:{x:750,y:500}}
-    var mountX,mountY;
     function mountTelescope() {
       telescopeHole.visible = true;
       state = telescope;
@@ -528,142 +515,14 @@
       explorer.y = ship.y;
     }
     function sail(){
-      //  state = wait;
-      if(ship.health < 4) {
-        ship.texture = resources["sprites/topDownShiphurt3.png"].texture;
-        ship.point1 = rotatePoint((ship.x - ship.width / 2), (ship.y - ship.height / 4),ship.x,ship.y,ship.rotation);
-        ship.point2 = rotatePoint((ship.x - ship.width / 2), (ship.y + ship.height / 4),ship.x,ship.y,ship.rotation);
-        ship.point3 = rotatePoint((ship.x + ship.width / 2), (ship.y + ship.height / 4),ship.x,ship.y,ship.rotation);
-        ship.point4 = rotatePoint((ship.x + ship.width / 2), (ship.y - ship.height / 4),ship.x,ship.y,ship.rotation);
-      } else if (ship.health < 7) {
-        ship.texture = resources["sprites/topDownShiphurt2.png"].texture;
-        ship.point1 = rotatePoint((ship.x - ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
-        ship.point2 = rotatePoint((ship.x - ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
-        ship.point3 = rotatePoint((ship.x + ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
-        ship.point4 = rotatePoint((ship.x + ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
-      } else if (ship.health < 10) {
-        ship.texture = resources["sprites/topDownShiphurt.png"].texture;
-        ship.point1 = rotatePoint((ship.x - ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
-        ship.point2 = rotatePoint((ship.x - ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
-        ship.point3 = rotatePoint((ship.x + ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
-        ship.point4 = rotatePoint((ship.x + ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
-      } else {
-        ship.texture = resources["sprites/topDownShip.png"].texture;
-        ship.point1 = rotatePoint((ship.x - ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
-        ship.point2 = rotatePoint((ship.x - ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
-        ship.point3 = rotatePoint((ship.x + ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
-        ship.point4 = rotatePoint((ship.x + ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
-      }
-      explorer.rotation = pointInDirection(ship.direction - 180);
-      var data = direction(ship.speed,ship.direction);
-      var windOffset = (Math.abs(1-(Math.abs(windDirection - ship.direction)/100)));
-      while(windOffset > 1) {
-        --windOffset;
-      }
-      var trueSpeed = Math.round(windSpeed * windOffset);
-      var windData = direction(windSpeed * windOffset,windDirection);
-      ship.vx = data.r + windData.r;
-      ship.vy = data.u + windData.u;
-      globalX -= ship.vx;
-      globalY -= ship.vy;
-      islands.forEach(function(testIsland){
-        testIsland.x = globalX + testIsland.myX;
-        testIsland.y = globalY + testIsland.myY;
-      });
+      handleShip();
+      handleIslands();
       handlePirates();
       handleFrigates();
       handleShots();
       handleTreasures();
-      ship.rotation = ((ship.direction + 90) * Math.PI * -1) / 180;
-      ship.direction += ship.turn;
-      if(fireCannon === 2) {
-        if(cannonballs > 0) {
-          addNewCannonball(90, 1, ship);
-          --cannonballs;
-        }
-        if(cannonballs > 0) {
-          addNewCannonball(-90, 1, ship);
-          --cannonballs;
-        }
-        HUD.text = "Cannonballs: "+cannonballs.toString()+" Health: "+ship.health.toString();
-        fireCannon = false;
-      } else if(fireCannon === 1) {
-        if(cannonballs > 0) {
-          addNewCannonball(90, 1, ship);
-          --cannonballs;
-        }
-        HUD.text = "Cannonballs: "+cannonballs.toString()+" Health: "+ship.health.toString();
-        fireCannon = false;
-      } else if (fireCannon === -1) {
-        if(cannonballs > 0) {
-          addNewCannonball(-90, 1, ship);
-          --cannonballs;
-        }
-        HUD.text = "Cannonballs: "+cannonballs.toString()+" Health: "+ship.health.toString();
-        fireCannon = false;
-      }
-      ship.l1 = {p1:ship.point1,p2:ship.point2};
-      ship.l2 = {p1:ship.point2,p2:ship.point3};
-      ship.l3 = {p1:ship.point3,p2:ship.point4};
-      ship.l4 = {p1:ship.point4,p2:ship.point1};
-      explorer.x = ship.x;
-      explorer.y = ship.y;
-      data = direction(ship.speed,ship.direction);
-      windData = direction(windSpeed * Math.abs(1-(Math.abs(windDirection - ship.direction)/100)),windDirection);
-      var trueVector = findVectorFromImpulse((data.r + windData.r),(data.u + windData.u)*-1)
-      arrow.rotation = pointInDirection(trueVector.direction + 180);
-      windArrow.rotation = pointInDirection(windDirection+90);
-      var nearTreasure = nearestTreasure(ship);
-      if(nearTreasure.distance > 10**9) {
-        var nearFrigate = nearestFrigate(ship);
-        markArrow.rotation = pointInDirection(pointTowards(ship.x,ship.y,nearFrigate.x,nearFrigate.y) - 90);
-      } else {
-        markArrow.rotation = pointInDirection(pointTowards(ship.x,ship.y,nearTreasure.x,nearTreasure.y)- 90);
-      }
-      let k = Math.abs(Math.round(trueVector.force))
-      if(k < 1) {
-        knots.visible = false;
-        knots2.visible = false;
-      } else if(k < 6){
-        knots.visible = true;
-        knots2.visible = false;
-      } else {
-        knots.visible = true;
-        knots2.visible = true;
-      }
-      if(k < 2) {
-        knots.texture = resources["sprites/knot1.png"].texture;
-      } else if(k < 3) {
-        knots.texture = resources["sprites/knot2.png"].texture;
-      } else if(k < 4) {
-        knots.texture = resources["sprites/knot3.png"].texture;
-      } else if(k < 5) {
-        knots.texture = resources["sprites/knot4.png"].texture;
-      } else if(k < 6) {
-        knots.texture = resources["sprites/knot5.png"].texture;
-      } else if(k < 7) {
-        knots.texture = resources["sprites/knot5.png"].texture;
-        knots2.texture = resources["sprites/knot1.png"].texture;
-      } else if(k < 8) {
-        knots.texture = resources["sprites/knot5.png"].texture;
-        knots2.texture = resources["sprites/knot2.png"].texture;
-      } else if(k < 9) {
-        knots.texture = resources["sprites/knot5.png"].texture;
-        knots2.texture = resources["sprites/knot3.png"].texture;
-      } else if(k < 10) {
-        knots.texture = resources["sprites/knot5.png"].texture;
-        knots2.texture = resources["sprites/knot4.png"].texture;
-      } else if(k < 11) {
-        knots.texture = resources["sprites/knot5.png"].texture;
-        knots2.texture = resources["sprites/knot5.png"].texture;
-      }
-      parseIslandCollision();
-      if(divideScale < 2 && shipIntersectingIslands()){
-        state = die;
-      }
-      if(debug){
-        drawCollision();
-      }
+      fireCannonballs();
+      handleDashboard();
     }
     function shipIntersectingIslands(){
       var v = false;
@@ -1199,7 +1058,171 @@
         }
       });
     }
-    var winningText;
+    function handleShip() {
+      if(ship.health < 4) {
+        ship.texture = resources["sprites/topDownShiphurt3.png"].texture;
+        ship.point1 = rotatePoint((ship.x - ship.width / 2), (ship.y - ship.height / 4),ship.x,ship.y,ship.rotation);
+        ship.point2 = rotatePoint((ship.x - ship.width / 2), (ship.y + ship.height / 4),ship.x,ship.y,ship.rotation);
+        ship.point3 = rotatePoint((ship.x + ship.width / 2), (ship.y + ship.height / 4),ship.x,ship.y,ship.rotation);
+        ship.point4 = rotatePoint((ship.x + ship.width / 2), (ship.y - ship.height / 4),ship.x,ship.y,ship.rotation);
+      } else if (ship.health < 7) {
+        ship.texture = resources["sprites/topDownShiphurt2.png"].texture;
+        ship.point1 = rotatePoint((ship.x - ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
+        ship.point2 = rotatePoint((ship.x - ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
+        ship.point3 = rotatePoint((ship.x + ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
+        ship.point4 = rotatePoint((ship.x + ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
+      } else if (ship.health < 10) {
+        ship.texture = resources["sprites/topDownShiphurt.png"].texture;
+        ship.point1 = rotatePoint((ship.x - ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
+        ship.point2 = rotatePoint((ship.x - ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
+        ship.point3 = rotatePoint((ship.x + ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
+        ship.point4 = rotatePoint((ship.x + ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
+      } else {
+        ship.texture = resources["sprites/topDownShip.png"].texture;
+        ship.point1 = rotatePoint((ship.x - ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
+        ship.point2 = rotatePoint((ship.x - ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
+        ship.point3 = rotatePoint((ship.x + ship.width / 2), (ship.y + ship.height / 2),ship.x,ship.y,ship.rotation);
+        ship.point4 = rotatePoint((ship.x + ship.width / 2), (ship.y - ship.height / 2),ship.x,ship.y,ship.rotation);
+      }
+      ship.l1 = {p1:ship.point1,p2:ship.point2};
+      ship.l2 = {p1:ship.point2,p2:ship.point3};
+      ship.l3 = {p1:ship.point3,p2:ship.point4};
+      ship.l4 = {p1:ship.point4,p2:ship.point1};
+      explorer.rotation = pointInDirection(ship.direction - 180);
+      var data = direction(ship.speed,ship.direction);
+      var windOffset = (Math.abs(1-(Math.abs(windDirection - ship.direction)/100)));
+      while(windOffset > 1) {
+        --windOffset;
+      }
+      var trueSpeed = Math.round(windSpeed * windOffset);
+      var windData = direction(windSpeed * windOffset,windDirection);
+      ship.vx = data.r + windData.r;
+      ship.vy = data.u + windData.u;
+      globalX -= ship.vx;
+      globalY -= ship.vy;
+      ship.rotation = ((ship.direction + 90) * Math.PI * -1) / 180;
+      ship.direction += ship.turn;
+      explorer.x = ship.x;
+      explorer.y = ship.y;
+    }
+    function handleIslands() {
+      islands.forEach(function(testIsland){
+        testIsland.x = globalX + testIsland.myX;
+        testIsland.y = globalY + testIsland.myY;
+      });
+    }
+    function fireCannonballs() {
+      if(fireCannon === 2) {
+        if(cannonballs > 0) {
+          addNewCannonball(90, 1, ship);
+          --cannonballs;
+        }
+        if(cannonballs > 0) {
+          addNewCannonball(-90, 1, ship);
+          --cannonballs;
+        }
+        HUD.text = "Cannonballs: "+cannonballs.toString()+" Health: "+ship.health.toString();
+        fireCannon = false;
+      } else if(fireCannon === 1) {
+        if(cannonballs > 0) {
+          addNewCannonball(90, 1, ship);
+          --cannonballs;
+        }
+        HUD.text = "Cannonballs: "+cannonballs.toString()+" Health: "+ship.health.toString();
+        fireCannon = false;
+      } else if (fireCannon === -1) {
+        if(cannonballs > 0) {
+          addNewCannonball(-90, 1, ship);
+          --cannonballs;
+        }
+        HUD.text = "Cannonballs: "+cannonballs.toString()+" Health: "+ship.health.toString();
+        fireCannon = false;
+      }
+    }
+    function handleDashboard() {
+      data = direction(ship.speed,ship.direction);
+      windOffset = Math.abs(1-(Math.abs(windDirection - ship.direction)/100));
+      while(windOffset > 1) {
+        --windOffset;
+      }
+      windData = direction(windSpeed * windOffset,windDirection);
+      var trueVector = findVectorFromImpulse((data.r + windData.r),(data.u + windData.u)*-1)
+      arrow.rotation = pointInDirection(trueVector.direction + 180);
+      windArrow.rotation = pointInDirection(windDirection+90);
+      var nearTreasure = nearestTreasure(ship);
+      if(nearTreasure.distance > 10**9) {
+        var nearFrigate = nearestFrigate(ship);
+        markArrow.rotation = pointInDirection(pointTowards(ship.x,ship.y,nearFrigate.x,nearFrigate.y) - 90);
+      } else {
+        markArrow.rotation = pointInDirection(pointTowards(ship.x,ship.y,nearTreasure.x,nearTreasure.y)- 90);
+      }
+      let k = Math.abs(Math.round(trueVector.force));
+      // HUD.text = k.toString() + ' ' + windOffset.toString();
+      knots.rotation = pointInDirection(90);
+      knots2.rotation = pointInDirection(90);
+      if(k < 1) {
+        knots.visible = false;
+        knots2.visible = false;
+      }
+      if(k < 2) {
+        knots.texture = resources["sprites/knot1.png"].texture;
+        knots.visible = true;
+        knots2.visible = false;
+      } else if(k < 3) {
+        knots.texture = resources["sprites/knot2.png"].texture;
+        knots.visible = true;
+        knots2.visible = false;
+      } else if(k < 4) {
+        knots.texture = resources["sprites/knot3.png"].texture;
+        knots.visible = true;
+        knots2.visible = false;
+      } else if(k < 5) {
+        knots.texture = resources["sprites/knot4.png"].texture;
+        knots.visible = true;
+        knots2.visible = false;
+      } else if(k < 6) {
+        knots.texture = resources["sprites/knot5.png"].texture;
+        knots.visible = true;
+        knots2.visible = false;
+      } else if(k < 7) {
+        knots.texture = resources["sprites/knot5.png"].texture;
+        knots2.texture = resources["sprites/knot1.png"].texture;
+        knots2.x = 490;
+        knots.visible = true;
+        knots2.visible = true;
+      } else if(k < 8) {
+        knots.texture = resources["sprites/knot5.png"].texture;
+        knots2.texture = resources["sprites/knot2.png"].texture;
+        knots2.x = 505;
+        knots.visible = true;
+        knots2.visible = true;
+      } else if(k < 9) {
+        knots.texture = resources["sprites/knot5.png"].texture;
+        knots2.texture = resources["sprites/knot3.png"].texture;
+        knots2.x = 520;
+        knots.visible = true;
+        knots2.visible = true;
+      } else if(k < 10) {
+        knots.texture = resources["sprites/knot5.png"].texture;
+        knots2.texture = resources["sprites/knot4.png"].texture;
+        knots2.x = 535;
+        knots.visible = true;
+        knots2.visible = true;
+      } else if(k < 11) {
+        knots.texture = resources["sprites/knot5.png"].texture;
+        knots2.texture = resources["sprites/knot5.png"].texture;
+        knots2.x = 550;
+        knots.visible = true;
+        knots2.visible = true;
+      }
+      parseIslandCollision();
+      if(divideScale < 2 && shipIntersectingIslands()){
+        state = die;
+      }
+      if(debug){
+        drawCollision();
+      }
+    }
     function win(){
       var textStyle = new PIXI.TextStyle({stroke: "#ffff00",fill:"yellow"})
       winningText = new PIXI.Text("You win!",textStyle);
