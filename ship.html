@@ -70,10 +70,11 @@
       app.ticker.add(delta => gameLoop(delta));
       windSpeed = 1;
       windDirection = 90;
-      setTimeout(changeWind,30000 + randInt(-10000,10000))
+      setTimeout(changeWind,10000 + randInt(-10000,10000))
     }
     function changeWind() {
       windSpeed = randInt(0,5);
+      graphics.drawRect(0,0,100,100);
       windDirection = randInt(0,360);
       setTimeout(changeWind,30000 + randInt(-10000,10000));
     }
