@@ -74,6 +74,7 @@
     var shots = [];
     var barrels = [];
     var timbers = [];
+    var difficultyScale = params.difficultyScale || 1;
     function setup() {
       telescopeHole.lineStyle(1000*(window.innerWidth/1000),0x000000,1);
       telescopeHole.drawCircle(window.innerWidth/2,window.innerHeight/2,800*(window.innerWidth/1200));
@@ -138,7 +139,9 @@
       gameScene.addChild(graphics);
       var left = keyboard("ArrowLeft"), right = keyboard("ArrowRight"), up = keyboard("ArrowUp"), down = keyboard("ArrowDown");
       var space = keyboard(" "), a = keyboard("a"), d = keyboard("d");
-      var enter = keyboard("Enter");
+      var e = keyboard("e");
+      var m = keyboard("m");
+      var h = keyboard("h");
       var s = keyboard("s");
       var w = keyboard("w");
       var b = keyboard("b");
@@ -173,13 +176,34 @@
       s.release = () => {
         sPress = false;
       }
-      enter.press = () => {
+      e.press = () => {
         if(state === intro) {
           introScene.visible = false;
           state = sail;
           gameScene.visible = true;
           setTimeout(changeWind,30000 + randInt(-10000,10000));
           app.renderer.backgroundColor = 0x7777FF;
+          difficultyScale = 0.5;
+        }
+      }
+      m.press = () => {
+        if(state === intro) {
+          introScene.visible = false;
+          state = sail;
+          gameScene.visible = true;
+          setTimeout(changeWind,30000 + randInt(-10000,10000));
+          app.renderer.backgroundColor = 0x7777FF;
+          difficultyScale = 0.75;
+        }
+      }
+      h.press = () => {
+        if(state === intro) {
+          introScene.visible = false;
+          state = sail;
+          gameScene.visible = true;
+          setTimeout(changeWind,30000 + randInt(-10000,10000));
+          app.renderer.backgroundColor = 0x7777FF;
+          difficultyScale = 1;
         }
       }
       space.press = () => {
@@ -297,6 +321,7 @@
         pirateShip.loot = new Sprite(resources["sprites/timber.png"].texture);
         pirateShip.loot.scale.set(3);
       }
+      pirateShip.loot.anchor.set(0.5);
       pirateShips.push(pirateShip);
       gameScene.addChild(pirateShip);
       gameScene.addChild(pirateShip.pilot);
@@ -413,7 +438,7 @@
     function introSetup() {
       gameScene.visible = false;
       introScene = new Container();
-      var introText = 'Press Enter to skip. Press S to speed up. Press W to slow down.\n\n\nHello, brave explorer. We meet again.\n\n\nI assume you are back from Blob Adventures I?\n\n\nWell. You completed that mission well. Almost.\n\n\nI assume you remembered what happened after that?\n\n\nWhat? Is your memory so short? Alright, I will tell you.\n\n\nYou proudly brought in the chests before the king, and then left.\n\n\nWhat happened after that was the king opened them up.\n\n\nAnd then he found that they were stuffed with stinky socks.\n\n\nAt first he suspected you of treason, but then...\n\n\nhe remembered that the blobs use the treasure chests for hampers.\n\n\nThen he sent your superior to get them. He proudly grabbed all the hampers...\n\n\nand then it turned out that the blobs had "hidden" the socks in the hampers.\n\n\nIt seems that the blobs prize the stinky socks as antiques, even more than the treasures.\n\n\nThen the king would have sent you to go retrieve both the chests and the hampers...\n\n\nBut the blobs had moved their treasure overseas.\n\n\nSo, he sends you to swim across the ocean to go retrieve the treasure.\n\n\nFortunately, the queen doubted your swimming abilities and sent you a ship and crew.\n\n\nBeware of the islands while you'+"'"+'re sailing! You may wreck just hitting their sand banks.\n\n\nThe treasure seems to be hoarded by the haughty red sail ships.\n\n\nBy the way, the king said to only look for 5 treasure chests, because the blobs packed it down.\n\n\nWell, Godspeed! Oh, right. Sailing the boat. Don'+"'"+"t you just want to wing it?\n\n\nNo? Okay. Up speeds up, down slows down. You can't reverse.\n\n\nLeft and right turn, and space fires a double broadside.\n\n\nOh, and A and D fire the black and gray cannons.\n\n\nT goes into Telescope mode, where you can look about the islands and see things.\n\n\nBut you still might be creamed while you're not looking. Have fun!"
+      var introText = 'Press E, M, or H to do Easy, Medium, or Hard. Press S to speed up intro. Press W to slow down intro.\n\n\nHello, brave explorer. We meet again.\n\n\nI assume you are back from Blob Adventures I?\n\n\nWell. You completed that mission well. Almost.\n\n\nI assume you remembered what happened after that?\n\n\nWhat? Is your memory so short? Alright, I will tell you.\n\n\nYou proudly brought in the chests before the king, and then left.\n\n\nWhat happened after that was the king opened them up.\n\n\nAnd then he found that they were stuffed with stinky socks.\n\n\nAt first he suspected you of treason, but then...\n\n\nhe remembered that the blobs use the treasure chests for hampers.\n\n\nThen he sent your superior to get them. He proudly grabbed all the hampers...\n\n\nand then it turned out that the blobs had "hidden" the socks in the hampers.\n\n\nIt seems that the blobs prize the stinky socks as antiques, even more than the treasures.\n\n\nThen the king would have sent you to go retrieve both the chests and the hampers...\n\n\nBut the blobs had moved their treasure overseas.\n\n\nSo, he sends you to swim across the ocean to go retrieve the treasure.\n\n\nFortunately, the queen doubted your swimming abilities and sent you a ship and crew.\n\n\nBeware of the islands while you'+"'"+'re sailing! You may wreck just hitting their sand banks.\n\n\nThe treasure seems to be hoarded by the haughty red sail ships.\n\n\nBy the way, the king said to only look for 5 treasure chests, because the blobs packed it down.\n\n\nWell, Godspeed! Oh, right. Sailing the boat. Don'+"'"+"t you just want to wing it?\n\n\nNo? Okay. Up speeds up, down slows down. You can't reverse.\n\n\nLeft and right turn, and space fires a double broadside.\n\n\nOh, and A and D fire the black and gray cannons.\n\n\nT goes into Telescope mode, where you can look about the islands and see things.\n\n\nBut you still might be creamed while you're not looking. Have fun!"
       var style = new PIXI.TextStyle({stroke:"#0000ff", fill:"blue"});
       var introMessage = new PIXI.Text(introText,style);
       app.renderer.backgroundColor = 0x000000;
@@ -785,11 +810,11 @@
             }
           }
           if(turnLeftDistance < turnRightDistance) {
-            pShip.direction += 0.25
+            pShip.direction += 0.75 * difficultyScale;
           } else if (turnRightDistance < turnLeftDistance){
-            pShip.direction -= 0.25
+            pShip.direction -= 0.75 * difficultyScale;
           }
-        } else if((Math.abs(fireRotation1-(pShip.direction + 90)) < 20 || Math.abs(fireRotation2-(pShip.direction+90)) < 20)&& pShip.lastFire + 500 < Date.now()) {
+        } else if(((Math.abs(fireRotation1-(pShip.direction + 90)) < 20 || Math.abs(fireRotation2-(pShip.direction+90)) < 20))&& (pShip.lastFire + (1000 / difficultyScale)) < Date.now()) {
           pShip.lastFire = Date.now();
           addNewCannonball(90, 0, pShip);
           addNewCannonball(-90, 0, pShip);
@@ -827,22 +852,22 @@
             }
           }
           if(turnLeftDistance < turnRightDistance) {
-            pShip.direction += 0.25 * 3
+            pShip.direction += 0.75 * difficultyScale;
           } else if (turnRightDistance < turnLeftDistance){
-            pShip.direction -= 0.25 * 3
+            pShip.direction -= 0.75 * difficultyScale;
           }
         } else {
             if(Math.abs(fireRotation1-(pShip.direction + 90)) < Math.abs(fireRotation2-(pShip.direction+90))) {
               if((Math.abs(fireRotation1-(pShip.direction + 91)) < Math.abs(fireRotation1-(pShip.direction + 89)))) {
-                pShip.direction += 0.25 * 3;
+                pShip.direction += 0.75 * difficultyScale;
               } else {
-                pShip.direction -= 0.25 * 3;
+                pShip.direction -= 0.75 * difficultyScale;
               }
             } else {
               if((Math.abs(fireRotation2-(pShip.direction + 91)) < Math.abs(fireRotation2-(pShip.direction + 89)))) {
-                pShip.direction += 0.25 * 3;
+                pShip.direction += 0.75 * difficultyScale;
               } else {
-                pShip.direction -= 0.25 * 3;
+                pShip.direction -= 0.75 * difficultyScale;
               }
             } 
         }
@@ -857,9 +882,6 @@
           pShip.texture = resources["sprites/pirateshipblackhurt2.png"].texture;
         } else if (pShip.health < 10) {
           pShip.texture = resources["sprites/pirateshipblackhurt.png"].texture;
-        }
-        if(nearestIsland(pShip) < 300) {
-          // console.log(nearestIsland(pShip));
         }
         if(pShip.hit){
           pShip.hit = false;
@@ -913,7 +935,7 @@
         /// 4. Search for the ship.
         
         /// Always fire if it is a good shot, but we want to be able to turn away too.
-        if((Math.abs(fireRotation1-(pShip.direction + 90)) < 90 || Math.abs(fireRotation2-(pShip.direction+90)) < 90)&& pShip.lastFire + 500 < Date.now()) {
+        if((Math.abs(fireRotation1-(pShip.direction + 90)) < 90 || Math.abs(fireRotation2-(pShip.direction+90)) < 90)&& (pShip.lastFire + 1000 / difficultyScale) < Date.now()) {
           pShip.lastFire = Date.now();
           addNewCannonball(90, 0, pShip);
           addNewCannonball(90, 0, pShip,direction(100,pShip.direction).r + pShip.x,direction(100,pShip.direction).u + pShip.y);
@@ -963,9 +985,9 @@
             }
           }
           if(turnLeftDistance < turnRightDistance) {
-            pShip.direction += 0.25 * pShip.speed;
+            pShip.direction += 0.25 * pShip.speed / difficultyScale;
           } else if (turnRightDistance < turnLeftDistance){
-            pShip.direction -= 0.25 * pShip.speed;
+            pShip.direction -= 0.25 * pShip.speed / difficultyScale;
           }
         } else if (getDistance(pShip.x, pShip.y, ship.x, ship.y) > 850) {
           var pointTowardsShip = pointTowards(pShip.x, pShip.y, ship.x, ship.y) - 180;
@@ -1001,22 +1023,22 @@
             }
           }
           if(turnLeftDistance < turnRightDistance) {
-            pShip.direction += 0.25 * pShip.speed;
+            pShip.direction += 0.25 * pShip.speed / difficultyScale
           } else if (turnRightDistance < turnLeftDistance){
-            pShip.direction -= 0.25 * pShip.speed;
+            pShip.direction -= 0.25 * pShip.speed / difficultyScale;
           }
         } else {
             if(Math.abs(fireRotation1-(pShip.direction + 90)) < Math.abs(fireRotation2-(pShip.direction+90))) {
               if((Math.abs(fireRotation1-(pShip.direction + 91)) < Math.abs(fireRotation1-(pShip.direction + 89)))) {
-                pShip.direction += 0.25 * pShip.speed;
+                pShip.direction += 0.25 * pShip.speed / difficultyScale;
               } else {
-                pShip.direction -= 0.25 * pShip.speed;
+                pShip.direction -= 0.25 * pShip.speed / difficultyScale;
               }
             } else {
               if((Math.abs(fireRotation2-(pShip.direction + 91)) < Math.abs(fireRotation2-(pShip.direction + 89)))) {
-                pShip.direction += 0.25 * pShip.speed;
+                pShip.direction += 0.25 * pShip.speed / difficultyScale;
               } else {
-                pShip.direction -= 0.25 * pShip.speed;
+                pShip.direction -= 0.25 * pShip.speed / difficultyScale;
               }
             } 
         }
@@ -1159,10 +1181,10 @@
         } else if (barrel.rotation > 0) {
           barrel.rotation -= 0.01;
         }
-        barrel.point1 = {x:barrel.x - barrel.width / 8,y:barrel.y - barrel.height / 8};
-        barrel.point2 = {x:barrel.x - barrel.width / 8,y:barrel.y + barrel.height / 8};
-        barrel.point3 = {x:barrel.x + barrel.width / 8,y:barrel.y + barrel.height / 8};
-        barrel.point4 = {x:barrel.x + barrel.width / 8,y:barrel.y - barrel.height / 8};
+        barrel.point1 = {x:barrel.x - barrel.width / 2,y:barrel.y - barrel.height / 2};
+        barrel.point2 = {x:barrel.x - barrel.width / 2,y:barrel.y + barrel.height / 2};
+        barrel.point3 = {x:barrel.x + barrel.width / 2,y:barrel.y + barrel.height / 2};
+        barrel.point4 = {x:barrel.x + barrel.width / 2,y:barrel.y - barrel.height / 2};
         barrel.l1 = {p1:barrel.point1,p2:barrel.point2};
         barrel.l2 = {p1:barrel.point2,p2:barrel.point3};
         barrel.l3 = {p1:barrel.point3,p2:barrel.point4};
@@ -1179,7 +1201,7 @@
           collided = true;
         }
         if(collided) {
-          cannonballs += 40;
+          cannonballs += Math.round(40 / difficultyScale);
           updateHUD();
           gameScene.removeChild(barrel);
           barrels.splice(i, 1);
@@ -1193,10 +1215,10 @@
         } else if (timber.rotation > 0) {
           timber.rotation -= 0.01;
         }
-        timber.point1 = {x:timber.x - timber.width / 8,y:timber.y - timber.height / 8};
-        timber.point2 = {x:timber.x - timber.width / 8,y:timber.y + timber.height / 8};
-        timber.point3 = {x:timber.x + timber.width / 8,y:timber.y + timber.height / 8};
-        timber.point4 = {x:timber.x + timber.width / 8,y:timber.y - timber.height / 8};
+        timber.point1 = {x:timber.x - timber.width / 20,y:timber.y - timber.height / 20};
+        timber.point2 = {x:timber.x - timber.width / 20,y:timber.y + timber.height / 20};
+        timber.point3 = {x:timber.x + timber.width / 20,y:timber.y + timber.height / 20};
+        timber.point4 = {x:timber.x + timber.width / 20,y:timber.y - timber.height / 20};
         timber.l1 = {p1:timber.point1,p2:timber.point2};
         timber.l2 = {p1:timber.point2,p2:timber.point3};
         timber.l3 = {p1:timber.point3,p2:timber.point4};
@@ -1213,7 +1235,7 @@
           collided = true;
         }
         if(collided) {
-          ship.health += 10;
+          ship.health += Math.round(10 / difficultyScale);
           updateHUD();
           gameScene.removeChild(timber);
           timbers.splice(i, 1);
@@ -1371,6 +1393,7 @@
       timber.myX = x - globalX;
       timber.myY = y - globalY;
       timber.rotation = rotation || 0;
+      timber.anchor.set(0.5);
       timbers.push(timber);
       gameScene.addChild(timber);
     }
