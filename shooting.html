@@ -147,6 +147,7 @@
       var w = keyboard("w");
       var b = keyboard("b");
       var t = keyboard("t");
+      var v = keyboard("v");
       t.press = () => {
         if(state === sail) {
           state = mountTelescope;
@@ -185,6 +186,19 @@
           setTimeout(changeWind,30000 + randInt(-10000,10000));
           app.renderer.backgroundColor = 0x7777FF;
           difficultyScale = 0.5;
+          cannonballs = Math.round(41 * (1/difficultyScale));
+          ship.health = Math.round(10 * (1/difficultyScale));
+          updateHUD();
+        }
+      }
+      v.press = () => {
+        if(state === intro) {
+          introScene.visible = false;
+          state = sail;
+          gameScene.visible = true;
+          setTimeout(changeWind,30000 + randInt(-10000,10000));
+          app.renderer.backgroundColor = 0x7777FF;
+          difficultyScale = 0.25;
           cannonballs = Math.round(41 * (1/difficultyScale));
           ship.health = Math.round(10 * (1/difficultyScale));
           updateHUD();
@@ -471,7 +485,7 @@
     function introSetup() {
       gameScene.visible = false;
       introScene = new Container();
-      var introText = 'Press E, M, or H to do Easy, Medium, or Hard. Press S to speed up intro. Press W to slow down intro.\n\n\nHello, brave explorer. We meet again.\n\n\nI assume you are back from Blob Adventures I?\n\n\nWell. You completed that mission well. Almost.\n\n\nI assume you remembered what happened after that?\n\n\nWhat? Is your memory so short? Alright, I will tell you.\n\n\nYou proudly brought in the chests before the king, and then left.\n\n\nWhat happened after that was the king opened them up.\n\n\nAnd then he found that they were stuffed with stinky socks.\n\n\nAt first he suspected you of treason, but then...\n\n\nhe remembered that the blobs use the treasure chests for hampers.\n\n\nThen he sent your superior to get them. He proudly grabbed all the hampers...\n\n\nand then it turned out that the blobs had "hidden" the socks in the hampers.\n\n\nIt seems that the blobs prize the stinky socks as antiques, even more than the treasures.\n\n\nThen the king would have sent you to go retrieve both the chests and the hampers...\n\n\nBut the blobs had moved their treasure overseas.\n\n\nSo, he sends you to swim across the ocean to go retrieve the treasure.\n\n\nFortunately, the queen doubted your swimming abilities and sent you a ship and crew.\n\n\nBeware of the islands while you'+"'"+'re sailing! You may wreck just hitting their sand banks.\n\n\nThe treasure seems to be hoarded by the haughty red sail ships.\n\n\nBy the way, the king said to only look for 5 treasure chests, because the blobs packed it down.\n\n\nWell, Godspeed! Oh, right. Sailing the boat. Don'+"'"+"t you just want to wing it?\n\n\nNo? Okay. Up speeds up, down slows down. You can't reverse.\n\n\nLeft and right turn, and space fires a double broadside.\n\n\nOh, and A and D fire the black and gray cannons.\n\n\nT goes into Telescope mode, where you can look about the islands and see things.\n\n\nBut you still might be creamed while you're not looking. Have fun!"
+      var introText = 'Press V, E, M, or H to do Very Easy, Easy, Medium, or Hard.\nPress S to speed up intro. Press W to slow down intro.\n\n\nHello, brave explorer. We meet again.\n\n\nI assume you are back from Blob Adventures I?\n\n\nWell. You completed that mission well. Almost.\n\n\nI assume you remembered what happened after that?\n\n\nWhat? Is your memory so short? Alright, I will tell you.\n\n\nYou proudly brought in the chests before the king, and then left.\n\n\nWhat happened after that was the king opened them up.\n\n\nAnd then he found that they were stuffed with stinky socks.\n\n\nAt first he suspected you of treason, but then...\n\n\nhe remembered that the blobs use the treasure chests for hampers.\n\n\nThen he sent your superior to get them. He proudly grabbed all the hampers...\n\n\nand then it turned out that the blobs had "hidden" the socks in the hampers.\n\n\nIt seems that the blobs prize the stinky socks as antiques, even more than the treasures.\n\n\nThen the king would have sent you to go retrieve both the chests and the hampers...\n\n\nBut the blobs had moved their treasure overseas.\n\n\nSo, he sends you to swim across the ocean to go retrieve the treasure.\n\n\nFortunately, the queen doubted your swimming abilities and sent you a ship and crew.\n\n\nBeware of the islands while you'+"'"+'re sailing! You may wreck just hitting their sand banks.\n\n\nThe treasure seems to be hoarded by the haughty red sail ships.\n\n\nBy the way, the king said to only look for 5 treasure chests, because the blobs packed it down.\n\n\nWell, Godspeed! Oh, right. Sailing the boat. Don'+"'"+"t you just want to wing it?\n\n\nNo? Okay. Up speeds up, down slows down. You can't reverse.\n\n\nLeft and right turn, and space fires a double broadside.\n\n\nOh, and A and D fire the black and gray cannons.\n\n\nT goes into Telescope mode, where you can look about the islands and see things.\n\n\nBut you still might be creamed while you're not looking. Have fun!"
       var style = new PIXI.TextStyle({stroke:"#0000ff", fill:"blue"});
       var introMessage = new PIXI.Text(introText,style);
       app.renderer.backgroundColor = 0x000000;
@@ -1018,9 +1032,9 @@
             }
           }
           if(turnLeftDistance < turnRightDistance) {
-            pShip.direction += 0.25 * pShip.speed / difficultyScale;
+            pShip.direction += 0.25 * pShip.speed * difficultyScale;
           } else if (turnRightDistance < turnLeftDistance){
-            pShip.direction -= 0.25 * pShip.speed / difficultyScale;
+            pShip.direction -= 0.25 * pShip.speed * difficultyScale;
           }
         } else if (getDistance(pShip.x, pShip.y, ship.x, ship.y) > 850) {
           var pointTowardsShip = pointTowards(pShip.x, pShip.y, ship.x, ship.y) - 180;
@@ -1056,22 +1070,22 @@
             }
           }
           if(turnLeftDistance < turnRightDistance) {
-            pShip.direction += 0.25 * pShip.speed / difficultyScale
+            pShip.direction += 0.25 * pShip.speed * difficultyScale
           } else if (turnRightDistance < turnLeftDistance){
-            pShip.direction -= 0.25 * pShip.speed / difficultyScale;
+            pShip.direction -= 0.25 * pShip.speed * difficultyScale;
           }
         } else {
             if(Math.abs(fireRotation1-(pShip.direction + 90)) < Math.abs(fireRotation2-(pShip.direction+90))) {
               if((Math.abs(fireRotation1-(pShip.direction + 91)) < Math.abs(fireRotation1-(pShip.direction + 89)))) {
-                pShip.direction += 0.25 * pShip.speed / difficultyScale;
+                pShip.direction += 0.25 * pShip.speed * difficultyScale;
               } else {
-                pShip.direction -= 0.25 * pShip.speed / difficultyScale;
+                pShip.direction -= 0.25 * pShip.speed * difficultyScale;
               }
             } else {
               if((Math.abs(fireRotation2-(pShip.direction + 91)) < Math.abs(fireRotation2-(pShip.direction + 89)))) {
-                pShip.direction += 0.25 * pShip.speed / difficultyScale;
+                pShip.direction += 0.25 * pShip.speed * difficultyScale;
               } else {
-                pShip.direction -= 0.25 * pShip.speed / difficultyScale;
+                pShip.direction -= 0.25 * pShip.speed * difficultyScale;
               }
             } 
         }
