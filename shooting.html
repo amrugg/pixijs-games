@@ -58,7 +58,7 @@
     loader.add("sprites/treasureHunter.json").load(setup);
     var pirateShips = [];
     var cannonballSpeed = 10;
-    var cannonballs = 41;
+    var cannonballs = 60;
     var globalX = -200;
     var globalY = 0;
     var divideScale = params.divideScale || 1;
@@ -124,7 +124,18 @@
       spawn(1400,350);
       spawn(750,-700);
       spawn(750,1100);
-      spawn(-300,350)
+      spawn(-300,350);
+      spawn(-400,350)
+      spawn(1800,-1000);
+      spawn(2200,-1000);
+      spawn(-2200,0);
+      spawn(-1800,0);
+      spawn(-3200,-200);
+      spawn(-2800,200);
+      spawn(200,-3000);
+      spawn(-200,-3000);
+      spawn(-3000,-3200);
+      spawn(-3000,-2800);
       for(let i = 0; i < islandPositions.length; i++) {
         let newIsland = new Sprite(resources["sprites/island.png"].texture);
         newIsland.scale.set(50/divideScale);
@@ -186,7 +197,7 @@
           setTimeout(changeWind,30000 + randInt(-10000,10000));
           app.renderer.backgroundColor = 0x7777FF;
           difficultyScale = 0.5;
-          cannonballs = Math.round(41 * (1/difficultyScale));
+          cannonballs = Math.round(cannonballs * (1/difficultyScale));
           ship.health = Math.round(10 * (1/difficultyScale));
           updateHUD();
         }
@@ -212,7 +223,7 @@
           setTimeout(changeWind,30000 + randInt(-10000,10000));
           app.renderer.backgroundColor = 0x7777FF;
           difficultyScale = 0.75;
-          cannonballs = Math.round(41 * (1/difficultyScale));
+          cannonballs = Math.round(cannonballs * (1/difficultyScale));
           ship.health = Math.round(10 * (1/difficultyScale));
           updateHUD();
         }
@@ -225,7 +236,7 @@
           setTimeout(changeWind,30000 + randInt(-10000,10000));
           app.renderer.backgroundColor = 0x7777FF;
           difficultyScale = 1;
-          cannonballs = Math.round(41 * (1/difficultyScale));
+          cannonballs = Math.round(cannonballs * (1/difficultyScale));
           ship.health = Math.round(10 * (1/difficultyScale));
           updateHUD();
         }
@@ -354,7 +365,7 @@
       /// Sounds good! Let's go!
       let randomNumber = randInt(1,100);
       let barrelDiff = loot1 - loot2;
-      let threshold = 50 - (barrelDiff * 10);
+      let threshold = 50 + (barrelDiff * 20);
       if(randomNumber > threshold) {
         pirateShip.lootNum = 1;
       } else {
