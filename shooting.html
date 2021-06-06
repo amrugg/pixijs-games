@@ -199,8 +199,8 @@
           setTimeout(changeWind,30000 + randInt(-10000,10000));
           app.renderer.backgroundColor = 0x7777FF;
           difficultyScale = 0.25;
-          cannonballs = Math.round(41 * (1/difficultyScale));
-          ship.health = Math.round(10 * (1/difficultyScale));
+          cannonballs = Infinity;
+          ship.health = ship.health = Math.round(10 * (1/difficultyScale));
           updateHUD();
         }
       }
@@ -353,12 +353,14 @@
       /// Right. But how about this? "if(randomNumber > 50 + (barrelDiff * 10)) {pirateShip.lootNum = 1}".
       /// Sounds good! Let's go!
       let randomNumber = randInt(1,100);
-      let barrelDiff = loot1 - loot2
-      if(randomNumber > 50 - (barrelDiff * 10)) {
+      let barrelDiff = loot1 - loot2;
+      let threshold = 50 - (barrelDiff * 10);
+      if(randomNumber > threshold) {
         pirateShip.lootNum = 1;
       } else {
         pirateShip.lootNum = 0;
       }
+      console.log(randomNumber, threshold,loot1,loot2);
       if(pirateShip.lootNum > 0) {
         pirateShip.loot = new Sprite(resources["sprites/cannonballbarrel.png"].texture);
         pirateShip.loot.scale.set(3);
