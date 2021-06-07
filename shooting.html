@@ -53,6 +53,10 @@
     app.stage.addChild(gameScene);
     var mountX,mountY,knots, knots2, winningText, ship, windSpeed, windDirection, markArrow, creditsScene, arrow, explorer, graphics, data, windOffset, windData, layerOfClouds, windArrow, HUD, id, introScene, wPress, sPress;
     var fireCannon = false;
+    var pauseText = new PIXI.Text("Your game has been paused. Press P to unpause.");
+    pauseText.anchor.set(0.5);
+    pauseText.x = innerWidth / 2;
+    pauseText.y = innerHeight / 2;
     var files = ["whitearrow","brownarrow","timber","knot5","knot4","knot3","knot2","cannonballbarrel","knot1","pirateshipblackhurt","pirateshipblackhurt2","pirateshipblackhurt3","cannonball","island","pirateBlob","pirateshipblack","pirateshipred","topDownShip","topDownShipdeath","topDownShiphurt","topDownShiphurt2","topDownShiphurt3"]
     loadArray(files, "sprites", "png");
     loader.add("sprites/treasureHunter.json").load(setup);
@@ -156,7 +160,7 @@
       var h = keyboard("h");
       var s = keyboard("s");
       var w = keyboard("w");
-      var b = keyboard("b");
+      var p = keyboard("p");
       var t = keyboard("t");
       var v = keyboard("v");
       t.press = () => {
@@ -172,9 +176,12 @@
         }
       }
       wPress = false, sPress = false;
-      b.press = () => {
+      p.press = () => {
         if(state === sail) {
-          
+          state = pause;
+        } else if(state === paused){
+          gameScene.removeChild(pauseText);
+          state = sail;
         }
       }
       w.press = () => {
@@ -284,7 +291,6 @@
       down.release = () => {
         keys.downPress = false;
       }
-
       app.ticker.add(delta => gameLoop(delta));
       windSpeed = 1;
       windDirection = 90;
@@ -336,6 +342,7 @@
       pirateShip.scale.y = 10/divideScale;
       pirateShip.direction = 90;
       pirateShip.speed = 1 * difficultyScale;
+      pirateShip.collided = false;
       pirateShip.lastFire = Date.now() - 25000;
       pirateShip.anchor.set(0.5, 0.5);
       pirateShip.myX = x;
@@ -565,6 +572,8 @@
     function telescope() {
       if(debug){
         drawCollision();
+      } else {
+        parseIslandCollision();
       }
       if(ship.health < 4) {
         ship.texture = resources["sprites/topDownShiphurt3.png"].texture;
@@ -606,6 +615,8 @@
       ship.vy = data.u + windData.u;
       ship.myX += ship.vx;
       ship.myY += ship.vy;
+      mountX -= ship.vx;
+      mountY -= ship.vy;
       ship.x = ship.myX + globalX;
       ship.y = ship.myY + globalY;
       if(keys.leftPress) {
@@ -623,24 +634,61 @@
       explorer.rotation = pointInDirection(ship.direction - 180);
       explorer.x = ship.x;
       explorer.y = ship.y;
+      if(shipIntersectingIslands()) {
+        telescopeHole.visible = false;
+          globalX = mountX;
+          globalY = mountY;
+          ship.x = 750;
+          ship.y = 350;
+          state = sail;
+      }
     }
     function sail() {
-      handleShip();
       handleIslands();
       handlePirates();
       handleFrigates();
+      handleShip();
       handleLoot();
       handleShots();
       handleTreasures();
       fireCannonballs();
       handleDashboard();
     }
+    function shipIntersectingPirates(){
+      var v = false;
+      pirateShips.forEach(function(p){
+        let l = lineCollideLine;
+        var myV = false
+        if(l(ship.l1,p.l1)||l(ship.l1,p.l2)||l(ship.l1,p.l3)||l(ship.l1,p.l4)) {
+          v = true;
+          myV = true;
+        }
+        if(l(ship.l2,p.l1)||l(ship.l2,p.l2)||l(ship.l2,p.l3)||l(ship.l2,p.l4)) {
+          v = true;
+          myV = true;
+        }
+        if(l(ship.l3,p.l1)||l(ship.l3,p.l2)||l(ship.l3,p.l3)||l(ship.l3,p.l4)) {
+          v = true;
+          myV = true;
+        }
+        if(l(ship.l4,p.l1)||l(ship.l4,p.l2)||l(ship.l4,p.l3)||l(ship.l4,p.l3)) {
+          v = true;
+          myV = true;
+        }
+        if(myV === true) {
+          p.collided = true;
+        } else {
+          p.collided = false;
+        }
+      });
+      return v;
+    }
     function shipIntersectingIslands(){
       var v = false;
       var l = lineCollideLine;
       islands.forEach(function(island){
         if(getDistance(island.x,island.y,ship.x,ship.y > 1000)){
-          //return;
+          ///return;
         }
         /*if(l(ship.l1,island.l1)||l(ship.l1,island.l2)||l(ship.l1,island.l3)||l(ship.l1,island.l4||l(ship.l1,island.l5)||l(ship.l1,island.l6)||l(ship.l1,island.l7)||l(ship.l1,island.l8)||l(ship.l1,island.l9)||l(ship.l1,island.l10)||l(ship.l1,island.l11)||l(ship.l1,island.l12)||l(ship.l1,island.l13)||l(ship.l1,island.l14))){
           v=true;
@@ -812,8 +860,14 @@
         }
         pShip.vx = badData.r;
         pShip.vy = badData.u;
-        pShip.myX += pShip.vx;
-        pShip.myY += pShip.vy;
+        pShip.l1 = {p1:pShip.point1,p2:pShip.point2};
+        pShip.l2 = {p1:pShip.point2,p2:pShip.point3};
+        pShip.l3 = {p1:pShip.point3,p2:pShip.point4};
+        pShip.l4 = {p1:pShip.point4,p2:pShip.point1};
+        if(!pShip.collided) {
+          pShip.myX += pShip.vx;
+          pShip.myY += pShip.vy;
+        }
         pShip.x = globalX + pShip.myX;
         pShip.y = globalY + pShip.myY;
         pShip.z = 0;
@@ -1219,8 +1273,11 @@
       var windData = direction(windSpeed * windOffset,windDirection);
       ship.vx = data.r + windData.r;
       ship.vy = data.u + windData.u;
-      globalX -= ship.vx;
-      globalY -= ship.vy;
+      var bounce = shipIntersectingPirates();
+      if(!shipIntersectingPirates()) {
+        globalX -= ship.vx;
+        globalY -= ship.vy;
+      }
       ship.rotation = ((ship.direction + 90) * Math.PI * -1) / 180;
       ship.direction += ship.turn;
       explorer.x = ship.x;
@@ -1446,6 +1503,13 @@
       barrel.rotation = rotation || 0;
       barrels.push(barrel);
       gameScene.addChild(barrel);
+    }
+    function pause() {
+      gameScene.addChild(pauseText);
+      state = paused;
+    }
+    function paused(){
+
     }
     function spawnNewTimberStack(x,y,rotation) {
       let timber = new Sprite(resources["sprites/timber.png"].texture);
