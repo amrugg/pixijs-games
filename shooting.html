@@ -292,7 +292,7 @@
         keys.downPress = false;
       }
       app.ticker.add(delta => gameLoop(delta));
-      windSpeed = 1;
+      windSpeed = 0;
       windDirection = 90;
       arrow = new Sprite(resources["sprites/brownarrow.png"].texture);
       arrow.scale.set(0.025);
@@ -347,6 +347,7 @@
       pirateShip.anchor.set(0.5, 0.5);
       pirateShip.myX = x;
       pirateShip.myY = y;
+      pirateShip.rand = {rand:randNum(-0.9,0.9), time: 180}
       pirateShip.start = true;
       pirateShip.hit = false;
       pirateShip.health = 10;
@@ -475,10 +476,11 @@
       frigate.lastFire = Date.now() - 50000;
       frigate.myX = x;
       frigate.myY = y;
-      console.log(frigate.myY)
+      frigate.collided = false;
       frigate.anchor.set(0.5);
       frigate.hit = false;
       frigate.health = 20;
+      frigate.rand = {rand:randNum(-0.9,0.9),time:180};
       frigate.rotation = pointInDirection(frigate.direction + 90);
       frigate.pilot = new Sprite(resources["sprites/pirateBlob.png"].texture);
       frigate.pilot.x = frigate.x;
@@ -658,22 +660,55 @@
       var v = false;
       pirateShips.forEach(function(p){
         let l = lineCollideLine;
-        var myV = false
-        if(l(ship.l1,p.l1)||l(ship.l1,p.l2)||l(ship.l1,p.l3)||l(ship.l1,p.l4)) {
-          v = true;
-          myV = true;
+        var myV = false;
+        if(getDistance(p.x,p.y,ship.x,ship.y) < 500) {
+          if(l(ship.l1,p.l1)||l(ship.l1,p.l2)||l(ship.l1,p.l3)||l(ship.l1,p.l4)) {
+            v = true;
+            myV = true;
+          }
+          if(l(ship.l2,p.l1)||l(ship.l2,p.l2)||l(ship.l2,p.l3)||l(ship.l2,p.l4)) {
+            v = true;
+            myV = true;
+          }
+          if(l(ship.l3,p.l1)||l(ship.l3,p.l2)||l(ship.l3,p.l3)||l(ship.l3,p.l4)) {
+            v = true;
+            myV = true;
+          }
+          if(l(ship.l4,p.l1)||l(ship.l4,p.l2)||l(ship.l4,p.l3)||l(ship.l4,p.l3)) {
+            v = true;
+            myV = true;
+          }
         }
-        if(l(ship.l2,p.l1)||l(ship.l2,p.l2)||l(ship.l2,p.l3)||l(ship.l2,p.l4)) {
-          v = true;
-          myV = true;
+        if(myV === true) {
+          p.collided = true;
+        } else {
+          p.collided = false;
         }
-        if(l(ship.l3,p.l1)||l(ship.l3,p.l2)||l(ship.l3,p.l3)||l(ship.l3,p.l4)) {
-          v = true;
-          myV = true;
-        }
-        if(l(ship.l4,p.l1)||l(ship.l4,p.l2)||l(ship.l4,p.l3)||l(ship.l4,p.l3)) {
-          v = true;
-          myV = true;
+      });
+      return v;
+    }
+    function shipIntersectingFrigates() {
+      var v = false;
+      frigates.forEach(function(p){
+        let l = lineCollideLine;
+        var myV = false;
+        if(getDistance(p.x,p.y,ship.x,ship.y) < 500) {
+          if(l(ship.l1,p.l1)||l(ship.l1,p.l2)||l(ship.l1,p.l3)||l(ship.l1,p.l4)) {
+            v = true;
+            myV = true;
+          }
+          if(l(ship.l2,p.l1)||l(ship.l2,p.l2)||l(ship.l2,p.l3)||l(ship.l2,p.l4)) {
+            v = true;
+            myV = true;
+          }
+          if(l(ship.l3,p.l1)||l(ship.l3,p.l2)||l(ship.l3,p.l3)||l(ship.l3,p.l4)) {
+            v = true;
+            myV = true;
+          }
+          if(l(ship.l4,p.l1)||l(ship.l4,p.l2)||l(ship.l4,p.l3)||l(ship.l4,p.l3)) {
+            v = true;
+            myV = true;
+          }
         }
         if(myV === true) {
           p.collided = true;
@@ -850,7 +885,11 @@
             return;
           }
         }
-        var badData = direction(pShip.speed, pShip.direction);
+        --pShip.rand.time;
+        if(pShip.rand.time < 1) {
+          pShip.rand = {rand:randNum(-0.9,0.9),time:180};
+        }
+        var badData = direction(pShip.speed + pShip.rand.rand, pShip.direction);
         pShip.point1 = rotatePoint((pShip.x - pShip.width / 2), (pShip.y - pShip.height / 2),pShip.x,pShip.y,pShip.rotation);
         pShip.point2 = rotatePoint((pShip.x - pShip.width / 2), (pShip.y + pShip.height / 2),pShip.x,pShip.y,pShip.rotation);
         pShip.point3 = rotatePoint((pShip.x + pShip.width / 2), (pShip.y + pShip.height / 2),pShip.x,pShip.y,pShip.rotation);
@@ -1012,18 +1051,28 @@
             return;
           }
         }
-        var badData = direction(pShip.speed, pShip.direction);
+        --pShip.rand.time;
+        if(pShip.rand.time < 1) {
+          pShip.rand = {rand:randNum(-0.9,0.9),time:180};
+        }
+        var badData = direction(pShip.speed + pShip.rand.rand, pShip.direction);
         pShip.point1 = rotatePoint((pShip.x - pShip.width / 2), (pShip.y - pShip.height / 2),pShip.x,pShip.y,pShip.rotation);
         pShip.point2 = rotatePoint((pShip.x - pShip.width / 2), (pShip.y + pShip.height / 2),pShip.x,pShip.y,pShip.rotation);
         pShip.point3 = rotatePoint((pShip.x + pShip.width / 2), (pShip.y + pShip.height / 2),pShip.x,pShip.y,pShip.rotation);
         pShip.point4 = rotatePoint((pShip.x + pShip.width / 2), (pShip.y - pShip.height / 2),pShip.x,pShip.y,pShip.rotation);
+        pShip.l1 = {p1:pShip.point1,p2:pShip.point2};
+        pShip.l2 = {p1:pShip.point2,p2:pShip.point3};
+        pShip.l3 = {p1:pShip.point3,p2:pShip.point4};
+        pShip.l4 = {p1:pShip.point4,p2:pShip.point1};
         if(debug){
        //   drawPirateCollision();
         }
         pShip.vx = badData.r;
         pShip.vy = badData.u;
-        pShip.myX += pShip.vx;
-        pShip.myY += pShip.vy;
+        if(!pShip.collided) {
+          pShip.myX += pShip.vx;
+          pShip.myY += pShip.vy;
+        }
         pShip.x = globalX + pShip.myX;
         pShip.y = globalY + pShip.myY;
         pShip.z = 0;
@@ -1273,8 +1322,8 @@
       var windData = direction(windSpeed * windOffset,windDirection);
       ship.vx = data.r + windData.r;
       ship.vy = data.u + windData.u;
-      var bounce = shipIntersectingPirates();
-      if(!shipIntersectingPirates()) {
+      var bounce = shipIntersectingPirates() || shipIntersectingFrigates();
+      if(!bounce) {
         globalX -= ship.vx;
         globalY -= ship.vy;
       }
@@ -1397,8 +1446,13 @@
         --windOffset;
       }
       windData = direction(windSpeed * windOffset,windDirection);
-      var trueVector = findVectorFromImpulse((data.r + windData.r),(data.u + windData.u)*-1)
-      arrow.rotation = pointInDirection(trueVector.direction);
+      var trueVector = findVectorFromImpulse((data.r + windData.r),(data.u + windData.u)*-1);
+      if(Math.abs(trueVector.force)>0) {
+        arrow.visible = true;
+        arrow.rotation = pointInDirection(trueVector.direction);
+      } else {
+        arrow.visible = false;
+      }
       windArrow.rotation = pointInDirection(windDirection-90);
       var nearTreasure = nearestTreasure(ship);
       if(nearTreasure.distance > 10**9) {

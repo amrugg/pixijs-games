@@ -134,6 +134,20 @@ function randInt(min, max) {
     }
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
+function randNum(min, max) {
+    if(max === undefined) {
+        max = min;
+        min = 1;
+    }
+    var num = (Math.random() * (max - min + 1)) + min;
+    while(num < min) {
+        ++num;
+    }
+    while(num > max) {
+        --num;
+    }
+    return num;
+}
 function direction(distance,angle) {
     angle = (angle * Math.PI) / 180;
     var x = 0;
@@ -235,4 +249,14 @@ line1 = {p1:{x:0,y:0},p2:{x:5,y:5}};
 line2 = {p1:{x:2,y:-10},p2:{x:3,y:10}};
 line1 = {p1:{x:0,y:0},p2:{x:1,y:0}}
 line2 = {p1:{x:1,y:1},p2:{x:1,y:-1}}
-console.log(findVectorFromImpulse(1,-1))
+/*var test = randNum;
+console.log(test(-0.5,0.5));
+console.log(test(-0.5,0.5));
+console.log(test(-0.5,0.5));
+console.log(test(-0.5,0.5));
+console.log(test(-0.5,0.5));
+console.log(test(-0.5,0.5));
+console.log(test(-0.5,0.5));
+console.log(test(-0.5,0.5));
+console.log(test(-0.5,0.5));
+console.log(test(-0.5,0.5));*/
