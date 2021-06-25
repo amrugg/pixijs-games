@@ -1,0 +1,909 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Blob Adventures 3</title>
+</head>
+<style>
+    * {
+        padding: 0;
+        margin: 0
+    }
+</style>
+<script src="pixi/pixi.min.js"></script>
+<script src="usefulFunctions.js"></script>
+<script src="tink.js"></script>
+
+<body>
+    <script type="text/javascript">
+        PIXI.utils.skipHello();
+        PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
+        let Application = PIXI.Application,
+            Container = PIXI.Container,
+            loader = PIXI.loader,
+            resources = PIXI.loader.resources,
+            TextureCache = PIXI.utils.TextureCache,
+            Sprite = PIXI.Sprite,
+            Rectangle = PIXI.Rectangle,
+            Graphics = PIXI.Graphics;
+        let app = new Application({
+            width: 800,
+            height: 800,
+            antialias: true,
+            transparent: false,
+            resolution: 1
+        }
+        );
+        app.renderer.backgroundColor = 0x55DD55;
+        /// Fill the screen 
+        app.renderer.view.style.position = "absolute";
+        app.renderer.view.style.display = "block";
+        app.renderer.autoResize = true;
+        app.renderer.resize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(app.view);
+        loader.add("sprites/treasureHunter.json").add("sprites/house1.png").add("sprites/house2.png").add("sprites/house3.png").add("sprites/arrow.png").add("sprites/brownarrow.png").load(setup);
+        
+        var params = getParams();
+        var mapScene, battleScene;
+        function getParams() {
+            var params = {};
+            location.search.substr(1).split("&").forEach(function (el) {
+                var data = el.replace(/\+/g, " ").split("=");
+                params[decodeURIComponent(data[0])] = data[1] ? decodeURIComponent(data[1]) : true;
+            });
+            return params;
+        }
+        var blue = new PIXI.TextStyle({ stroke: "blue", fill: "blue" });
+        var state;
+        var keys = {};
+        var id;
+        var blobs = [];
+        var soldiers = [];
+        var arrows = [];
+        var knightHp = 2;
+        var knightDmg = 2;
+        var blobHp = 5;
+        var boulders = 5;
+        var blobDmg = 2;
+        var inputs = {};
+        var mouseModes = [{ name: "Spawn blobs", effect: function () { spawnBlobs("fill", innerHeight - 600) } }, { name: "Call knights", effect: function () { spawnSoldiers("fill", innerHeight - 100) } }, { name: "Volley", effect: function () { fireArrows() } }, { name: "Targeted Fire", effect: function () { guideArrows() } }, {
+            name: "Fire Catapult", effect: function () {
+                if (boulders > 0) {
+                    --boulders;
+                    let blobsKilled = 0;
+                    blobs.forEach(function (blob) {
+                        if (blobsKilled < 50 && getDistance(blob.x, blob.y, mouseX, mouseY) <= 100) {
+                            blob.health = 0;
+                            ++blobsKilled;
+                        }
+                    });
+                }
+            }
+        }];
+        if (params.slowTick === true || params.slowTick === "true") {
+            params.slowTick = 1;
+        }
+        var mouseMode = 1;
+        var eventText;
+        var knightNum = 20;
+        var archerNum = 1;
+        var arrows = 24;
+        var firedArrows = [];
+        var blobNum = 2;
+        var catapult;
+        var cooldown = 0;
+        var catapultSize = 100;
+        var lastSec = 0;
+        var myArmy;
+        var blobArmySplice = false;
+        var townSplice = false;
+        var makeTowns = [{ x: 0, y: 2, pop: 125 }];
+        var towns = [];
+        var gold = 100;
+        var blobArmies = [];
+        var updateStats = true;
+        var helmets = 20;
+        var breastplates = 20;
+        var misc = 20;
+        var spears = 6;
+        var swords = 8;
+        var maces = 3;
+        var axes = 3;
+        var mouseX = 0;
+        var mouseY = 0;
+        var leftReady = true;
+        var rightReady = true;
+        var turn = 0;
+        var maxSpacing = (innerWidth - 400) / 8;
+        var textInfo = 2;
+        maxSpacing = maxSpacing < (innerHeight) / 8 ? maxSpacing : (innerHeight - 100) / 8;
+        var neededSpacing;
+        var slowTickSec = Date.now();
+        var textStyle = new PIXI.TextStyle({ stroke: "white", fill: "white" });
+        if(params.health || params.dmg || params.damage) {
+            params.debug = true;
+        }
+        function setup() {
+            mapScene = new PIXI.Container();
+            battleScene = new PIXI.Container();
+            app.stage.addChild(mapScene);
+            app.stage.addChild(battleScene);
+            battleScene.visible = true;
+            catapult = new Graphics();
+            battleScene.addChild(catapult);
+            id = resources["sprites/treasureHunter.json"].textures;
+            myArmy = new Sprite(id["explorer.png"]);
+            mapScene.addChild(myArmy);
+            myArmy.visible = false;
+            eventText = new PIXI.Text("", textStyle);
+            app.stage.addChild(eventText);
+            state = intro;
+            app.ticker.add(delta => gameLoop(delta));
+        }
+        function intro() {
+            app.renderer.backgroundColor = 0x00000;
+            eventText.text = "Press Enter to start. Press S to speed up. Press D to slow down.\n\n\nAh, Sir Knight! The king has chosen you for a very important mission.\n\n\nRemember Blob Adventures 2, and how you captured back 5 treasures?\n\n\nWell, it turns out that the blob's weren't so happy about that. Who would have thought?\n\n\nApparently, they had just found someone that would sell them stinky socks.\n\n\nSo, can you guess what happened? Yep, they attacked.\n\n\nRemember all those frigates that held the treasure? Now they hold blobs and are sending out their armies.\n\n\nIt wouldn't have been so bad if we had any scouts to keep watch. They were caught in a traffic jam.\n\n\nThe POINT is, now we are under attack by the blobs. You will have to save the countryside.\n\n\nThe king quickly gave the command of all the forces he had on had to you.\n\n\nUnfortunately, there was a big battle and there were only a few left.\n\n\nYou have 20 knights, 1 archer, and 1 catapult. You also have 24 arrows, but no ammo for the catapult.\n\n\nI have to teach you how to command your army. Unless you know, of course, in which case hit Enter or click.\n\n\nYou move your small character representing your army around the map by clicking in a direction.\n\n\nYou can move left, right, up, down, or diagonally, but only 1, so don't go on a detour.\n\n\nThe small blob figures represent blob armies. They will have blobs that you must fight.\n\n\nYour knights are much, much weaker than the blobs. 3 knights perhaps could beat 1 blob.\n\n\nHowever, don't despair. The knights can equip weapons and armor. This makes their damage and health go up.\n\n\nYou can buy weapons and armor at a town. If you have more weapons or armor than soldiers, it will be saved.\n\n\nHowever, if you don't have enough weapons or armor for all of your soldiers, the front line will take them.\n\n\nYou can expect to get back at least half of the loot of your fallen. Armor won't be lost unless its bearer dies.\n\n\nIf blob armies have armor, you may get that if you defeat them. You may also loot off blobs too sometimes.\n\nIf you move into a blob army, you will immediately do battle. Your knights will deploy to fight the blobs.\n\n\nYou are powerless to control the knights, but the archers and the catapults you may by clicking.\n\n\nThere are certain actions you may do. You may issue a volley, where the arrows go straight...\n\n\n or a targeted fire, where the archers fire towards your mouse. This of course costs arrows.\n\n\nYou can also fire your catapult if you have a boulder, and that destroys many blobs within a certain radius.\n\n\nTo do this, you must select a mode by pressing Left and Right or scrolling up and down.\n\n\nThen click to fire off the event. Arrows will fire if you have any, or a catapult will launch if you have boulders.\n\n\nProtect the towns, represented by houses. They may have a small local militia, but are unable to stand on their own.\n\n\nYou can buy arrows and boulders there with gold you gained from the blobs, and you can try to raise militia too.\n\n\nIf the blobs destroy all the towns or make it to the bottom, all is lost. Don't let that happen.\n\n\nGo forth, and save the kingdom!";
+            eventText.y = innerHeight;
+            state = introWait;
+        }
+        function introWait() {
+            if (keys["d"]) {
+                eventText.y -= 0.5;
+            } else if (keys["s"]) {
+                eventText.y -= 5;
+            } else {
+                eventText.y -= 2.5;
+            }
+            if (keys.Enter || keys.mouse) {
+                keys.mouse = false;
+                state = mapSetup;
+                eventText.y = 0;
+                app.renderer.backgroundColor = 0x55DD55;
+            }
+        }
+        function numberOfBlobs() {
+            var v = 0;
+            for (let i = 0; i < blobs.length; i++) {
+                if (blobs[i].state) {
+                    ++v;
+                }
+            }
+            return v;
+        }
+        function numberOfKnights() {
+            var v = 0;
+            for (let i = 0; i < soldiers.length; i++) {
+                if (soldiers[i].state) {
+                    ++v;
+                }
+            }
+            return v;
+        }
+        function mapSetup() {
+            myArmy.mapX = 7;
+            myArmy.mapY = 7;
+            myArmy.x = (myArmy.mapX * maxSpacing) + 400;
+            myArmy.y = (myArmy.mapY * maxSpacing) + 100;
+            myArmy.visible = true;
+            spawnBlobArmy(0, 0, "small");
+            spawnBlobArmy(7, 0, "medium");
+            spawnBlobArmy(3, 0, 80);
+            spawnTowns();
+            state = map;
+        }
+        function spawnBlobArmy(x, y, num) {
+            if (num === "small") {
+                num = randInt(10, 20);
+            } else if (num === "medium") {
+                num = randInt(21, 40);
+            } else if (num === "large") {
+                num = randInt(41, 60);
+            }
+            var newBlobArmy = new Sprite(id["blob.png"]);
+            mapScene.addChild(newBlobArmy);
+            newBlobArmy.mapX = x;
+            newBlobArmy.mapY = y;
+            newBlobArmy.x = (newBlobArmy.mapX * maxSpacing) + 400;
+            newBlobArmy.y = (newBlobArmy.mapY * maxSpacing) + 100;
+            newBlobArmy.num = num;
+            newBlobArmy.scale.set(1 + num / 100);
+            blobArmies.push(newBlobArmy);
+        }
+        function map() {
+            if(keys.mouse) {
+                updateStats = true;
+            }
+            if(updateStats) {
+                if(textInfo === 1) {
+                    eventText.text = "Soldiers: "+knightNum.toString() + "\nSwords: "+swords.toString()+"\nMaces: "+maces.toString() + "\nAxes: "+axes.toString() + "\nSpears: "+spears.toString()+"\nHelmets: "+helmets.toString()+"\nBreastplates: "+breastplates.toString()+"\nOther:"+misc.toString()+"\nArchers: "+archerNum.toString()+"\nArrows: "+arrows.toString()+"\nBoulders: "+boulders.toString()+"\nGold:"+gold.toString()+"\nArmies left: " +blobArmies.length.toString();
+                    if(keys.mouse && mouseX < 150 && mouseY < 365) {
+                        keys.mouse = false;
+                        ++textInfo;
+                    }
+                } else if(textInfo === 0){
+                    if(keys.mouse && mouseX < 150 && mouseY < 75) {
+                        keys.mouse = false;
+                        ++textInfo;
+                    }
+                    eventText.text = "Soldiers: "+knightNum.toString() + "\nArmies left: " + blobArmies.length.toString() + "\nGold: " + gold.toString();
+                } else if(textInfo === 2) {
+                    var fullClad = Math.min(knightNum,helmets,breastplates,misc,(spears+swords+maces+axes));
+                    var avgHealth = 0;
+                    var avgDmg = 0;
+                    let countSwords = swords;
+                    let countAxes = axes;
+                    let countMaces = maces;
+                    let countSpears = spears;
+                    for(let i = 0; i < knightNum; i++) {
+                        let curHp = 2;
+                        if(i < breastplates) {
+                            curHp += 6;
+                        }
+                        if(i < helmets) {
+                            curHp += 3;
+                        }
+                        if(i < misc) {
+                            curHp += 4;
+                        }
+                        avgHealth += curHp;
+                        let curDmg = 2;
+                        if(i < swords) {
+                            curDmg += 2;
+                        } else if(i < swords + maces) {
+                            curDmg += 3;
+                        } else if(i < swords + maces + axes) {
+                            curDmg += 4;
+                        } else if(i < swords + maces + axes + spears) {
+                            curDmg += 2;
+                        }
+                        avgDmg += curDmg;
+                    }
+                    avgHealth /= knightNum;
+                    avgHealth *= 100;
+                    avgHealth = Math.round(avgHealth);
+                    avgHealth /= 100;
+                    avgDmg /= knightNum;
+                    avgDmg *= 100;
+                    avgDmg = Math.round(avgDmg);
+                    avgDmg /= 100;
+                    var blobKnightRatio = 0;
+                    /// Simulate a knight battling blobs
+                    let simKnight = {health:5,dmg:5};
+                    let simBlob = {health:blobHp,dmg:blobDmg};
+                    let blobsKilled = 0;
+                    while(simKnight.health > 0) {
+                        simBlob.health -= simKnight.dmg;
+                        simKnight.health -= simBlob.dmg;
+                        if(simBlob.health < 0.001) {
+                            simBlob = {health:blobHp,dmg:blobDmg};
+                            ++blobsKilled;
+                        }
+                    }
+                    let gangUpKilled = 0;
+                    for(let i = 1; i < 10; i++) {
+                        simKnight = {health:5,dmg:5};
+                        simBlob = {health:blobHp * i,dmg:blobDmg * i};
+                        while(simKnight.health > 0) {
+                            simKnight.health -= simBlob.dmg;
+                            simBlob.health -= simKnight.dmg;
+                            if(simBlob.health <= 0) {
+                                gangUpKilled = i;
+                            }
+                        }
+                    }
+                    var maxBlobNum = 0;
+                    maxBlobNum += boulders > 0?25:0;
+                    maxBlobNum += arrows / 2.5;
+                    eventText.text = "Soldiers: "+knightNum.toString() + "\nArchers: " + archerNum.toString() + "\nFull clad: " + fullClad.toString() + "\nAverage health: " + avgHealth.toString() + "\nAverage damage: " + avgDmg.toString() + "\nKnight-blob-ratios:\nOne-by-one: " + blobsKilled.toString() + "\nGang-up: " + gangUpKilled.toString() + "\nMax Blobs Killed:\n1: " + (maxBlobNum + (knightNum * blobsKilled)).toString() + "\n2: "+(maxBlobNum + (knightNum * gangUpKilled)).toString();
+                    if(keys.mouse && mouseX < 150 && mouseY < 365) {
+                        keys.mouse = false;
+                        textInfo = 0;
+                    }
+                }
+            }
+            towns.forEach(function (town) {
+                // console.log(town.mapX,town.mapY);
+                town.x = (town.mapX * maxSpacing) + 400;
+                town.y = (town.mapY * maxSpacing) + 100;
+            });
+            if (turn > 9) {
+                if (Date.now() - 1000 > lastSec) {
+                    turn -= 10;
+                }
+            }
+            if (turn === 1) {
+                blobArmies.forEach(function (blobArmy) {
+                    /// Chose a random action
+                    function mapIncludes(x, y) {
+                        v = false;
+                        blobArmies.forEach(function (blob) {
+                            if (blob.mapX === x && blob.mapY === y) {
+                                v = true;
+                            }
+                        });
+                        return v;
+                    }
+                    var action = randInt(0, 5);
+                    if (action === 0) {
+                        /// Move straight down
+                        if (!mapIncludes(blobArmy.mapX, blobArmy.mapY + 1)) {
+                            blobArmy.mapY++;
+                        }
+                    } else if (action === 1) {
+                        var moveX = myArmy.mapX > blobArmy.mapX ? 1 : myArmy.mapX < blobArmy.mapX ? -1 : 0;
+                        var moveY = myArmy.mapX > blobArmy.mapY ? 1 : myArmy.mapY < blobArmy.mapY ? -1 : 0;
+                        if (!mapIncludes(blobArmy.mapX + moveX, blobArmy.mapY + moveY)) {
+                            blobArmy.mapX += moveX;
+                            blobArmy.mapY += moveY;
+                        }
+                    }
+                    blobArmy.x = (blobArmy.mapX * maxSpacing) + 400;
+                    blobArmy.y = (blobArmy.mapY * maxSpacing) + 100;
+                });
+                blobArmies.forEach(function (blobArmy, i) {
+                    if (blobArmy.mapX == myArmy.mapX && blobArmy.mapY === myArmy.mapY) {
+                        state = videoStartup;
+                        mapScene.visible = false;
+                        battleScene.visible = true;
+                        blobArmySplice = i;
+                        blobNum = blobArmy.num;
+                    }
+                });
+                turn = 10;
+            }
+            if (keys.mouse) {
+                keys.mouse = false;
+                if (turn === 0) {
+                    turn = 11;
+                    lastSec = Date.now();
+                    /// What direction are we closest to? 0,45,90,135,180,225,270,315, or 360, which is 0.
+                    var closestDir = 0;
+                    var pointingDir = pointTowards(myArmy.x, myArmy.y, mouseX, mouseY);
+                    if (pointingDir < 0) {
+                        pointingDir += 360;
+                    }
+                    var closestDiff = Infinity;
+                    var directions = [0, 45, 90, 135, 180, 225, 270, 315, 360];
+                    for (let i = 0; i < directions.length; i++) {
+                        if (Math.abs(pointingDir - directions[i]) < closestDiff) {
+                            closestDiff = Math.abs(pointingDir - directions[i]);
+                            closestDir = directions[i];
+                        }
+                    }
+                    if (closestDir === 270) {
+                        myArmy.mapX++;
+                    } else if (closestDir === 315) {
+                        myArmy.mapX++;
+                        myArmy.mapY--
+                    } else if (closestDir === 360 || closestDir === 0) {
+                        myArmy.mapY--;
+                    } else if (closestDir === 45) {
+                        myArmy.mapX--;
+                        myArmy.mapY--;
+                    } else if (closestDir === 90) {
+                        myArmy.mapX--;
+                    } else if (closestDir === 135) {
+                        myArmy.mapX--;
+                        myArmy.mapY++;
+                    } else if (closestDir === 180) {
+                        myArmy.mapY++;
+                    } else if (closestDir === 225) {
+                        myArmy.mapX++;
+                        myArmy.mapY++;
+                    }
+                    myArmy.x = (myArmy.mapX * maxSpacing) + 400;
+                    myArmy.y = (myArmy.mapY * maxSpacing) + 100;
+                    blobArmies.forEach(function (blobArmy, i) {
+                        if (blobArmy.mapX == myArmy.mapX && blobArmy.mapY === myArmy.mapY) {
+                            state = videoStartup;
+                            mapScene.visible = false;
+                            battleScene.visible = true;
+                            blobArmySplice = i;
+                            blobNum = blobArmy.num;
+                        }
+                    });
+                }
+            }
+            if(keys.Enter) {
+                state = videoStartup;
+                mapScene.visible = false;
+                battleScene.visible = true;
+            }
+        }
+        function videoStartup() {
+            let blobLineMax = Math.floor(innerWidth / 50);
+            let blobLinesNeeded = Math.ceil(blobNum / blobLineMax);
+            let knightLineMax = Math.floor(innerWidth / 50);
+            let knightLinesNeeded = Math.ceil(knightNum / knightLineMax);
+            let totalLinesNeeded = knightLinesNeeded + blobLinesNeeded + 5;
+            neededSpacing = innerHeight / totalLinesNeeded;
+            if (neededSpacing > 100) {
+                neededSpacing = 100;
+            }
+            spawnAllBlobs();
+            spawnAllSoldiers();
+            state = play;
+        }
+        function gameLoop(delta) {
+            state(delta);
+        }
+        function fireArrows() {
+            for (let i = 0; i < archerNum; i++) {
+                if (arrows > 0) {
+                    spawnArrow(0, (i * (innerWidth / archerNum) + 24));
+                    --arrows;
+                }
+            }
+        }
+        function guideArrows() {
+            for (let i = 0; i < archerNum; i++) {
+                if (arrows > 0) {
+                    spawnArrow(pointTowards((i * (innerWidth / archerNum) + 24), innerHeight, mouseX, mouseY), (i * (innerWidth / archerNum) + 24));
+                    --arrows;
+                }
+            }
+        }
+        function spawnArrow(direction, x) {
+            let arrow = new Sprite(resources["sprites/arrow.png"].texture);
+            arrow.y = innerHeight;
+            arrow.x = x;
+            // arrow.scale.set(0.05);
+            arrow.direction = direction;
+            battleScene.addChild(arrow);
+            firedArrows.push(arrow);
+            arrow.anchor.set(0.5);
+
+        }
+        function spawnAllBlobs() {
+            var lineMax = Math.floor(innerWidth / 50);
+            /// Any amount less than lineMax will work.
+            var linesNeeded = Math.ceil(blobNum / lineMax);
+
+            for (let i = 0; i < linesNeeded; i++) {
+                if (blobNum >= lineMax) {
+                    spawnBlobs(lineMax, 0 + ((i + 1) * neededSpacing));
+                    blobNum -= lineMax;
+                } else {
+                    spawnBlobs(blobNum, 0 + ((i + 1) * neededSpacing));
+                    blobNum = 0;
+                }
+            }
+        }
+        function spawnAllSoldiers() {
+            /// We want to fill the screen as packed as we can with soldiers.
+
+            /// How many soldiers can we fit in a line?
+            var lineMax = Math.floor(innerWidth / 50);
+            /// Any amount less than lineMax will work.
+            var linesNeeded = Math.ceil(knightNum / lineMax);
+            for (let i = 0; i < linesNeeded; i++) {
+                if (knightNum >= lineMax) {
+                    spawnSoldiers(lineMax, innerHeight - ((i + 1) * neededSpacing));
+                    knightNum -= lineMax;
+                } else {
+                    spawnSoldiers(knightNum, innerHeight - ((i + 1) * neededSpacing));
+                    knightNum = 0;
+                }
+            }
+        }
+        function play() {
+            if (params.slowTick) {
+                if (Date.now() - (Number(params.slowTick) * 100) < slowTickSec) {
+                    return;
+                } else {
+                    slowTickSec = Date.now();
+                }
+            }
+            if (numberOfBlobs() < 1) {
+                knightNum = numberOfKnights();
+                soldiers.forEach(function (knight) {
+                    if(knight.helmet && (knight.state != false || randInt(1,2) === 2)) {
+                        ++helmets;
+                    }
+                    if(knight.breastplate && (knight.state != false || randInt(1,2) === 2)) {
+                        ++breastplates;
+                    }
+                    if(knight.helmet && (knight.state != false || randInt(1,2) === 2)) {
+                        ++misc;
+                    }
+                    if(knight.sword && (knight.state != false || randInt(1,2) === 2)) {
+                        ++swords;
+                    } else if(knight.mace && (knight.state != false || randInt(1,2) === 2)) {
+                        ++maces;
+                    } else if(knight.axe && (knight.state != false || randInt(1,2) === 2)) {
+                        ++axes;
+                    } else if(knight.spear && (knight.state != false || randInt(1,2) === 2)) {
+                        ++spears;
+                    }
+                    battleScene.removeChild(knight);
+                });
+                if (blobArmySplice > -1) {
+                    mapScene.removeChild(blobArmies[blobArmySplice]);
+                    // blobArmies[blobArmySplice].visible = false;
+                    blobArmies.splice(blobArmySplice, 1);
+                }
+                mapScene.visible = true;
+                battleScene.visible = false;
+                soldiers = [];
+                state = map;
+                return;
+            }
+            if (cooldown > 0 && Date.now() - 250 > lastSec) {
+                lastSec = Date.now();
+                cooldown -= 0.25;
+            }
+            catapult.clear();
+            if (cooldown > 4.75) {
+                catapultSize += 2;
+                catapult.lineStyle(0)
+                catapult.beginFill(0x777777);
+                catapult.drawCircle(mouseX, mouseY, catapultSize);
+                catapult.endFill();
+            } else if (cooldown > 4.5) {
+                catapultSize -= 2;
+                catapult.lineStyle(0)
+                catapult.beginFill(0x777777);
+                catapult.drawCircle(mouseX, mouseY, catapultSize);
+                catapult.endFill();
+            } else if (mouseModes[mouseMode].name === "Fire Catapult") {
+                catapult.lineStyle(0)
+                catapult.beginFill(0x777777);
+                catapult.drawCircle(mouseX, mouseY, 100);
+                catapult.endFill();
+            }
+            firedArrows.forEach(function (arrow, i) {
+                var data = direction(10, arrow.direction + 180);
+                arrow.x += data.r;
+                arrow.y += data.u;
+                arrow.rotation = pointInDirection(arrow.direction);
+                if (arrow.x < -100 || arrow.x > innerWidth + 100 || arrow.y < -100 || arrow.y > innerHeight + 100) {
+                    battleScene.removeChild(arrow);
+                    firedArrows.splice(i, 1);
+                }
+            });
+            eventText.text = cooldown < 1 ? mouseModes[mouseMode].name : "Cooldown";
+            if (keys.ArrowLeft) {
+                if (leftReady) {
+                    --mouseMode;
+                    if (mouseMode < 0) {
+                        mouseMode = mouseModes.length - 1;
+                    }
+                    leftReady = false;
+                }
+            }
+            if (!keys.ArrowLeft) {
+                leftReady = true;
+            }
+            if (keys.ArrowRight) {
+                if (rightReady) {
+                    ++mouseMode;
+                    if (mouseMode >= mouseModes.length) {
+                        mouseMode = 0;
+                    }
+                    rightReady = false;
+                }
+            }
+            if (!keys.ArrowRight) {
+                rightReady = true;
+            }
+            soldiers.forEach(function (knight, i) {
+                if (params.health) {
+                    knight.children[1].text = knight.health.toString();
+                } else if(params.dmg || params.damage) {
+                    knight.children[1].text = knight.dmg.toString();
+                }
+                if (!knight.state) {
+                    return;
+                }
+                if (knight.health < 1) {
+                    if (knight.state === "attacking") {
+                        if (blobs[knight.attackingSprite.i].state) {
+                            blobs[knight.attackingSprite.i].health -= knight.dmg;
+                        }
+                    }
+                    knight.state = "dead";
+                }
+                if (knight.state === "dead") {
+                    knight.rotation += 0.05;
+                    if (knight.rotation > 1.75) {
+                        battleScene.removeChild(knight);
+                        if (params.debug) {
+                            battleScene.removeChild(knight.text);
+                        }
+                        knight.state = false;
+                    }
+                } else if (knight.state === "live") {
+                    var enemyInfo = nearestBlob(knight);
+                    if (!enemyInfo) {
+                        return;
+                    }
+                    var enemy = enemyInfo.sprite;
+                    knight.direction = pointTowards(knight.x, knight.y, enemy.x, enemy.y);
+                    let data = direction(1, knight.direction + 180);
+                    knight.x += data.r;
+                    knight.y += data.u;
+                    if (enemyInfo.dist < 25) {
+                        knight.state = "attacking";
+                        knight.attacking = 5;
+                        knight.attackingSprite = enemyInfo;
+                    }
+                    if (knight.health < 1) {
+                        knight.state = "dead";
+                    }
+                } else if (knight.state === "attacking") {
+                    var enemy = knight.attackingSprite.sprite
+                    knight.direction = pointTowards(knight.x, knight.y, enemy.x, enemy.y);
+                    let data = direction(knight.attacking > 0 ? 2 : -2, knight.direction + 180);
+                    knight.x += data.r;
+                    knight.y += data.u;
+                    --knight.attacking;
+                    if (knight.attacking < -5) {
+                        knight.state = "live";
+                        if (blobs[knight.attackingSprite.i].state) {
+                            blobs[knight.attackingSprite.i].health -= knight.dmg;
+                        }
+                    }
+                }
+            });
+            blobs.forEach(function (knight, i) {
+                if (params.debug) {
+                    knight.text.text = knight.health.toString();
+                    knight.text.anchor.set(0.5);
+                    knight.text.x = knight.x;
+                    knight.text.y = knight.y;
+                }
+                if (!knight.state) {
+                    return;
+                }
+                firedArrows.forEach(function (arrow, i) {
+                    if (hitTestRectangle(knight, arrow)) {
+                        knight.health -= 2;
+                        firedArrows.splice(i, 1)
+                        battleScene.removeChild(arrow);
+                    }
+                })
+                if (knight.health < 1) {
+                    if (knight.state === "attacking") {
+                        if (soldiers[knight.attackingSprite.i].state) {
+                            soldiers[knight.attackingSprite.i].health -= knightDmg;
+                        }
+                    }
+                    knight.state = "dead";
+                }
+                if (knight.state === "dead") {
+                    knight.rotation += 0.05;
+                    if (knight.rotation > 1.75) {
+                        battleScene.removeChild(knight);
+                        if (params.debug) {
+                            battleScene.removeChild(knight.text);
+                        }
+                        knight.state = false;
+                    }
+                } else if (knight.state === "live") {
+                    var enemyInfo = nearestKnight(knight);
+                    var enemy = enemyInfo.sprite;
+                    knight.direction = pointTowards(knight.x, knight.y, enemy.x, enemy.y);
+                    let data = direction(1, knight.direction + 180);
+                    knight.x += data.r;
+                    knight.y += data.u;
+                    if (enemyInfo.dist < 25) {
+                        knight.state = "attacking";
+                        knight.attacking = 5;
+                        knight.attackingSprite = enemyInfo;
+                    }
+                    if (knight.health < 1) {
+                        knight.state = "dead";
+
+                    }
+                } else if (knight.state === "attacking") {
+                    var enemy = knight.attackingSprite.sprite
+                    knight.direction = pointTowards(knight.x, knight.y, enemy.x, enemy.y);
+                    let data = direction(knight.attacking > 0 ? 2 : -2, knight.direction + 180);
+                    knight.x += data.r;
+                    knight.y += data.u;
+                    --knight.attacking;
+                    if (knight.attacking < -5) {
+                        knight.state = "live";
+                        if (soldiers[knight.attackingSprite.i].state) {
+                            soldiers[knight.attackingSprite.i].health -= blobDmg;
+                        }
+                    }
+                }
+            });
+        }
+        function nearestBlob(sprite) {
+            var returnSprite = false;
+            var dist = Infinity;
+            var index = 0;
+            blobs.forEach(function (blob, i) {
+                if (blob.state === false || blob.state === "dead") {
+                    return;
+                }
+                if (getDistance(sprite.x, sprite.y, blob.x, blob.y) < dist) {
+                    returnSprite = blob;
+                    dist = getDistance(sprite.x, sprite.y, blob.x, blob.y);
+                    index = i;
+                }
+            });
+            if (returnSprite) {
+                return { sprite: returnSprite, dist: dist, i: index };
+            } else {
+                return false;
+            }
+        }
+        function nearestKnight(sprite) {
+            var returnSprite;
+            var dist = Infinity;
+            var index = 0;
+            soldiers.forEach(function (soldier, i) {
+                if (soldier.state === false || soldier.state === "dead") {
+                    return;
+                }
+                if (getDistance(sprite.x, sprite.y, soldier.x, soldier.y) < dist) {
+                    returnSprite = soldier;
+                    dist = getDistance(sprite.x, sprite.y, soldier.x, soldier.y);
+                    index = i;
+                }
+                if (getDistance(sprite.x, sprite.y, soldier.x, soldier.y) === dist && randInt(1, 2) === 1) {
+                    returnSprite = soldier;
+                    dist = getDistance(sprite.x, sprite.y, soldier.x, soldier.y);
+                    index = i;
+                }
+            });
+            return { sprite: returnSprite, dist: dist, i: index };
+        }
+        function spawnSoldiers(count, y) {
+            if (count === "fill") {
+                count = innerWidth / 50;
+            }
+            count = Number(count) || 1;
+            for (let i = 0; i < count; i++) {
+                let knight = new Container();
+                battleScene.addChild(knight);
+                let newSoldier = new Sprite(id["explorer.png"]);
+                knight.y = y;
+                knight.x = (i * 50) + 24;
+                knight.addChild(newSoldier);
+                soldiers.push(knight);
+                knight.health = knightHp;
+                knight.dmg = knightDmg;
+                if (helmets > 0) {
+                    --helmets;
+                    knight.health += 3;
+                    knight.helmet = true;
+                }
+                if (breastplates > 0) {
+                    --breastplates;
+                    knight.health += 6;
+                    knight.breastplate = true;
+                }
+                if (misc > 0) {
+                    --misc;
+                    knight.health += 4;
+                    knight.misc = true;
+                }
+                knight.falter = 0;
+                if(swords > 0) {
+                    --swords;
+                    knight.dmg += 2;
+                    knight.sword = true;
+                } else if(maces > 0) {
+                    --maces;
+                    knight.dmg += 3;
+                    knight.falter = 0.25;
+                    knight.mace = true;
+                } else if(axes > 0) {
+                    --axes;
+                    knight.dmg += 5;
+                    knight.falter = 0.5;
+                    knight.axe = true;
+                } else if(spears > 0) {
+                    --spears;
+                    knight.dmg += 1;
+                    knight.spear = true;
+                }
+                knight.state = "live";
+                newSoldier.anchor.set(0.5);
+                if (params.debug) {
+                    let text = new PIXI.Text(knight.health.toString(), blue);//{stroke:"0000FF",fill:"blue"});
+                    //battleScene.addChild(newSoldier.text);
+                    knight.addChild(text);
+                }
+            }
+
+        }
+        function spawnBlobs(count, y) {
+            if (count === "fill") {
+                let x = 24;
+                for (let i = 0; i < innerWidth / 50; i++) {
+                    let newSoldier = new Sprite(id["blob.png"]);
+                    newSoldier.y = y;
+                    newSoldier.x = (i * 50) + 24;
+                    battleScene.addChild(newSoldier);
+                    blobs.push(newSoldier);
+                    newSoldier.health = blobHp;
+                    newSoldier.state = "live";
+                    newSoldier.anchor.set(0.5);
+                    if (params.debug) {
+                        newSoldier.text = new PIXI.Text(newSoldier.health.toString(), blue);//{stroke:"0000FF",fill:"blue"});
+                        battleScene.addChild(newSoldier.text);
+                        newSoldier.text.x = newSoldier.x;
+                        newSoldier.text.y = newSoldier.y;
+                    }
+                }
+            } else {
+                count = Number(count) || 1;
+                for (let i = 0; i < count; i++) {
+                    let newSoldier = new Sprite(id["blob.png"]);
+                    newSoldier.y = y;
+                    newSoldier.x = (i * 50) + 24;
+                    battleScene.addChild(newSoldier);
+                    blobs.push(newSoldier);
+                    newSoldier.health = blobHp;
+                    newSoldier.state = "live";
+                    newSoldier.anchor.set(0.5);
+                    if (params.debug) {
+                        newSoldier.text = new PIXI.Text(newSoldier.health.toString(), blue);//{stroke:"0000FF",fill:"blue"});
+                        battleScene.addChild(newSoldier.text);
+                        newSoldier.text.x = newSoldier.x;
+                        newSoldier.text.y = newSoldier.y;
+                    }
+                }
+            }
+        }
+        function spawnTowns() {
+            makeTowns.forEach(function (townToMake) {
+                var town = new PIXI.Sprite(resources["sprites/house1.png"].texture);
+                town.mapX = townToMake.x;
+                town.mapY = townToMake.y;
+                town.scale.set(0.35);
+                // town.x = 100;
+                // town.y = 300;
+                // app.stage.addChild(town);
+                mapScene.addChild(town);
+                towns.push(town);
+            });
+        }
+        addEventListener("mousedown", function () {
+            keys.mouse = true;
+            if (state === play && cooldown < 1) {
+                mouseModes[mouseMode].effect();
+                if (mouseModes[mouseMode].name === "Fire Catapult") {
+                    cooldown = 5;
+                    lastSec = Date.now();
+                }
+            }
+        });
+        addEventListener("mouseup", function () {
+            keys.mouse = false;
+        })
+        addEventListener("wheel", function (scroll) {
+            if (scroll.deltaY < 0) {
+                ++mouseMode;
+                if (mouseMode >= mouseModes.length) {
+                    mouseMode = 0;
+                }
+            } else if (scroll.deltaY > 0) {
+                --mouseMode;
+                if (mouseMode < 0) {
+                    mouseMode = mouseModes.length - 1;
+                }
+            }
+        })
+        addEventListener("mousemove", function (mouse) {
+            mouseX = mouse.pageX;
+            mouseY = mouse.pageY;
+        })
+        addEventListener("blur", function () {
+            keys = {};
+        });
+        addEventListener("keydown", function (e) {
+            keys[e.key] = true;
+        });
+        addEventListener("keyup", function (e) {
+            keys[e.key] = false;
+        });
+    </script>
+</body>
+</html>

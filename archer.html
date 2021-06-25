@@ -1,0 +1,149 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Direction ship</title>
+</head>
+    <style>* {padding: 0; margin: 0}</style>
+    <script src="pixi/pixi.min.js"></script>
+    <script src="usefulFunctions.js"></script>
+<body>
+  <script type="text/javascript">
+    PIXI.utils.skipHello();
+    PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
+    let Application = PIXI.Application,
+        Container = PIXI.Container,
+        loader = PIXI.loader,
+        resources = PIXI.loader.resources,
+        TextureCache = PIXI.utils.TextureCache,
+        Sprite = PIXI.Sprite,
+        Rectangle = PIXI.Rectangle,
+        Graphics = PIXI.Graphics;
+    let app = new Application({ 
+        width: 800,
+        height: 800,              
+        antialias: true,
+        transparent: false,
+        resolution: 1
+      }
+    );
+    app.renderer.backgroundColor = 0x77FF77;
+    /// Fill the screen 
+    app.renderer.view.style.position = "absolute";
+    app.renderer.view.style.display = "block";
+    app.renderer.autoResize = true;
+    app.renderer.resize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(app.view);
+    loader.add("sprites/treasureHunter.json").load(setup);
+    var state, id, explorer;
+    var castle;
+    var blobs = [];
+    var wave = 0;
+    var waveChanged = true;
+    var waves = [5];
+    function setup() {
+        id = resources["sprites/treasureHunter.json"].textures;
+        explorer = new Sprite(id["explorer.png"]);
+        explorer.x = 480;
+        explorer.y = innerHeight / 2;
+        explorer.anchor.set(0.5);
+        castle = new Sprite(id["dungeon.png"]);
+        castle.scale.set(2);
+        castle.x = -512;
+        app.stage.addChild(castle)
+        app.stage.addChild(explorer);
+        state = play;
+        app.ticker.add(delta => gameLoop(delta));
+    }
+    function gameLoop(delta) {
+      state(delta)
+    }
+    function play(){
+        if(waveChanged){
+            for(let i = 0; i < waves[wave]; i++) {
+                spawnBlob();
+            }
+            waveChanged = false;
+        }
+        blobs.forEach(function(blob){
+            if(blob.attack) {
+
+            } else {
+                if(blob.x > 512 + blob.width / 2) {
+                    blob.x--;
+                } else {
+                    blob.attack = true;
+                }
+            }
+        });
+    }
+    function spawnBlob(){
+        let newBlob = new Sprite(id["blob.png"]);
+        app.stage.addChild(newBlob);
+        newBlob.anchor.set(0.5);
+        newBlob.x = innerWidth + newBlob.width;
+        newBlob.y = randInt(newBlob.height,innerHeight - newBlob.height);
+        while(yDist(newBlob.y) < newBlob.height) {
+            newBlob.y = randInt(newBlob.height,innerHeight - newBlob.height);
+        }
+        blobs.push(newBlob);
+    }
+    function yDist(y){
+        var dist = Infinity;
+        blobs.forEach(function(blob){
+            var currentDist = Math.abs(blob.y - y);
+            if(currentDist < dist) {
+                dist = currentDist;
+            }
+        });
+        return dist;
+    }
+    function keyboard(value) {
+      let key = {};
+      key.value = value;
+      key.isDown = false;
+      key.isUp = true;
+      key.press = undefined;
+      key.release = undefined;
+      //The `downHandler`
+      key.downHandler = event => {
+        if (event.key === key.value) {
+          if (key.isUp && key.press) key.press();
+          key.isDown = true;
+          key.isUp = false;
+          event.preventDefault();
+        }
+      };
+
+      //The `upHandler`
+      key.upHandler = event => {
+        if (event.key === key.value) {
+          if (key.isDown && key.release) key.release();
+          key.isDown = false;
+          key.isUp = true;
+          event.preventDefault();
+        }
+      };
+
+      //Attach event listeners
+      const downListener = key.downHandler.bind(key);
+      const upListener = key.upHandler.bind(key);
+      
+      window.addEventListener(
+        "keydown", downListener, false
+      );
+      window.addEventListener(
+        "keyup", upListener, false
+      );
+      
+      // Detach event listeners
+      key.unsubscribe = () => {
+        window.removeEventListener("keydown", downListener);
+        window.removeEventListener("keyup", upListener);
+      };
+      
+      return key;
+    }
+  </script>
+</body>
+</html>

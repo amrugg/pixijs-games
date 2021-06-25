@@ -1,0 +1,242 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Direction ship</title>
+</head>
+    <style>* {padding: 0; margin: 0}</style>
+    <script src="pixi/pixi.min.js"></script>
+    <script src="usefulFunctions.js"></script>
+    <script src="tink.js"></script>
+<body>
+  <script type="text/javascript">
+    PIXI.utils.skipHello();
+    PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
+    let Application = PIXI.Application,
+        Container = PIXI.Container,
+        loader = PIXI.loader,
+        resources = PIXI.loader.resources,
+        TextureCache = PIXI.utils.TextureCache,
+        Sprite = PIXI.Sprite,
+        Rectangle = PIXI.Rectangle,
+        Graphics = PIXI.Graphics;
+    let app = new Application({ 
+        width: 800,
+        height: 800,              
+        antialias: true,
+        transparent: false,
+        resolution: 1
+      }
+    );
+    app.renderer.backgroundColor = 0xFFFFFF;
+    /// Fill the screen 
+    app.renderer.view.style.position = "absolute";
+    app.renderer.view.style.display = "block";
+    app.renderer.autoResize = true;
+    app.renderer.resize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(app.view);
+    loader.add("sprites/dinosaurgame/dinosaur.png").add("sprites/blankball.png").add("sprites/cat.png").load(setup);
+    var tink = new Tink(PIXI,app.renderer.view);
+    var mouse = tink.makePointer(); 
+    var dinosaur;
+    var keys = {};
+    var obstacles = [];
+    var state = restarting;
+    var style = new PIXI.TextStyle({stroke: "#ffffff",fill:"white"})
+    var hubText = new PIXI.Text("Press Enter to start.",style);
+    app.stage.addChild(hubText);
+    hubText.visible = false;
+    var coins = [];
+    function addBoots(){
+
+    };
+    var possibleItems = [{cost:10,effectType:"impulse",effect:-2,function:addBoots}]
+    function setup(){
+        dinosaur = new Sprite(resources["sprites/dinosaurgame/dinosaur.png"].texture);
+        app.stage.addChild(dinosaur);
+        dinosaur.x = 200;
+        dinosaur.y = window.innerHeight / 2;
+        dinosaur.scale.set(2);
+        dinosaur.anchor.set(0.5);
+        dinosaur.vx = 5;
+        dinosaur.maxVY = -15;
+        dinosaur.maxFallSpeed = 0.75;
+        dinosaur.vy = 0;
+        dinosaur.flip = 0;
+        dinosaur.inAir = false;
+        addNewCactus();
+        addNewCactus(500);
+        addNewCactus(1000);
+        // addNewCactus(1500);
+        app.ticker.add(delta => gameLoop(delta));
+    }
+    addEventListener("keydown",function(e){
+        keys[e.key] = true;
+        // console.log(e.key)
+    });
+    addEventListener("keyup",function(e){
+      keys[e.key] = false;
+    });
+    function gameLoop(delta) {
+      tink.update();
+      state(delta);
+    }
+    var gold = 0;
+    function play(delta) {
+        if((keys.ArrowUp || keys[" "]) && !dinosaur.inAir) {
+            dinosaur.vy = dinosaur.maxVY;
+            dinosaur.inAir = true;
+        }
+        if(keys.f && dinosaur.flip < 0.0001 && dinosaur.inAir && Math.abs(dinosaur.vy) < 1) {
+          dinosaur.flip = 1*2*3.13;
+        }
+        if(dinosaur.flip > 0) {
+          dinosaur.rotation += 0.25;
+          dinosaur.flip -= 0.25;
+        } else {
+          dinosaur.rotation = 0;
+        }
+        dinosaur.y += dinosaur.vy;
+        if(dinosaur.inAir) {
+            dinosaur.vy += dinosaur.maxFallSpeed;
+            if(dinosaur.y >= innerHeight / 2) {
+                dinosaur.vy = 0;
+                dinosaur.inAir = false;
+            }
+        }
+        obstacles.forEach(function(cactus, i){
+            cactus.x -= dinosaur.vx;
+            if(hitTestRectangle(dinosaur, cactus,0,-50)) {
+                state = restarting;
+            }
+            if(cactus.x < -100) {
+                app.stage.removeChild(cactus);
+                obstacles.splice(i,1);
+                addNewCactus(randInt(0,250));
+                if(randInt(1,2) === 1) {
+                  addNewGold(200);
+                }
+            }
+        });
+        coins.forEach(function(coin, i) {
+          coin.x -= dinosaur.vx;
+            if(hitTestRectangle(dinosaur, coin,0,0)) {
+                ++gold;
+                app.stage.removeChild(coin);
+                coins.splice(i,1);
+                if(randInt(1,10) === 1) {
+                  addNewGold(200);
+                }
+                return;
+            }
+            if(coin.x < -100) {
+                app.stage.removeChild(coin);
+                coins.splice(i,1);
+                if(randInt(1,10) === 1) {
+                  addNewGold(200);
+                }
+            }
+        });
+    }
+    function addNewCactus(offset){
+        offset = offset || 0;
+        let cactus = new Sprite(resources["sprites/cat.png"].texture);
+        app.stage.addChild(cactus);
+        cactus.anchor.set(0.5);
+        cactus.y = innerHeight / 2;
+        cactus.x = window.innerWidth + offset;
+        obstacles.push(cactus);
+    }
+    function restarting() {
+      app.renderer.backgroundColor = 0x000000;
+      obstacles.forEach(function(cactus, i){
+        app.stage.removeChild(cactus);
+      });
+      coins.forEach(function(cactus, i){
+        app.stage.removeChild(cactus);
+      });
+      coins = [];
+      obstacles = [];
+      dinosaur.visible = false;
+      hubText.text = "Press Enter to start.\nGold: " + gold.toString();
+      hubText.visible = true;
+      state = restarted;
+    }
+    function restarted() {
+      if(keys.Enter) {
+        state = starting;
+      }
+    }
+    function starting() {
+      dinosaur.x = 200;
+      dinosaur.y = window.innerHeight / 2;
+      // dinosaur.scale.set(2);
+      dinosaur.vx = 5;
+      dinosaur.vy = 0;
+      dinosaur.inAir = false;
+      dinosaur.visible = true;
+      addNewCactus();
+      addNewCactus(500 + randInt(0,250));
+      addNewCactus(1000 + randInt(0,250));
+      app.renderer.backgroundColor = 0xFFFFFF;
+      state = play;
+    }
+    function addNewGold(offset) {
+      let coin = new PIXI.Sprite(resources["sprites/blankball.png"].texture);
+      app.stage.addChild(coin);
+      coin.tint = 0xFFFF00;
+      coin.scale.set(10);
+      coin.anchor.set(0.5);
+      coin.y = innerHeight / 2;
+      coin.x = window.innerWidth + offset;
+      coins.push(coin);
+    }
+    function keyboard(value) {
+      let key = {};
+      key.value = value;
+      key.isDown = false;
+      key.isUp = true;
+      key.press = undefined;
+      key.release = undefined;
+      //The `downHandler`
+      key.downHandler = event => {
+        if (event.key === key.value) {
+          if (key.isUp && key.press) key.press();
+          key.isDown = true;
+          key.isUp = false;
+          event.preventDefault();
+        }
+      };
+
+      //The `upHandler`
+      key.upHandler = event => {
+        if (event.key === key.value) {
+          if (key.isDown && key.release) key.release();
+          key.isDown = false;
+          key.isUp = true;
+          event.preventDefault();
+        }
+      };
+
+      //Attach event listeners
+      const downListener = key.downHandler.bind(key);
+      const upListener = key.upHandler.bind(key);
+      
+      window.addEventListener(
+        "keydown", downListener, false
+      );
+      window.addEventListener(
+        "keyup", upListener, false
+      );
+      
+      // Detach event listeners
+      key.unsubscribe = () => {
+        window.removeEventListener("keydown", downListener);
+        window.removeEventListener("keyup", upListener);
+      };
+      
+      return key;
+    }
+  </script>
+</body>
+</html>
