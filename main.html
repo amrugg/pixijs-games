@@ -276,26 +276,26 @@
       treasure.y = cld.treasureY;
       gameScene.addChild(treasure);
       var blobNum = cld.blobNum, spacing = 48, startX = 100, startY = 100, direction = 1;
-      blobs = []
+      blobs = [];
       for(let i = 0; i < blobNum; i++) {
         let newBlob;
         if(grandpaMode){
-          newBlob = new Sprite(id["explorer.png"])
+          newBlob = new Sprite(id["explorer.png"]);
         } else {
-          newBlob = new Sprite(id["blob.png"])
+          newBlob = new Sprite(id["blob.png"]);
         }
-        app.stage.addChild(newBlob)
-        newBlob.x = spacing * i + startX
-        newBlob.y = startY + randInt(0,300)
+        app.stage.addChild(newBlob);
+        newBlob.x = spacing * i + startX;
+        newBlob.y = startY + randInt(0,300);
         newBlob.speed = randInt(cld.blobSpeedMax, cld.blobSpeedMin)
         newBlob.blobVY = cld.blobVY;
         newBlob.blobVX = cld.blobVX;
         if(cld.blobVX) {
           newBlob.vx = newBlob.speed * direction;
         } else {
-          newBlob.vy = newBlob.speed * direction
+          newBlob.vy = newBlob.speed * direction;
         }
-        direction *= -1
+        direction *= -1;
         blobs.push(newBlob)
         gameScene.addChild(newBlob)
       }
@@ -385,8 +385,8 @@
       time.text = ("Time remaining: "+(Math.ceil((startTime - (Date.now() - (cld.time*1000)))/1000)));
       if(Date.now() - (cld.time*1000) > startTime) {
         if(grandmaMode){
-          --level
-          state = nextLevelSetup
+          --level;
+          state = nextLevelSetup;
         } else {
           state = lose;
           return;
