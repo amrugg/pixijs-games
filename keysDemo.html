@@ -1,0 +1,103 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Direction ship</title>
+</head>
+    <style>* {padding: 0; margin: 0}</style>
+    <script src="pixi/pixi.min.js"></script>
+    <script src="usefulFunctions.js"></script>
+<body>
+  <script type="text/javascript">
+    PIXI.utils.skipHello();
+    PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
+    let Application = PIXI.Application,
+        Container = PIXI.Container,
+        loader = PIXI.loader,
+        resources = PIXI.loader.resources,
+        TextureCache = PIXI.utils.TextureCache,
+        Sprite = PIXI.Sprite,
+        Rectangle = PIXI.Rectangle,
+        Graphics = PIXI.Graphics;
+    let app = new Application({ 
+        width: 800,
+        height: 800,              
+        antialias: true,
+        transparent: false,
+        resolution: 1
+      }
+    );
+    app.renderer.backgroundColor = 0x55DD55;
+    /// Fill the screen 
+    app.renderer.view.style.position = "absolute";
+    app.renderer.view.style.display = "block";
+    app.renderer.autoResize = true;
+    app.renderer.resize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(app.view);
+    loader.add("sprites/treasureHunter.json").add("sprites/butterknife.png").load(setup);
+    var state;
+    var keys = {};
+    var explorer;
+    var actions;
+    var blobs = [];
+    var mapping = {left:"ArrowLeft",right:"ArrowRight",up:"ArrowUp",down:"ArrowDown",sprint:"Shift"};
+    function setup() {
+        state = play;
+        id = resources["sprites/treasureHunter.json"].textures;
+        explorer = new Container();
+        explorer.addChild(new Sprite(id["explorer.png"]));
+        app.stage.addChild(explorer);
+        explorer.addChild(new Sprite(resources["sprites/butterknife.png"].texture));
+        explorer.children[1].scale.set(5);
+        explorer.children[1].anchor.set(0.5);
+        explorer.children[1].position.set(16,16);
+        app.ticker.add(delta => gameLoop(delta));
+        for(let i = 0; i < 10; i++) {
+            let blob = new Sprite(id["blob.png"]);
+            app.stage.addChild(blob);
+            blob.x = randInt(200,innerWidth);
+            blob.y = randInt(100,innerHeight);
+            blobs.push(blob);
+        }
+    }
+    function gameLoop(delta) {
+      state(delta);
+    }
+    function play(){
+        actions = {left:keys[mapping.left],right:keys[mapping.right],up:keys[mapping.up],down:keys[mapping.down],sprint:keys[mapping.sprint]};
+        explorer.vx = 0;
+        explorer.vy = 0;
+        if(actions.left) {
+            explorer.vx -= 5;
+        }
+        if(actions.right) {
+            explorer.vx += 5;
+        }
+        if(actions.up) {
+            explorer.vy -= 5;
+        }
+        if(actions.down) {
+            explorer.vy += 5;
+        }
+        if(actions.sprint) {
+            explorer.vx *= 1.5;
+            explorer.vy *= 1.5;
+        }
+        explorer.x += explorer.vx;
+        explorer.y += explorer.vy;
+        blobs.forEach(function(blob){
+
+        })
+    }
+    addEventListener("blur", function (){
+        keys = {};
+    });
+    addEventListener("keydown", function (e){
+        keys[e.key] = true;
+    });
+    addEventListener("keyup", function (e){
+        keys[e.key] = false;
+    });
+  </script>
+</body>
+</html>

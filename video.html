@@ -43,7 +43,6 @@
         app.renderer.resize(window.innerWidth, window.innerHeight);
         document.body.appendChild(app.view);
         loader.add("sprites/treasureHunter.json").add("sprites/house1.png").add("sprites/house2.png").add("sprites/house3.png").add("sprites/arrow.png").add("sprites/brownarrow.png").load(setup);
-        
         var params = getParams();
         var mapScene, battleScene;
         function getParams() {
@@ -56,6 +55,7 @@
         }
         var blue = new PIXI.TextStyle({ stroke: "blue", fill: "blue" });
         var state;
+        var newText;
         var keys = {};
         var id;
         var blobs = [];
@@ -64,9 +64,10 @@
         var knightHp = 2;
         var knightDmg = 2;
         var blobHp = 5;
-        var boulders = 5;
+        var boulders = 0;
         var blobDmg = 2;
         var inputs = {};
+        var taxButton, recruitButton, leaveButton, buyButton;
         var mouseModes = [{ name: "Spawn blobs", effect: function () { spawnBlobs("fill", innerHeight - 600) } }, { name: "Call knights", effect: function () { spawnSoldiers("fill", innerHeight - 100) } }, { name: "Volley", effect: function () { fireArrows() } }, { name: "Targeted Fire", effect: function () { guideArrows() } }, {
             name: "Fire Catapult", effect: function () {
                 if (boulders > 0) {
@@ -87,7 +88,7 @@
         var mouseMode = 1;
         var eventText;
         var knightNum = 20;
-        var archerNum = 1;
+        var archerNum = 10;
         var arrows = 24;
         var firedArrows = [];
         var blobNum = 2;
@@ -98,17 +99,17 @@
         var myArmy;
         var blobArmySplice = false;
         var townSplice = false;
-        var makeTowns = [{ x: 0, y: 2, pop: 125 }];
+        var makeTowns = [{ x: 0, y: 2, pop: 125, name: "Thrugsford"}, { x: 6, y: 6, pop: 125, name: "Bronsburg"}];
         var towns = [];
         var gold = 100;
         var blobArmies = [];
         var updateStats = true;
-        var helmets = 20;
-        var breastplates = 20;
-        var misc = 20;
-        var spears = 6;
-        var swords = 8;
-        var maces = 3;
+        var helmets = 0;
+        var breastplates = 0;
+        var misc = 0;
+        var spears = 0;
+        var swords = 0;
+        var maces = 0;
         var axes = 3;
         var mouseX = 0;
         var mouseY = 0;
@@ -117,21 +118,42 @@
         var turn = 0;
         var maxSpacing = (innerWidth - 400) / 8;
         var textInfo = 2;
+        var reputation = 0;
         maxSpacing = maxSpacing < (innerHeight) / 8 ? maxSpacing : (innerHeight - 100) / 8;
         var neededSpacing;
         var slowTickSec = Date.now();
+        var townScene;
         var textStyle = new PIXI.TextStyle({ stroke: "white", fill: "white" });
+        var townIn;
         if(params.health || params.dmg || params.damage) {
             params.debug = true;
         }
         function setup() {
-            mapScene = new PIXI.Container();
-            battleScene = new PIXI.Container();
+            mapScene = new Container();
+            battleScene = new Container();
+            townScene = new Container();
+            townScene.visible = false;
+            app.stage.addChild(townScene)
             app.stage.addChild(mapScene);
             app.stage.addChild(battleScene);
             battleScene.visible = true;
             catapult = new Graphics();
             battleScene.addChild(catapult);
+            taxButton = new PIXI.Text("TAX",textStyle);
+            taxButton.y = 500;
+            townScene.addChild(taxButton);
+            recruitButton = new PIXI.Text("Recruit",textStyle);
+            recruitButton.y = 500;
+            recruitButton.x = 150;
+            townScene.addChild(recruitButton);
+            leaveButton = new PIXI.Text("Leave Town",textStyle);
+            leaveButton.y = 500;
+            leaveButton.x = 300;
+            townScene.addChild(leaveButton);
+            buyButton = new PIXI.Text("To Market",textStyle);
+            buyButton.y = 500;
+            buyButton.x = 550;
+            townScene.addChild(buyButton);
             id = resources["sprites/treasureHunter.json"].textures;
             myArmy = new Sprite(id["explorer.png"]);
             mapScene.addChild(myArmy);
@@ -216,7 +238,7 @@
             }
             if(updateStats) {
                 if(textInfo === 1) {
-                    eventText.text = "Soldiers: "+knightNum.toString() + "\nSwords: "+swords.toString()+"\nMaces: "+maces.toString() + "\nAxes: "+axes.toString() + "\nSpears: "+spears.toString()+"\nHelmets: "+helmets.toString()+"\nBreastplates: "+breastplates.toString()+"\nOther:"+misc.toString()+"\nArchers: "+archerNum.toString()+"\nArrows: "+arrows.toString()+"\nBoulders: "+boulders.toString()+"\nGold:"+gold.toString()+"\nArmies left: " +blobArmies.length.toString();
+                    eventText.text = "Soldiers: "+knightNum.toString() + "\nSwords: "+swords.toString()+"\nMaces: "+maces.toString() + "\nLight Axes: "+axes.toString() + "\nSpears: "+spears.toString()+"\nHelmets: "+helmets.toString()+"\nBreastplates: "+breastplates.toString()+"\nOther:"+misc.toString()+"\nArchers: "+archerNum.toString()+"\nArrows: "+arrows.toString()+"\nBoulders: "+boulders.toString()+"\nGold:"+gold.toString()+"\nArmies left: " +blobArmies.length.toString();
                     if(keys.mouse && mouseX < 150 && mouseY < 365) {
                         keys.mouse = false;
                         ++textInfo;
@@ -269,7 +291,7 @@
                     avgDmg /= 100;
                     var blobKnightRatio = 0;
                     /// Simulate a knight battling blobs
-                    let simKnight = {health:5,dmg:5};
+                    let simKnight = {health:avgHealth,dmg:avgDmg};
                     let simBlob = {health:blobHp,dmg:blobDmg};
                     let blobsKilled = 0;
                     while(simKnight.health > 0) {
@@ -280,9 +302,12 @@
                             ++blobsKilled;
                         }
                     }
+                    if(simBlob.health > 0) {
+                        blobsKilled += 0.5;
+                    }
                     let gangUpKilled = 0;
                     for(let i = 1; i < 10; i++) {
-                        simKnight = {health:5,dmg:5};
+                        simKnight = {health:avgHealth,dmg:avgDmg};
                         simBlob = {health:blobHp * i,dmg:blobDmg * i};
                         while(simKnight.health > 0) {
                             simKnight.health -= simBlob.dmg;
@@ -291,6 +316,9 @@
                                 gangUpKilled = i;
                             }
                         }
+                    }
+                    if(simBlob.health > 0) {
+                        gangUpKilled += 0.5;
                     }
                     var maxBlobNum = 0;
                     maxBlobNum += boulders > 0?25:0;
@@ -403,13 +431,72 @@
                             blobNum = blobArmy.num;
                         }
                     });
+                    if(state === map) {
+                        towns.forEach(function (town, i) {
+                            if (town.mapX == myArmy.mapX && town.mapY === myArmy.mapY) {
+                                state = townSetup;
+                                townIn = town;
+                                mapScene.visible = false;
+                                townScene.visible = true;
+                            }
+                        });
+                    }
                 }
             }
-            if(keys.Enter) {
-                state = videoStartup;
-                mapScene.visible = false;
-                battleScene.visible = true;
+        }
+        function townSetup() {
+            taxButton.visible = true;
+            leaveButton.visible = true;
+            recruitButton.visible = true;
+            eventText.x = innerWidth / 2;
+            eventText.anchor.set(0.5,0);
+            eventText.text = "You are in the town of " + townIn.name + ", population " + townIn.pop.toString() + ".";
+            eventText.text += "\nMilitia in the town is " + townIn.militia.toString() + " at the moment. May be attacked.";
+            eventText.text += "\nYou can recruit some of the fighting men, and possibly some eager others.";
+            eventText.text += "\nRecruit by hitting the " + '"Recruit"' + " button. You will get soldiers.";
+            eventText.text += "\nHitting it more than once may lower your reputation. Reputation is worldwide...";
+            eventText.text += "\nIt helps you get recruits and get goods. High reputation means people favor you.";
+            eventText.text += "\nThere is soldier reputation and commoner reputation. Soldier reputation makes soldiers fight better.";
+            eventText.text += "\nBuy goods for gold too. Boulders and arrows are projectiles, swords and helmets are knight equippables.";
+            eventText.text += "\nGet gold from looting blobs OR hitting the TAX button. TAX decreases your reputation.";
+            eventText.text += "\nProtect towns too. They will be targeted by blobs and destroyed if the militia fail.";
+            eventText.text += "\nLeave the town by hitting the Leave Town button. Have fun in " + townIn.name.toString() + "!";
+            app.renderer.backgroundColor = 0x777700;
+            state = townEntered;
+        }
+        function townEntered() {
+            if(keys.mouse) {
+                /// Mouse has been pressed
+                if(mouseX < 50 && mouseY < 525 && mouseY > 500 && taxButton.visible) {
+                    /// TAX
+                    reputation--;
+                    gold += townIn.pop + (townIn.pop * reputation * 0.4)>0?townIn.pop + (townIn.pop * reputation * 0.4):0;
+                    newText = new PIXI.Text("You taxed the people of Bronsburg for " + ((townIn.pop + (townIn.pop * reputation * 0.4))>0?(townIn.pop + (townIn.pop * reputation * 0.4)):0).toString(),textStyle);
+                    newText.y = 450;
+                    //setTimeout(1000, function(){app.stage.removeChild(newText)});
+                    app.stage.addChild(newText);
+                    taxButton.visible = false;
+                    setTimeout(function(){app.stage.removeChild(newText)},1000);
+                }
+                if(mouseX > 300 && mouseX < 450 && mouseY < 525 && mouseY > 500) {
+                    state = map;
+                    townScene.visible = false;
+                    mapScene.visible = true;
+                }
+                if(mouseX > 250 && mouseX < 350 && mouseY < 525 && mouseY > 500 && recruitButton.visible) {
+                    /// Recruit based on reputation
+                    /// Recruit half of the militia(losing or gaining percentage based on rep)
+                    let militiaNum = Math.floor(townIn.militia * (0.5 + (0.25 * reputation)>1?1:0.5 + (0.25 * reputation)<0?0:0.5 + (0.25 * reputation)));
+                    knightNum += militiaNum;
+                    townIn.militia -= militiaNum;
+                    console.log(militiaNum);
+                    recruitButton.visible = false;
+                }
+                keys.mouse = false;
             }
+        }
+        function townMarket() {
+
         }
         function videoStartup() {
             let blobLineMax = Math.floor(innerWidth / 50);
@@ -496,7 +583,10 @@
                 }
             }
             if (numberOfBlobs() < 1) {
+                /// The battle is won!
+                /// Keep all the alive knights
                 knightNum = numberOfKnights();
+                /// Gain back the weapons and armor of the knights and perhaps of the fallen
                 soldiers.forEach(function (knight) {
                     if(knight.helmet && (knight.state != false || randInt(1,2) === 2)) {
                         ++helmets;
@@ -516,13 +606,84 @@
                     } else if(knight.spear && (knight.state != false || randInt(1,2) === 2)) {
                         ++spears;
                     }
+                    /// Delete that knight
                     battleScene.removeChild(knight);
                 });
-                if (blobArmySplice > -1) {
+                /// Loot from the blobs!
+                let lootSpears = 0;
+                let lootSwords = 0;
+                let lootAxes = 0;
+                let lootMaces = 0;
+                let lootHelmets = 0;
+                let lootBreastplates = 0;
+                let lootMisc = 0;
+                let lootGold = 0;
+                let lootArrows = 0;
+                for(let i = 0; i < blobs.length; i++) {
+                    /// Loot gold, armor, and weapons. No boulders, but maybe arrows.
+                    var gain = randInt(0,20);
+                    if(gain === 1) {
+                        ++spears;
+                        ++lootSpears;
+                    } else if(gain === 2) {
+                        ++swords;
+                        ++lootSwords;
+                    } else if(gain === 3) {
+                        ++maces;
+                        ++lootMaces;
+                    } else if(gain === 4) {
+                        ++axes;
+                        ++lootAxes;
+                    } else if(gain === 5) {
+                        ++helmets;
+                        ++lootHelmets;
+                    } else if(gain === 6) {
+                        ++breastplates;
+                        ++lootBreastplates;
+                    } else if(gain === 7) {
+                        ++misc;
+                        ++lootMisc;
+                    } else if(gain === 8) {
+                        let randArrows = randInt(8,24);
+                        arrows += randInt(8,24);
+                        lootArrows += randArrows;
+                    } else if(gain < 15) {
+                        gold += gain - 8;
+                        lootGold += gain - 8;
+                    }
+                    eventText.text = "Congratulations! You won the battle! You looted:"
+                    if(lootSwords) {
+                        eventText.text += "\nSwords:" + lootSwords.toString()
+                    }
+                    if(lootSpears) {
+                        eventText.text += "\nSpears:" + lootSpears.toString()
+                    }
+                    if(lootMaces) {
+                        eventText.text += "\nMaces:" + lootMaces.toString()
+                    }
+                    if(lootAxes) {
+                        eventText.text += "\nLight Axes:" + lootAxes.toString()
+                    }
+                    if(lootHelmets) {
+                        eventText.text += "\nHelmets:" + lootHelmets.toString()
+                    }
+                    if(lootBreastplates) {
+                        eventText.text += "\nBreastplates:" + lootBreastplates.toString()
+                    }
+                    if(lootMisc) {
+                        eventText.text += "\nOther:" + lootMisc.toString()
+                    }
+                    if(lootArrows) {
+                        eventText.text += "\nArrows:" + lootArrows.toString()
+                    }
+                    updateStats = false;
+                }
+                if(blobArmySplice > -1) {
+                    /// Destroy the blob army
                     mapScene.removeChild(blobArmies[blobArmySplice]);
-                    // blobArmies[blobArmySplice].visible = false;
                     blobArmies.splice(blobArmySplice, 1);
                 }
+                /// Switch to Map
                 mapScene.visible = true;
                 battleScene.visible = false;
                 soldiers = [];
@@ -858,6 +1019,9 @@
                 town.mapX = townToMake.x;
                 town.mapY = townToMake.y;
                 town.scale.set(0.35);
+                town.name = townToMake.name;
+                town.pop = townToMake.pop;
+                town.militia = Math.round(town.pop / randNum(3.0,5.0));
                 // town.x = 100;
                 // town.y = 300;
                 // app.stage.addChild(town);
@@ -865,7 +1029,9 @@
                 towns.push(town);
             });
         }
-        addEventListener("mousedown", function () {
+        addEventListener("mousedown", function (mouse) {
+            mouseX = mouse.pageX;
+            mouseY = mouse.pageY;
             keys.mouse = true;
             if (state === play && cooldown < 1) {
                 mouseModes[mouseMode].effect();
