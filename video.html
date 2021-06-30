@@ -13,8 +13,6 @@
 </style>
 <script src="pixi/pixi.min.js"></script>
 <script src="usefulFunctions.js"></script>
-<script src="tink.js"></script>
-
 <body>
     <script type="text/javascript">
         PIXI.utils.skipHello();
@@ -87,9 +85,9 @@
         }
         var mouseMode = 1;
         var eventText;
-        var knightNum = 20;
-        var archerNum = 10;
-        var arrows = 24;
+        var knightNum = 0;
+        var archerNum = 0;
+        var arrows = 0;
         var firedArrows = [];
         var blobNum = 2;
         var catapult;
@@ -101,7 +99,7 @@
         var townSplice = false;
         var makeTowns = [{ x: 0, y: 2, pop: 125, name: "Thrugsford"}, { x: 6, y: 6, pop: 125, name: "Bronsburg"}];
         var towns = [];
-        var gold = 100;
+        var gold = 750;
         var blobArmies = [];
         var updateStats = true;
         var helmets = 0;
@@ -110,9 +108,10 @@
         var spears = 0;
         var swords = 0;
         var maces = 0;
-        var axes = 3;
+        var axes = 0;
         var mouseX = 0;
         var mouseY = 0;
+        var rallyButton;
         var leftReady = true;
         var rightReady = true;
         var turn = 0;
@@ -146,6 +145,10 @@
             recruitButton.y = 500;
             recruitButton.x = 150;
             townScene.addChild(recruitButton);
+            rallyButton = new PIXI.Text("Hire 10 Mercenaries",textStyle);
+            rallyButton.y = 500;
+            rallyButton.x = 700;
+            townScene.addChild(rallyButton);
             leaveButton = new PIXI.Text("Leave Town",textStyle);
             leaveButton.y = 500;
             leaveButton.x = 300;
@@ -383,8 +386,28 @@
             if (keys.mouse) {
                 keys.mouse = false;
                 if (turn === 0) {
+                    let luck = randInt(1,50);
+                    if(luck < 5) {
+                        if(luck === 1) {
+                            gold += 100;
+                        } else if(luck === 2) {
+                            arrows += 24*4;
+                        } else if(luck === 3) {
+                            swords += 3;
+                            spears += 3;
+                            maces += 3;
+                            axes += 3;
+                        } else if(luck === 4) {
+                            helmets += 3;
+                            breastplates += 3;
+                            misc += 3;
+                        } else if(luck === 5) {
+                            boulders += 5;
+                        }
+                    }
+                    reputation -= 0.05;
                     turn = 11;
-                    lastSec = Date.now();
+                    lastSec = Date.now() - 1000;
                     /// What direction are we closest to? 0,45,90,135,180,225,270,315, or 360, which is 0.
                     var closestDir = 0;
                     var pointingDir = pointTowards(myArmy.x, myArmy.y, mouseX, mouseY);
@@ -448,12 +471,13 @@
             taxButton.visible = true;
             leaveButton.visible = true;
             recruitButton.visible = true;
+            rallyButton.visible = true;
             eventText.x = innerWidth / 2;
             eventText.anchor.set(0.5,0);
             eventText.text = "You are in the town of " + townIn.name + ", population " + townIn.pop.toString() + ".";
             eventText.text += "\nMilitia in the town is " + townIn.militia.toString() + " at the moment. May be attacked.";
             eventText.text += "\nYou can recruit some of the fighting men, and possibly some eager others.";
-            eventText.text += "\nRecruit by hitting the " + '"Recruit"' + " button. You will get soldiers.";
+            eventText.text += "\nRecruit by hitting the " + '"Recruit"' + " button. You will get soldiers. Rally costs money, but gets more.";
             eventText.text += "\nHitting it more than once may lower your reputation. Reputation is worldwide...";
             eventText.text += "\nIt helps you get recruits and get goods. High reputation means people favor you.";
             eventText.text += "\nThere is soldier reputation and commoner reputation. Soldier reputation makes soldiers fight better.";
@@ -470,8 +494,13 @@
                 if(mouseX < 50 && mouseY < 525 && mouseY > 500 && taxButton.visible) {
                     /// TAX
                     reputation--;
-                    gold += townIn.pop + (townIn.pop * reputation * 0.4)>0?townIn.pop + (townIn.pop * reputation * 0.4):0;
-                    newText = new PIXI.Text("You taxed the people of Bronsburg for " + ((townIn.pop + (townIn.pop * reputation * 0.4))>0?(townIn.pop + (townIn.pop * reputation * 0.4)):0).toString(),textStyle);
+                    let taxed = townIn.pop + (townIn.pop * reputation * 0.4)>0?townIn.pop + (townIn.pop * reputation * 0.4):0; 
+                    gold += taxed;
+                    if(taxed > 0) {
+                        newText = new PIXI.Text("You taxed the people of " +townIn.name+" for " + ((townIn.pop + (townIn.pop * reputation * 0.4))>0?(townIn.pop + (townIn.pop * reputation * 0.4)):0).toString(),textStyle);
+                    } else {
+                        newText = new PIXI.Text("The people of " + townIn.name + " hold you in disdain. They gave you NOTHING!",textStyle);
+                    }
                     newText.y = 450;
                     //setTimeout(1000, function(){app.stage.removeChild(newText)});
                     app.stage.addChild(newText);
@@ -483,15 +512,104 @@
                     townScene.visible = false;
                     mapScene.visible = true;
                 }
-                if(mouseX > 250 && mouseX < 350 && mouseY < 525 && mouseY > 500 && recruitButton.visible) {
+                if(mouseX > 150 && mouseX < 235 && mouseY < 525 && mouseY > 500 && recruitButton.visible) {
                     /// Recruit based on reputation
                     /// Recruit half of the militia(losing or gaining percentage based on rep)
-                    let militiaNum = Math.floor(townIn.militia * (0.5 + (0.25 * reputation)>1?1:0.5 + (0.25 * reputation)<0?0:0.5 + (0.25 * reputation)));
-                    knightNum += militiaNum;
-                    townIn.militia -= militiaNum;
-                    console.log(militiaNum);
+                    // let militiaNum = Math.floor(townIn.militia * (0.5 + (0.25 * reputation)>1?1:0.5 + (0.25 * reputation)<0?0:0.5 + (0.25 * reputation)));
+                    // knightNum += militiaNum;
+                    // townIn.militia -= militiaNum;
+                    let popNum = Math.floor(townIn.pop * (0.25 + (0.125 * reputation))) || 0;
+                    knightNum += Math.round(popNum * 0.75);
+                    townIn.pop -= popNum;
+                    archerNum += Math.round(popNum * 0.25);
                     recruitButton.visible = false;
+                    for(let i = 0; i < popNum; i++) {
+                            var gain = randInt(0,100);
+                            if(gain === 1) {
+                                ++spears;
+                                // ++lootSpears;
+                            } else if(gain === 2) {
+                                ++swords;
+                                // ++lootSwords;
+                            } else if(gain === 3) {
+                                ++maces;
+                                // ++lootMaces;
+                            } else if(gain === 4) {
+                                ++axes;
+                                // ++lootAxes;
+                            } else if(gain === 5) {
+                                ++helmets;
+                                // ++lootHelmets;
+                            } else if(gain === 6) {
+                                ++breastplates;
+                                // ++lootBreastplates;
+                            } else if(gain === 7) {
+                                ++misc;
+                                // ++lootMisc;
+                            } else if(gain === 8) {
+                                // let randArrows = randInt(8,24);
+                                arrows += randInt(8,24);
+                                // lootArrows += randArrows;
+                            } else if(gain < 15) {
+                                gold += gain - 8;
+                                // lootGold += gain - 8;
+                            }
+                        }
                 }
+                if(mouseX > 700 && mouseX < 800 && mouseY < 525 && mouseY > 500 && (rallyButton.visible || true)) {
+                    if(gold >= 50) {
+                        /// Recruit based on reputation
+                        /// Recruit half of the militia(losing or gaining percentage based on rep)
+                        let militiaNum = 10<=townIn.militia?10:townIn.militia//Math.floor(townIn.militia * (0.75 + (0.25 * reputation)>1?1:0.5 + (0.25 * reputation)<0?0:0.5 + (0.25 * reputation)));
+                        knightNum += militiaNum;
+                        townIn.militia -= militiaNum;
+                        gold -= militiaNum * 10;
+                        rallyButton.visible = false;
+                        for(let i = 0; i < militiaNum; i++) {
+                            var gain = randInt(1,7);
+                            if(gain === 1) {
+                                ++spears;
+                                // ++lootSpears;
+                            } else if(gain === 2) {
+                                ++swords;
+                                // ++lootSwords;
+                            } else if(gain === 3) {
+                                ++maces;
+                                // ++lootMaces;
+                            } else if(gain === 4) {
+                                ++axes;
+                                // ++lootAxes;
+                            } else if(gain === 5) {
+                                ++helmets;
+                                // ++lootHelmets;
+                            } else if(gain === 6) {
+                                ++breastplates;
+                                // ++lootBreastplates;
+                            } else if(gain === 7) {
+                                ++misc;
+                                // ++lootMisc;
+                            } else if(gain === 8) {
+                                // let randArrows = randInt(8,24);
+                                arrows += randInt(8,24);
+                                // lootArrows += randArrows;
+                            } else if(gain < 15) {
+                                // gold += gain - 8;
+                                // lootGold += gain - 8;
+                            }
+                        }
+                    }
+                }
+                eventText.text = "You are in the town of " + townIn.name + ", population " + townIn.pop.toString() + ".";
+                eventText.text += "\nMilitia in the town is " + townIn.militia.toString() + " at the moment. May be attacked.";
+                eventText.text += "\nYou can recruit some of the fighting men, and possibly some eager others.";
+                eventText.text += "\nRecruit by hitting the " + '"Recruit"' + " button. You will get soldiers. Rally costs money, but gets more.";
+                eventText.text += "\nHitting it more than once may lower your reputation. Reputation is worldwide...";
+                eventText.text += "\nIt helps you get recruits and get goods. High reputation means people favor you.";
+                eventText.text += "\nThere is soldier reputation and commoner reputation. Soldier reputation makes soldiers fight better.";
+                eventText.text += "\nBuy goods for gold too. Boulders and arrows are projectiles, swords and helmets are knight equippables.";
+                eventText.text += "\nGet gold from looting blobs OR hitting the TAX button. TAX decreases your reputation.";
+                eventText.text += "\nProtect towns too. They will be targeted by blobs and destroyed if the militia fail.";
+                eventText.text += "\nLeave the town by hitting the Leave Town button. Have fun in " + townIn.name.toString() + "!";
                 keys.mouse = false;
             }
         }
@@ -524,7 +642,7 @@
             }
         }
         function guideArrows() {
-            for (let i = 0; i < archerNum; i++) {
+            for (let i = 0; i < archerNum * randNum(0.5,1); i++) {
                 if (arrows > 0) {
                     spawnArrow(pointTowards((i * (innerWidth / archerNum) + 24), innerHeight, mouseX, mouseY), (i * (innerWidth / archerNum) + 24));
                     --arrows;
@@ -564,7 +682,7 @@
             var lineMax = Math.floor(innerWidth / 50);
             /// Any amount less than lineMax will work.
             var linesNeeded = Math.ceil(knightNum / lineMax);
-            for (let i = 0; i < linesNeeded; i++) {
+            for (let i = linesNeeded - 1; i >= 0; i--) {
                 if (knightNum >= lineMax) {
                     spawnSoldiers(lineMax, innerHeight - ((i + 1) * neededSpacing));
                     knightNum -= lineMax;
