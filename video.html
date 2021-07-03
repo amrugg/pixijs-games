@@ -112,6 +112,14 @@
         var mouseX = 0;
         var mouseY = 0;
         var rallyButton;
+        var prices = {sword:25,
+        mace:20,
+        axe:15,
+        spear:10,
+        helmet:30,
+        breastplate:50,
+        misc:20
+        };
         var leftReady = true;
         var rightReady = true;
         var turn = 0;
@@ -511,13 +519,12 @@
                     state = map;
                     townScene.visible = false;
                     mapScene.visible = true;
+                    app.renderer.backgroundColor = 0x55DD55;
+                    eventText.position.set(0,0);
+                    eventText.anchor.set(0,0);
                 }
                 if(mouseX > 150 && mouseX < 235 && mouseY < 525 && mouseY > 500 && recruitButton.visible) {
                     /// Recruit based on reputation
-                    /// Recruit half of the militia(losing or gaining percentage based on rep)
-                    // let militiaNum = Math.floor(townIn.militia * (0.5 + (0.25 * reputation)>1?1:0.5 + (0.25 * reputation)<0?0:0.5 + (0.25 * reputation)));
-                    // knightNum += militiaNum;
-                    // townIn.militia -= militiaNum;
                     let popNum = Math.floor(townIn.pop * (0.25 + (0.125 * reputation))) || 0;
                     knightNum += Math.round(popNum * 0.75);
                     townIn.pop -= popNum;
@@ -599,6 +606,9 @@
                         }
                     }
                 }
+                if(mouseX > 500 && mouseX < 665 && mouseY < 525 && mouseY > 500) {
+                    state = marketSetup;
+                }
                 eventText.text = "You are in the town of " + townIn.name + ", population " + townIn.pop.toString() + ".";
                 eventText.text += "\nMilitia in the town is " + townIn.militia.toString() + " at the moment. May be attacked.";
                 eventText.text += "\nYou can recruit some of the fighting men, and possibly some eager others.";
@@ -613,8 +623,65 @@
                 keys.mouse = false;
             }
         }
+        function marketSetup() {
+            eventText.text = "1 Sword: " + prices.sword.toString();
+            eventText.text += "\n10 Swords: " + (prices.sword * 8).toString();
+            eventText.text += "\n1 Mace: " + prices.mace.toString();
+            eventText.text += "\n10 Maces: " + (prices.mace * 8).toString();
+            eventText.text += "\n1 Axe: " + prices.axe.toString();
+            eventText.text += "\n10 Axes: " + (prices.axe * 8).toString();
+            eventText.text += "\n1 Spear: " + prices.spear.toString();
+            eventText.text += "\n10 Spears: " + (prices.spear * 8).toString();
+            eventText.text += "\n1 Breastplate: " + prices.breastplate.toString();
+            eventText.text += "\n10 Breastplates: " + (prices.breastplate * 8).toString();
+            eventText.text += "\n1 Helmet: " + prices.helmet.toString();
+            eventText.text += "\n10 Helmets: " + (prices.helmet * 8).toString();
+            eventText.text += "\n1 Other: " + prices.misc.toString();
+            eventText.text += "\n10 Others: " + (prices.misc * 8).toString();
+            eventText.text += "\nLeave Market";
+            state = townMarket;
+        }
         function townMarket() {
-
+            if(keys.mouse) {
+                var half = innerWidth / 2 - (501.5 - 387);
+                var inc = 28;
+                if(mouseX > half && mouseX < 700 - (564 - half) && mouseY > inc*0 && mouseY < inc*1) {
+                    console.log("/// Sword")
+                }  if(mouseX > half && mouseX < 744 - (564 - half) && mouseY > inc*1 && mouseY < inc*2) {
+                    console.log("/// 10Sword")
+                }  if(mouseX > half && mouseX < 691 - (564 - half) && mouseY > inc*2 && mouseY < inc*3) {
+                    console.log("/// Mace")
+                }  if(mouseX > half && mouseX < 735 - (564 - half) && mouseY > inc*3 && mouseY < inc*4) {
+                    console.log("/// 10mace")
+                }  if(mouseX > half && mouseX < 672 - (564 - half) && mouseY > inc*4 && mouseY < inc*5) {
+                    console.log("/// Axe")
+                }  if(mouseX > half && mouseX < 716 - (564 - half) && mouseY > inc*5 && mouseY < inc*6) {
+                    console.log("/// 10Axe")
+                }  if(mouseX > half && mouseX < 695 - (564 - half) && mouseY > inc*6 && mouseY < inc*7) {
+                    console.log("/// Spear")
+                }  if(mouseX > half && mouseX < 725 - (564 - half) && mouseY > inc*7 && mouseY < inc*8) {
+                    console.log("/// 10Spear")
+                }  if(mouseX > half && mouseX < 760 - (564 - half) && mouseY > inc*8 && mouseY < inc*9) {
+                    console.log("/// Breastplate")
+                }  if(mouseX > half && mouseX < 800 - (564 - half) && mouseY > inc*9 && mouseY < inc*10) {
+                    console.log("/// 10Breastplate")
+                }  if(mouseX > half && mouseX < 710 - (564 - half) && mouseY > inc*10 && mouseY < inc*11) {
+                    console.log("/// Helmet")
+                }  if(mouseX > half && mouseX < 750 - (564 - half) && mouseY > inc*11 && mouseY < inc*12) {
+                    console.log("/// 10Helmet")
+                }  if(mouseX > half && mouseX < 690 - (564 - half) && mouseY > inc*12 && mouseY < inc*13) {
+                    console.log("/// Misc")
+                }  if(mouseX > half && mouseX < 735 - (564 - half) && mouseY > inc*13 && mouseY < inc*14) {
+                    console.log("/// 10Misc")
+                }
+                state = map;
+                townScene.visible = false;
+                mapScene.visible = true;
+                app.renderer.backgroundColor = 0x55DD55;
+                eventText.position.set(0,0);
+                eventText.anchor.set(0,0);
+                keys.mouse = false;
+            }
         }
         function videoStartup() {
             let blobLineMax = Math.floor(innerWidth / 50);

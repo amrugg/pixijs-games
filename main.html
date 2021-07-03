@@ -280,26 +280,26 @@
       for(let i = 0; i < blobNum; i++) {
         let newBlob;
         if(grandpaMode){
-          newBlob = new Sprite(id["explorer.png"]);
+          newBlob = new Sprite(id["explorer.png"])
         } else {
-          newBlob = new Sprite(id["blob.png"]);
+          newBlob = new Sprite(id["blob.png"])
         }
-        app.stage.addChild(newBlob);
-        newBlob.x = spacing * i + startX;
-        newBlob.y = startY + randInt(0,300);
-        newBlob.speed = randInt(cld.blobSpeedMax, cld.blobSpeedMin)
+        if(cld.blobVY) {
+          newBlob.x = spacing * i + startX;
+          newBlob.y = startY + randInt(0, 300);
+        } else {
+          newBlob.x = startX + randInt(0, 300);
+          newBlob.y = (spacing / 2) * i + startY;
+        }
+        newBlob.vx = randInt(cld.blobSpeedMin, cld.blobSpeedMax) * direction;
+        newBlob.vy = randInt(cld.blobSpeedMin, cld.blobSpeedMax) * direction;
+        direction *= -1;
         newBlob.blobVY = cld.blobVY;
         newBlob.blobVX = cld.blobVX;
-        if(cld.blobVX) {
-          newBlob.vx = newBlob.speed * direction;
-        } else {
-          newBlob.vy = newBlob.speed * direction;
-        }
-        direction *= -1;
-        blobs.push(newBlob)
         gameScene.addChild(newBlob)
+        blobs.push(newBlob)
       }
-      savageBlobs = []
+      savageBlobs = [];
         if(cld.savageBlobNum) {
           var blobNum = cld.savageBlobNum, spacing = 48, startX = 100, startY = 100;
           for(let i= 0; i < blobNum; i++) {
@@ -322,6 +322,7 @@
       let enter = keyboard("Enter");
       enter.press = () => {
         if(state === wait) {
+          console.log(blobs);
           startText.visible = false;
           gameScene.visible = true;
           app.renderer.backgroundColor = 0xFFFFFF;
