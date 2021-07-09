@@ -154,7 +154,7 @@ function direction(distance,angle) {
     var y = 0;
     x = Math.sin(angle) * distance;
     y = Math.cos(angle) * distance
-    var radianRotation = (angle * Math.PI) / 180
+    var radianRotation = (angle * Math.PI) / 180;
     return({r:x, u:y});
 }
 function pointInDirection(degrees) {
