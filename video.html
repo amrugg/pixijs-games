@@ -59,10 +59,11 @@
         var newText;
         var keys = {};
         var id;
-        var townAttackedThisTurn = false;
+        var battleThisTurn = false;
         var blobs = [];
         var soldiers = [];
         var arrows = [];
+        var chosenBlobArmy;
         var knightHp = 2;
         var knightDmg = 2;
         var blobHp = 5;
@@ -72,14 +73,14 @@
         var calText;
         var inputs = {};
         var waves = [function(){
-            spawnBlobArmy(0, -1, "medium");
-            spawnBlobArmy(3,-1,"large");
-            spawnBlobArmy(7,-1, 60,3);
-            spawnBlobArmy(1, -1, "medium");
-            spawnBlobArmy(4,-1,"large");
-            spawnBlobArmy(6,-1, 60,0,5);
-            spawnBlobArmy(2, -1, "very large");
-            spawnBlobArmy(5,-1, 60,5);
+            spawnBlobArmy(0, -1, "very large");
+            spawnBlobArmy(3,-1,"vv large");
+            spawnBlobArmy(7,-1, 120,9);
+            spawnBlobArmy(1, -1, "very large");
+            spawnBlobArmy(4,-1,"vv large");
+            spawnBlobArmy(6,-1, 120,0,10);
+            spawnBlobArmy(2, -1, "vv large");
+            spawnBlobArmy(5,-1, 120,15);
         },
         function(){
             spawnBlobArmy(0, -1, "small",100);
@@ -90,7 +91,38 @@
             spawnBlobArmy(6,-1, 40,10,10);
             spawnBlobArmy(2, -1, "small",100);
             spawnBlobArmy(5,-1, 40,29);
-        }];
+        },
+        function(){
+            spawnBlobArmy(0, -1, "very large",50,10);
+            spawnBlobArmy(3,-1,"vv large",50,20);
+            spawnBlobArmy(7,-1, 100,54,8);
+            spawnBlobArmy(1, -1, "very large",100);
+            spawnBlobArmy(4,-1,"vv large",100);
+            spawnBlobArmy(6,-1, 100,40,10);
+            spawnBlobArmy(2, -1, "very large",50,20);
+            spawnBlobArmy(5,-1, 100,78,30);
+        },
+        function(){
+            spawnBlobArmy(0, -1, "small",0,100);
+            spawnBlobArmy(3,-1,"medium",15,10);
+            spawnBlobArmy(7,-1, 40,4,26);
+            spawnBlobArmy(1, -1, "small",0,100);
+            spawnBlobArmy(4,-1,"medium",0,100);
+            spawnBlobArmy(6,-1, 40,10,30);
+            spawnBlobArmy(2, -1, "small",0,200);
+            spawnBlobArmy(5,-1, 40,5,29);
+        },
+        function(){
+            spawnBlobArmy(0, -1, "very large",0,1000);
+            spawnBlobArmy(3,-1,"vv large",15,100);
+            spawnBlobArmy(7,-1, 120,30,50);
+            spawnBlobArmy(1, -1, "very large",0,1000);
+            spawnBlobArmy(4,-1,"vv large",0,100);
+            spawnBlobArmy(6,-1, 120,10,100);
+            spawnBlobArmy(2, -1, "very large",0,2000);
+            spawnBlobArmy(5,-1, 120,5,100);
+        },
+        ];
         function mapIncludes(x, y) {
             v = false;
             blobArmies.forEach(function (blob) {
@@ -101,14 +133,17 @@
             return v;
         }
         var taxButton, recruitButton, leaveButton, buyButton;
-        var mouseModes = [{ name: "Spawn blobs", effect: function () { spawnBlobs("fill", innerHeight - 600) } }, { name: "Call knights", effect: function () { spawnSoldiers("fill", innerHeight - 100) } }, { name: "Volley", effect: function () { fireArrows() } }, { name: "Targeted Fire", effect: function () { guideArrows() } }, {
+        var mouseModes = [{ name: "Volley", effect: function () { fireArrows() } }, { name: "Targeted Fire", effect: function () { guideArrows() } }, {
             name: "Fire Catapult", effect: function () {
                 if (boulders > 0) {
                     --boulders;
                     let blobsKilled = 0;
+                    noFireCatapult = false;
+                    // console.log("Went off 1")
                     blobs.forEach(function (blob) {
                         if (blobsKilled < 50 && getDistance(blob.x, blob.y, mouseX, mouseY) <= 100) {
                             blob.health = 0;
+                            // console.log("Went off 2");
                             ++blobsKilled;
                         }
                     });
@@ -132,7 +167,7 @@
         var myArmy;
         var blobArmySplice = false;
         var townSplice = false;
-        var makeTowns = [{ x: 0, y: 2, pop: 125, name: "Thrugsford"}, { x: 6, y: 6, pop: 125, name: "Bronsburg"},{ x: 4, y: 3, pop: 100, name: "Villsville"}, { x: 2, y: 4, pop: 125, name: "Fordstone"},{ x: 3, y: 7, pop: 400, name: "Kingsville"},{ x: 3, y: 0, pop: 300, name: "Royal Guard"},{ x: 0, y: 6, pop: 500, name: "Merchant's lair"},{ x: 7, y: 2, pop: 200, name: "Xitown"}];
+        var makeTowns = [{ x: 0, y: 2, pop: 125 * 2, name: "Thrugsford"}, { x: 6, y: 6, pop: 125 * 2, name: "Bronsburg"},{ x: 4, y: 3, pop: 100 * 2, name: "Villsville"}, { x: 2, y: 4, pop: 125 * 2, name: "Fordstone"},{ x: 3, y: 7, pop: 400 * 2, name: "Kingsville"},{ x: 3, y: 0, pop: 300 * 2, name: "Royal Guard"},{ x: 0, y: 6, pop: 500 * 2, name: "Merchant's lair"},{ x: 7, y: 2, pop: 200 * 2, name: "Xitown"}];
         var towns = [];
         var gold = 750;
         var blobArmies = [];
@@ -167,11 +202,14 @@
         var neededSpacing;
         var slowTickSec = Date.now();
         var townScene;
+        var merchant = true;
+        var market = true;
         var textStyle = new PIXI.TextStyle({ stroke: "white", fill: "white" });
         var townIn;
         if(params.health || params.dmg || params.damage) {
             params.debug = true;
         }
+        var noFireCatapult = true;
         function setup() {
             mapScene = new Container();
             battleScene = new Container();
@@ -262,11 +300,11 @@
             spawnBlobArmy(0, -1, "small");
             spawnBlobArmy(3,-1,"medium");
             spawnBlobArmy(7,-1, 40,3);
-            spawnBlobArmy(1, -1, "small");
-            spawnBlobArmy(4,-1,"medium");
+            spawnBlobArmy(1, -1, "small",1);
+            spawnBlobArmy(4,-1,"medium",5);
             spawnBlobArmy(6,-1, 40,0,5);
             spawnBlobArmy(2, -1, "small");
-            spawnBlobArmy(5,-1, 40,5);
+            spawnBlobArmy(5,-1, 40,3);
             spawnTowns();
             state = map;
         }
@@ -299,15 +337,21 @@
             blobArmies.push(newBlobArmy);
         }
         function map() {
-            townAttackedThisTurn = false;
+            battleThisTurn = false;
+            /// Update stats if mouse down
+            if(blobArmies.length < 1 && calendar > 15*5) {
+                state = winning;
+            }
             if(keys.mouse) {
                 updateStats = true;
             }
+            /// Place towns
             towns.forEach(function (town) {
                 // console.log(town.mapX,town.mapY);
                 town.x = (town.mapX * maxSpacing) + 400;
                 town.y = (town.mapY * maxSpacing) + 100;
             });
+            /// Turns
             if (turn > 9) {
                 calText.text = calendar.toString();
                 updateStats = false;
@@ -316,6 +360,7 @@
                     updateStats = true;
                 }
             }
+            /// Stats
             if(updateStats) {
                 updateStats = false;
                 if(textInfo === 1) {
@@ -384,15 +429,16 @@
                         }
                     }
                     Math.round2 = function(decimal,toPlace){
-                        // console.log(decimal,toPlace);
-                        console.log(decimal)
+                        // console.log("1",decimal);
+                        toPlace = toPlace || 100;
                         decimal *= toPlace;
                         decimal = Math.round(decimal);
                         decimal /= toPlace;
+                        // console.log("2",decimal);
                         return decimal;
                     }
                     if(simBlob.health < 5) {
-                        blobsKilled += Math.round2((5-simBlob.health)/5,100);
+                        blobsKilled += (5-simBlob.health)/5;
                     }
                     let gangUpKilled = 0;
                     for(let i = 1; i < 10; i++) {
@@ -412,7 +458,7 @@
                     var maxBlobNum = 0;
                     maxBlobNum += boulders > 0?25:0;
                     maxBlobNum += arrows / 2.5;
-                    eventText.text = "Soldiers: "+knightNum.toString() + "\nArchers: " + archerNum.toString() + "\nFull clad: " + fullClad.toString() + "\nAverage health: " + avgHealth.toString() + "\nAverage damage: " + avgDmg.toString() + "\nKnight-blob-ratios:\nOne-by-one: " + blobsKilled.toString() + "\nGang-up: " + gangUpKilled.toString() + "\nMax Blobs Killed:\n1: " + (maxBlobNum + (knightNum * blobsKilled)).toString() + "\n2: "+(maxBlobNum + (knightNum * gangUpKilled)).toString();
+                    eventText.text = "Soldiers: "+knightNum.toString() + "\nArchers: " + archerNum.toString() + "\nFull clad: " + fullClad.toString() + "\nAverage health: " + Math.round2(avgHealth,100).toString() + "\nAverage damage: " + Math.round2(avgDmg,100).toString() + "\nKnight-blob-ratios:\nOne-by-one: " + Math.round2(blobsKilled).toString() + "\nGang-up: " + Math.round2(gangUpKilled,100).toString() + "\nMax Blobs Killed:\n1: " + Math.round2((maxBlobNum + (knightNum * blobsKilled)),100).toString() + "\n2: "+Math.round2((maxBlobNum + (knightNum * gangUpKilled))).toString();
                     if(keys.mouse && mouseX < 150 && mouseY < 365) {
                         keys.mouse = false;
                         textInfo = 3;
@@ -429,36 +475,48 @@
                     }
                 }
             }
+            /// Blob's turn
             if (turn === 1) {
                 blobArmies.forEach(function (blobArmy) {
                     /// Chose a random action
                     var action = randInt(0, 5);
                     if (action === 0) {
                         /// Move straight down
-                        if (!mapIncludes(blobArmy.mapX, blobArmy.mapY + 1)) {
-                            blobArmy.mapY++;
+                        /// If we are gonna fight
+                        if((blobArmy.mapX == myArmy.mapX && blobArmy.mapY + 1 === myArmy.mapY) || coordOnTown(blobArmy.mapX,blobArmy.mapY+1)) {
+                            if(battleThisTurn == false) {
+                                if (!mapIncludes(blobArmy.mapX, blobArmy.mapY + 1)) {
+                                    blobArmy.mapY++;
+                                }
+                            }
+                        } else {
+                            if (!mapIncludes(blobArmy.mapX, blobArmy.mapY + 1)) {
+                                blobArmy.mapY++;
+                            }
                         }
                     } else if (action === 1) {
                         var moveX = myArmy.mapX > blobArmy.mapX ? 1 : myArmy.mapX < blobArmy.mapX ? -1 : 0;
                         var moveY = myArmy.mapY > blobArmy.mapY ? 1 : myArmy.mapY < blobArmy.mapY ? -1 : 0;
-                        if(coordOnTown(blobArmy.mapX + moveX,blobArmy.moveY + moveY) || townAttackedThisTurn == false) {
+                        if(!coordOnTown(blobArmy.mapX + moveX,blobArmy.moveY + moveY) || battleThisTurn == false) {
                             if (!mapIncludes(blobArmy.mapX + moveX, blobArmy.mapY + moveY)) {
                                 blobArmy.mapX += moveX;
                                 blobArmy.mapY += moveY;
                             }
                         }
-                    } else if(action === 2 && townAttackedThisTurn === false) {
+                    } else if((action === 2 || (action < 4 && calendar > 15 && calendar < 30)) && battleThisTurn === false) {
                         /// Move towards the nearest town
                         var town = getNearestTown(blobArmy.mapX,blobArmy.mapY);
                         var moveX = town.mapX > blobArmy.mapX ? 1 : myArmy.mapX < blobArmy.mapX ? -1 : 0;
                         var moveY = town.mapY > blobArmy.mapY ? 1 : myArmy.mapY < blobArmy.mapY ? -1 : 0;
-                        if (!mapIncludes(blobArmy.mapX + moveX, blobArmy.mapY + moveY)) {
+                        if (!mapIncludes(blobArmy.mapX + moveX, blobArmy.mapY + moveY) && (!coordOnTown(blobArmy.mapX + moveX,blobArmy.mapY + moveY) || battleThisTurn == false)) {
                             blobArmy.mapX += moveX;
                             blobArmy.mapY += moveY;
                         }
                         keys.mouse = false;
                     }
-                    townAttackedThisTurn = true;
+                    if(coordOnTown(blobArmy.mapX,blobArmy.mapY)) {
+                        battleThisTurn = true;
+                    }
                     blobArmy.x = (blobArmy.mapX * maxSpacing) + 400;
                     blobArmy.y = (blobArmy.mapY * maxSpacing) + 100;
                 });
@@ -482,7 +540,8 @@
                                 blobNum = blobArmy.num;
                                 townNum = town.militia;
                                 townSplice = i;
-                                chosenTown = towns[townSplice];
+                                chosenTown = town;
+                                chosenBlobArmy = blobArmy;
                             } 
                         });
                     }
@@ -501,12 +560,17 @@
                 keys.mouse = false;
                 if (turn === 0) {
                     ++calendar;
-                    if(calendar % 10 == 0 && (calendar/10)-1 < waves.length) {
+                    if(calendar % 15 == 0 && (calendar/15)-1 < waves.length) {
                         // console.log(waves[calendar/10],calendar,calendar/10)
-                        waves[(calendar/10)-1]();
+                        waves[(calendar/15)-1]();
+                        for(let i = 0; i < towns.length; i++) {
+                            if(towns[i].name == "Royal Guard") {
+                                towns[i].militia += 50;
+                            }
+                        }
                     }
                     turn = 11;
-                    eventText.text = "Blob's turn"
+                    eventText.text = "Blob's turn";
                     let luck = randInt(1,50);
                     if(luck < 5) {
                         if(luck === 1) {
@@ -605,7 +669,7 @@
             let blobLineMax = Math.floor(innerWidth / 50);
             let blobLinesNeeded = Math.ceil(blobNum / blobLineMax);
             let knightLineMax = Math.floor(innerWidth / 50);
-            let knightLinesNeeded = Math.ceil(knightNum / knightLineMax);
+            let knightLinesNeeded = Math.ceil(chosenTown.militia / knightLineMax);
             let totalLinesNeeded = knightLinesNeeded + blobLinesNeeded + 5;
             neededSpacing = innerHeight / totalLinesNeeded;
             if (neededSpacing > 100) {
@@ -637,10 +701,9 @@
             eventText.text = "You are in the town of " + townIn.name + ", population " + townIn.pop.toString() + ".";
             eventText.text += "\nMilitia in the town is " + townIn.militia.toString() + " at the moment. May be attacked.";
             eventText.text += "\nYou can recruit some of the fighting men, and possibly some eager others.";
-            eventText.text += "\nRecruit by hitting the " + '"Recruit"' + " button. You will get soldiers. Rally costs money, but gets more.";
-            eventText.text += "\nHitting it more than once may lower your reputation. Reputation is worldwide...";
-            eventText.text += "\nIt helps you get recruits and get goods. High reputation means people favor you.";
-            eventText.text += "\nThere is soldier reputation and commoner reputation. Soldier reputation makes soldiers fight better.";
+            eventText.text += "\nRecruit by hitting the " + '"Recruit"' + " button or the Hire 10 Mercenaries button."
+            eventText.text += "\nYou will get soldiers based on reputation. Hire 10 Mercenaries makes it be more likely that they have weapons.";
+            eventText.text += "\nReputation helps you get recruits and get goods. High reputation means people favor you.";
             eventText.text += "\nBuy goods for gold too. Boulders and arrows are projectiles, swords and helmets are knight equippables.";
             eventText.text += "\nGet gold from looting blobs OR hitting the TAX button. TAX decreases your reputation.";
             eventText.text += "\nProtect towns too. They will be targeted by blobs and destroyed if the militia fail.";
@@ -650,6 +713,9 @@
         }
         function townEntered() {
             if(keys.mouse) {
+                if(townIn.name == "Merchant's lair") {
+                    merchant = false;
+                }
                 /// Mouse has been pressed
                 if(mouseX < 50 && mouseY < 525 && mouseY > 500 && taxButton.visible) {
                     /// TAX
@@ -680,7 +746,7 @@
                     let popNum = Math.floor(townIn.pop * (0.25 + (0.125 * reputation))) || 0;
                     knightNum += Math.round(popNum * 0.75);
                     townIn.pop -= popNum;
-                    archerNum += Math.round(popNum * 0.25);
+                    archerNum += Math.round(popNum * 0.10 * 1/3);
                     recruitButton.visible = false;
                     for(let i = 0; i < popNum; i++) {
                             var gain = randInt(0,100);
@@ -761,13 +827,13 @@
                 if(mouseX > 500 && mouseX < 665 && mouseY < 525 && mouseY > 500) {
                     state = marketSetup;
                 }
+                // eventText.anchor.set(0.5,0);
                 eventText.text = "You are in the town of " + townIn.name + ", population " + townIn.pop.toString() + ".";
                 eventText.text += "\nMilitia in the town is " + townIn.militia.toString() + " at the moment. May be attacked.";
                 eventText.text += "\nYou can recruit some of the fighting men, and possibly some eager others.";
-                eventText.text += "\nRecruit by hitting the " + '"Recruit"' + " button. You will get soldiers. Rally costs money, but gets more.";
-                eventText.text += "\nHitting it more than once may lower your reputation. Reputation is worldwide...";
-                eventText.text += "\nIt helps you get recruits and get goods. High reputation means people favor you.";
-                eventText.text += "\nThere is soldier reputation and commoner reputation. Soldier reputation makes soldiers fight better.";
+                eventText.text += "\nRecruit by hitting the " + '"Recruit"' + " button or the Hire 10 Mercenaries button."
+                eventText.text += "\nYou will get soldiers based on reputation. Hire 10 Mercenaries makes it be more likely that they have weapons.";
+                eventText.text += "\nReputation helps you get recruits and get goods. High reputation means people favor you.";
                 eventText.text += "\nBuy goods for gold too. Boulders and arrows are projectiles, swords and helmets are knight equippables.";
                 eventText.text += "\nGet gold from looting blobs OR hitting the TAX button. TAX decreases your reputation.";
                 eventText.text += "\nProtect towns too. They will be targeted by blobs and destroyed if the militia fail.";
@@ -790,49 +856,213 @@
             eventText.text += "\n10 Helmets: " + (prices.helmet * 8).toString();
             eventText.text += "\n1 Other: " + prices.misc.toString();
             eventText.text += "\n10 Others: " + (prices.misc * 8).toString();
+            eventText.text += "\n1 Boulder: 70";
+            eventText.text += "\nGold:" + gold.toString();
             eventText.text += "\nLeave Market";
             state = townMarket;
         }
+        var lastEventText = false;
         function townMarket() {
+            market = false;
+            function marketUpdate() {
+                setTimeout(function(){
+                    eventText.text = "1 Sword: " + prices.sword.toString();
+                    eventText.text += "\n10 Swords: " + (prices.sword * 8).toString();
+                    eventText.text += "\n1 Mace: " + prices.mace.toString();
+                    eventText.text += "\n10 Maces: " + (prices.mace * 8).toString();
+                    eventText.text += "\n1 Axe: " + prices.axe.toString();
+                    eventText.text += "\n10 Axes: " + (prices.axe * 8).toString();
+                    eventText.text += "\n1 Spear: " + prices.spear.toString();
+                    eventText.text += "\n10 Spears: " + (prices.spear * 8).toString();
+                    eventText.text += "\n1 Breastplate: " + prices.breastplate.toString();
+                    eventText.text += "\n10 Breastplates: " + (prices.breastplate * 8).toString();
+                    eventText.text += "\n1 Helmet: " + prices.helmet.toString();
+                    eventText.text += "\n10 Helmets: " + (prices.helmet * 8).toString();
+                    eventText.text += "\n1 Other: " + prices.misc.toString();
+                    eventText.text += "\n10 Others: " + (prices.misc * 8).toString();
+                    eventText.text += "\n1 Boulder: 70";
+                    eventText.text += "\nGold:" + gold.toString();
+                    eventText.text += "\nLeave Market";
+                },1000);
+            }
             if(keys.mouse) {
+                keys.mouse = false;
                 var half = innerWidth / 2 - (501.5 - 387);
                 var inc = 28;
                 if(mouseX > half && mouseX < 700 - (564 - half) && mouseY > inc*0 && mouseY < inc*1) {
-                    console.log("/// Sword")
-                }  if(mouseX > half && mouseX < 744 - (564 - half) && mouseY > inc*1 && mouseY < inc*2) {
-                    console.log("/// 10Sword")
-                }  if(mouseX > half && mouseX < 691 - (564 - half) && mouseY > inc*2 && mouseY < inc*3) {
-                    console.log("/// Mace")
-                }  if(mouseX > half && mouseX < 735 - (564 - half) && mouseY > inc*3 && mouseY < inc*4) {
-                    console.log("/// 10mace")
-                }  if(mouseX > half && mouseX < 672 - (564 - half) && mouseY > inc*4 && mouseY < inc*5) {
-                    console.log("/// Axe")
-                }  if(mouseX > half && mouseX < 716 - (564 - half) && mouseY > inc*5 && mouseY < inc*6) {
-                    console.log("/// 10Axe")
-                }  if(mouseX > half && mouseX < 695 - (564 - half) && mouseY > inc*6 && mouseY < inc*7) {
-                    console.log("/// Spear")
-                }  if(mouseX > half && mouseX < 725 - (564 - half) && mouseY > inc*7 && mouseY < inc*8) {
-                    console.log("/// 10Spear")
-                }  if(mouseX > half && mouseX < 760 - (564 - half) && mouseY > inc*8 && mouseY < inc*9) {
-                    console.log("/// Breastplate")
-                }  if(mouseX > half && mouseX < 800 - (564 - half) && mouseY > inc*9 && mouseY < inc*10) {
-                    console.log("/// 10Breastplate")
-                }  if(mouseX > half && mouseX < 710 - (564 - half) && mouseY > inc*10 && mouseY < inc*11) {
-                    console.log("/// Helmet")
-                }  if(mouseX > half && mouseX < 750 - (564 - half) && mouseY > inc*11 && mouseY < inc*12) {
-                    console.log("/// 10Helmet")
-                }  if(mouseX > half && mouseX < 690 - (564 - half) && mouseY > inc*12 && mouseY < inc*13) {
-                    console.log("/// Misc")
-                }  if(mouseX > half && mouseX < 735 - (564 - half) && mouseY > inc*13 && mouseY < inc*14) {
-                    console.log("/// 10Misc")
+                    if (gold >= prices.sword) {
+                        lastEventText = eventText.text;
+                        eventText.text = "Purchased!";
+                        marketUpdate();
+                        ++swords;
+                        gold -= prices.sword;
+                    } else {
+                        eventText.text = "Insufficient money.";
+                        marketUpdate();
+                    }
+                } else if(mouseX > half && mouseX < 744 - (564 - half) && mouseY > inc*1 && mouseY < inc*2) {
+                    if (gold >= prices.sword * 8) {
+                        lastEventText = eventText.text;
+                        eventText.text = "Purchased!";
+                        marketUpdate();
+                        swords += 10;
+                        gold -= prices.sword * 8;
+                    } else {
+                        eventText.text = "Insufficient money.";
+                        marketUpdate();
+                    }
+                } else if(mouseX > half && mouseX < 691 - (564 - half) && mouseY > inc*2 && mouseY < inc*3) {
+                    if (gold >= prices.mace) {
+                        lastEventText = eventText.text;
+                        eventText.text = "Purchased!";
+                        marketUpdate();
+                        maces += 1;
+                        gold -= prices.mace;
+                    } else {
+                        eventText.text = "Insufficient money.";
+                        marketUpdate();
+                    }
+                } else if(mouseX > half && mouseX < 735 - (564 - half) && mouseY > inc*3 && mouseY < inc*4) {
+                    if (gold >= prices.mace * 8) {
+                        lastEventText = eventText.text;
+                        eventText.text = "Purchased!";
+                        marketUpdate();
+                        maces += 10;
+                        gold -= prices.mace * 8;
+                    } else {
+                        eventText.text = "Insufficient money.";
+                        marketUpdate();
+                    }
+                } else if(mouseX > half && mouseX < 672 - (564 - half) && mouseY > inc*4 && mouseY < inc*5) {
+                    if (gold >= prices.axe) {
+                        lastEventText = eventText.text;
+                        eventText.text = "Purchased!";
+                        marketUpdate();
+                        axes += 1;
+                        gold -= prices.axe;
+                    } else {
+                        eventText.text = "Insufficient money.";
+                        marketUpdate();
+                    }
+                } else if(mouseX > half && mouseX < 716 - (564 - half) && mouseY > inc*5 && mouseY < inc*6) {
+                    if (gold >= prices.axe * 8) {
+                        lastEventText = eventText.text;
+                        eventText.text = "Purchased!";
+                        marketUpdate();
+                        axes += 10;
+                        gold -= prices.axe * 8;
+                    } else {
+                        eventText.text = "Insufficient money.";
+                        marketUpdate();
+                    }
+                } else if(mouseX > half && mouseX < 695 - (564 - half) && mouseY > inc*6 && mouseY < inc*7) {
+                    if (gold >= prices.spear) {
+                        lastEventText = eventText.text;
+                        eventText.text = "Purchased!";
+                        marketUpdate();
+                        spears += 1;
+                        gold -= prices.spear;
+                    } else {
+                        eventText.text = "Insufficient money.";
+                        marketUpdate();
+                    }
+                } else if(mouseX > half && mouseX < 725 - (564 - half) && mouseY > inc*7 && mouseY < inc*8) {
+                    if (gold >= prices.spear * 8) {
+                        lastEventText = eventText.text;
+                        eventText.text = "Purchased!";
+                        marketUpdate();
+                        spears += 10;
+                        gold -= prices.spear * 8;
+                    } else {
+                        eventText.text = "Insufficient money.";
+                        marketUpdate();
+                    }
+                } else if(mouseX > half && mouseX < 760 - (564 - half) && mouseY > inc*8 && mouseY < inc*9) {
+                    if (gold >= prices.breastplate) {
+                        lastEventText = eventText.text;
+                        eventText.text = "Purchased!";
+                        marketUpdate();
+                        breastplates += 1;
+                        gold -= prices.breastplate;
+                    } else {
+                        eventText.text = "Insufficient money.";
+                        marketUpdate();
+                    }
+                } else if(mouseX > half && mouseX < 800 - (564 - half) && mouseY > inc*9 && mouseY < inc*10) {
+                    if (gold >= prices.breastplate * 8) {
+                        lastEventText = eventText.text;
+                        eventText.text = "Purchased!";
+                        marketUpdate();
+                        breastplates += 10;
+                        gold -= prices.breastplate * 8;
+                    } else {
+                        eventText.text = "Insufficient money.";
+                        marketUpdate();
+                    }
+                } else if(mouseX > half && mouseX < 710 - (564 - half) && mouseY > inc*10 && mouseY < inc*11) {
+                    if (gold >= prices.helmet) {
+                        lastEventText = eventText.text;
+                        eventText.text = "Purchased!";
+                        marketUpdate();
+                        helmets += 1;
+                        gold -= prices.helmet;
+                    } else {
+                        eventText.text = "Insufficient money.";
+                        marketUpdate();
+                    }
+                } else if(mouseX > half && mouseX < 750 - (564 - half) && mouseY > inc*11 && mouseY < inc*12) {
+                    if (gold >= prices.helmet * 8) {
+                        lastEventText = eventText.text;
+                        eventText.text = "Purchased!";
+                        marketUpdate();
+                        helmets += 10;
+                        gold -= prices.helmet * 8;
+                    } else {
+                        eventText.text = "Insufficient money.";
+                        marketUpdate();
+                    }
+                } else if(mouseX > half && mouseX < 690 - (564 - half) && mouseY > inc*12 && mouseY < inc*13) {
+                    if (gold >= prices.misc) {
+                        lastEventText = eventText.text;
+                        eventText.text = "Purchased!";
+                        marketUpdate();
+                        misc += 1;
+                        gold -= prices.misc;
+                    } else {
+                        eventText.text = "Insufficient money.";
+                        marketUpdate();
+                    }
+                } else if(mouseX > half && mouseX < 735 - (564 - half) && mouseY > inc*13 && mouseY < inc*14) {
+                    if (gold >= prices.misc * 8) {
+                        lastEventText = eventText.text;
+                        eventText.text = "Purchased!";
+                        marketUpdate();
+                        misc += 10;
+                        gold -= prices.misc * 8;
+                    } else {
+                        eventText.text = "Insufficient money.";
+                        marketUpdate();
+                    }
+                } else if(mouseX > half && mouseX < 735 - (564 - half) && mouseY > inc*14 && mouseY < inc*15) {
+                    if (gold >= 70) {
+                        lastEventText = eventText.text;
+                        eventText.text = "Purchased!";
+                        marketUpdate();
+                        boulders++;
+                        gold -= 70;
+                    } else {
+                        eventText.text = "Insufficient money.";
+                        marketUpdate();
+                    }
+                } else if(mouseX > half && mouseX < 735 - (564 - half) && mouseY > inc*16 && mouseY < inc*17) {
+                    state = map;
+                    townScene.visible = false;
+                    mapScene.visible = true;
+                    app.renderer.backgroundColor = 0x55DD55;
+                    eventText.position.set(0,0);
+                    eventText.anchor.set(0,0);
+                    keys.mouse = false;
                 }
-                state = map;
-                townScene.visible = false;
-                mapScene.visible = true;
-                app.renderer.backgroundColor = 0x55DD55;
-                eventText.position.set(0,0);
-                eventText.anchor.set(0,0);
-                keys.mouse = false;
             }
         }
         function videoStartup() {
@@ -940,15 +1170,31 @@
                 state = map;
                 blobs = [];
                 return;
-            } else if(numberOfKnights() < 1) {
+            }
+            else if(numberOfKnights() < 1) {
                 /// The town is taken
                 /// The blobs just burn them down
+                // console.log(blobArmies[blobArmySplice].mapX,blobArmies[blobArmySplice].mapY,chosenTown.mapX,chosenTown.mapY);
                 mapScene.removeChild(chosenTown);
                 towns.splice(townSplice,1);
                 mapScene.visible = true;
                 battleScene.visible = false;
-                blobs.forEach(function (knight) {
-                    battleScene.removeChild(knight);
+                // blobs.forEach(function (knight) {
+                    // battleScene.removeChild(knight);
+                // });
+                chosenBlobArmy.num = numberOfBlobs();
+                blobs.forEach(function(blob){
+                    console.log(blob.state)
+                    if(blob.state && blob.state !== "dead") {
+                        // blobArmies[blobArmySplice].militia++;
+                        if(blob.horns) {
+                            chosenBlobArmy.horns++;
+                        } else if(blob.redeye) {
+                            chosenBlobArmy.redeye++;
+                        }
+                    }
+                    battleScene.removeChild(blob.text);
+                    battleScene.removeChild(blob);
                 });
                 blobs = [];
                 soldiers = [];
@@ -960,24 +1206,6 @@
                 cooldown -= 0.25;
             }
             catapult.clear();
-            if (cooldown > 4.75) {
-                catapultSize += 2;
-                catapult.lineStyle(0)
-                catapult.beginFill(0x777777);
-                catapult.drawCircle(mouseX, mouseY, catapultSize);
-                catapult.endFill();
-            } else if (cooldown > 4.5) {
-                catapultSize -= 2;
-                catapult.lineStyle(0)
-                catapult.beginFill(0x777777);
-                catapult.drawCircle(mouseX, mouseY, catapultSize);
-                catapult.endFill();
-            } else if (mouseModes[mouseMode].name === "Fire Catapult") {
-                catapult.lineStyle(0)
-                catapult.beginFill(0x777777);
-                catapult.drawCircle(mouseX, mouseY, 100);
-                catapult.endFill();
-            }
             firedArrows.forEach(function (arrow, i) {
                 var data = direction(10, arrow.direction + 180);
                 arrow.x += data.r;
@@ -1019,9 +1247,9 @@
                     return;
                 }
                 if (params.health) {
-                    knight.children[1].text = knight.health.toString();
+                    knight.children[knight.children.length-1].text = knight.health.toString();
                 } else if(params.dmg || params.damage) {
-                    knight.children[1].text = knight.dmg.toString();
+                    knight.children[knight.children.length-1].text = knight.dmg.toString();
                 }
                 if (!knight.state) {
                     return;
@@ -1090,7 +1318,7 @@
                     return;
                 }
                 firedArrows.forEach(function (arrow, i) {
-                    if (hitTestRectangle(knight, arrow)) {
+                    if (hitTestRectangle(knight, arrow) && knight.state != "dead" && knight.state != false) {
                         knight.health -= 2;
                         firedArrows.splice(i, 1)
                         battleScene.removeChild(arrow);
@@ -1099,7 +1327,7 @@
                 if (knight.health < 1) {
                     if (knight.state === "attacking") {
                         if (soldiers[knight.attackingSprite.i].state) {
-                            soldiers[knight.attackingSprite.i].health -= knightDmg;
+                            soldiers[knight.attackingSprite.i].health -= knight.dmg;
                         }
                     }
                     knight.state = "dead";
@@ -1147,6 +1375,58 @@
                     }
                 }
             });
+        }
+        var light = new PIXI.Graphics();
+        function winning(){
+            mapScene.addChild(light);
+            light.alpha = 0;
+            light.beginFill(0xFFFFFF);
+            light.drawRect(0,0,100+innerWidth, 100+innerHeight);
+            state = lightUp;
+        }
+        function lightUp() {
+            if(light.alpha < 1) {
+                light.alpha += 0.005;
+            } else {
+                state = achievements;
+            }
+        }
+        var achieveText;
+        function achievements(){
+            achieveText = new PIXI.Text("");
+            app.stage.addChild(achieveText);
+            achieveText.text += "Congratulations! You saved the country!"
+            var achievText = "";
+            for(let i = 0; i < towns.length; i++) {
+                if(towns[i].name == "Royal Guard") {
+                    achievText += "\nSaved an Army: Royal Guard was not overcome!"
+                } else if(towns[i].name == "Fordstone") {
+                    achievText += "\nRockford: Fordstone was not taken!"
+                } else if(towns[i].name == "Thrugsford") {
+                    achievText += "\nThrugsford: Thrugsford survived!"
+                }
+            }
+            if(merchant) {
+                achievText += "\nSounds like a trap: Never go into Merchant's lair."
+            }
+            if(market) {
+                achievText += "\nI never shop: Never go into a market."
+            }
+            if(noFireCatapult) {
+                achievText += "\nCatapult?: Never fire the catapult."
+            }
+            if(towns.length > 7) {
+                achievText += "\nHero of the country: No towns taken!"
+            } else if(towns.length > 3) {
+                achievText += "\nHolden ground: One middle or farther city survived!"
+            }
+            if(achievText != "") {
+                achieveText.text += "\nYou gained the achievements:\n"+achievText;
+            }
+            state = wait;
+        }
+        function wait(){
+
         }
         function play() {
             if (params.slowTick) {
@@ -1298,6 +1578,7 @@
                 }
             });
             eventText.text = cooldown < 1 ? mouseModes[mouseMode].name : "Cooldown";
+            // eventText.text = numberOfBlobs();
             if (keys.ArrowLeft) {
                 if (leftReady) {
                     --mouseMode;
@@ -1324,9 +1605,9 @@
             }
             soldiers.forEach(function (knight, i) {
                 if (params.health) {
-                    knight.children[1].text = knight.health.toString();
+                    knight.children[knight.children.length - 1].text = knight.health.toString();
                 } else if(params.dmg || params.damage) {
-                    knight.children[1].text = knight.dmg.toString();
+                    knight.children[knight.children.length - 1].text = knight.dmg.toString();
                 }
                 if (!knight.state) {
                     return;
@@ -1392,7 +1673,7 @@
                     return;
                 }
                 firedArrows.forEach(function (arrow, i) {
-                    if (hitTestRectangle(knight, arrow)) {
+                    if (hitTestRectangle(knight, arrow) && knight.state != "dead" && knight.state != false) {
                         knight.health -= 2;
                         firedArrows.splice(i, 1)
                         battleScene.removeChild(arrow);
@@ -1401,7 +1682,7 @@
                 if (knight.health < 1) {
                     if (knight.state === "attacking") {
                         if (soldiers[knight.attackingSprite.i].state) {
-                            soldiers[knight.attackingSprite.i].health -= knightDmg;
+                            soldiers[knight.attackingSprite.i].health -= knight.dmg;
                         }
                     }
                     knight.state = "dead";
@@ -1710,8 +1991,23 @@
                 town.mapY = townToMake.y;
                 town.scale.set(0.35);
                 town.name = townToMake.name;
-                town.pop = townToMake.pop;
-                town.militia = Math.round(town.pop / randNum(3.0,5.0));
+                if(town.name == "Royal Guard") {
+                    town.pop = townToMake.pop;
+                    town.militia = 500;
+                    town.pop = 100;//town.militia;
+                } else if(town.name == "Xitown") {
+                    town.pop = townToMake.pop;
+                    town.militia = 100;
+                    town.pop -= town.militia;
+                } else if(town.name == "Thrugsford"){
+                    town.pop = townToMake.pop;
+                    town.militia = 70;
+                    town.pop -= town.militia;
+                } else {
+                    town.pop = townToMake.pop;
+                    town.militia = Math.round(town.pop / randNum(3.0,5.0));
+                }
+                // town.militia = 10;
                 // town.x = 100;
                 // town.y = 300;
                 // app.stage.addChild(town);
