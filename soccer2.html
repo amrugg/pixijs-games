@@ -1,0 +1,361 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Direction ship</title>
+</head>
+    <style>* {padding: 0; margin: 0}</style>
+    <script src="pixi/pixi.min.js"></script>
+    <script src="usefulFunctions.js"></script>
+<body>
+  <script type="text/javascript">
+    "use strict";
+    PIXI.utils.skipHello();
+    PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
+    let Application = PIXI.Application,
+        Container = PIXI.Container,
+        loader = PIXI.loader,
+        resources = PIXI.loader.resources,
+        TextureCache = PIXI.utils.TextureCache,
+        Sprite = PIXI.Sprite,
+        Rectangle = PIXI.Rectangle,
+        Graphics = PIXI.Graphics;
+    let app = new Application({ 
+        width: 800,
+        height: 800,              
+        antialias: true,
+        transparent: false,
+        resolution: 1
+      }
+    );
+    app.renderer.backgroundColor = 0x55DD55;
+    /// Fill the screen 
+    app.renderer.view.style.position = "absolute";
+    app.renderer.view.style.display = "block";
+    app.renderer.autoResize = true;
+    app.renderer.resize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(app.view);
+    loader.add("sprites/soccerball.png").add("sprites/treasureHunter.json").load(setup);
+    var state;
+    var keys = {};
+    var player;
+    var actions;
+    var points;
+    var playerPoints = 0;
+    var enemyPoints = 0;
+    var enemies = [];
+    var mapping = {left:"ArrowLeft",right:"ArrowRight",up:"ArrowUp",down:"ArrowDown",sprint:"Shift",dribble:"d",fire:" ",steal:"s",smallKick:"c"};
+    var ball;
+    var id;
+    var ballEnemy;
+    var ballFriend;
+    var friction = 0.1;
+    var goodGoalie;
+    var badGoalie;
+    function setup() {
+        id = resources["sprites/treasureHunter.json"].textures;
+        ball = new Sprite(resources["sprites/soccerball.png"].texture);
+        app.stage.addChild(ball);
+        ball.x = innerWidth / 2;
+        ball.y = innerHeight / 2;
+        ball.scale.set(4);
+        ball.vx = 0;
+        ball.vy = 0;
+        goodGoalie = new Sprite(id["explorer.png"]);
+        badGoalie = new Sprite(id["blob.png"]);
+        app.stage.addChild(goodGoalie);
+        app.stage.addChild(badGoalie);
+        goodGoalie.y = innerHeight / 2;
+        badGoalie.x = innerWidth - badGoalie.width / 2;
+        badGoalie.y = innerHeight / 2;
+        points = new PIXI.Text(playerPoints.toString() + " " + enemyPoints.toString());
+        app.stage.addChild(points);
+        state = play;
+        spawnEnemy();
+        spawnEnemy(1);
+        spawnEnemy(innerHeight);
+        player = new Sprite(id["explorer.png"]);
+        app.stage.addChild(player);
+        app.ticker.add(delta => gameLoop(delta));
+    }
+    function gameLoop(delta) {
+      state(delta);
+    }
+    function play(){
+        handlePlayer();
+        handleGoalies();
+        handleEnemies();
+        handleFriends();
+        handleBall();
+        actions.steal = false;
+    }
+    function handlePlayer() {
+        /// Move the player
+        actions = {
+            left:keys[mapping.left]
+            ,right:keys[mapping.right]
+            ,up:keys[mapping.up]
+            ,down:keys[mapping.down]
+            ,sprint:keys[mapping.sprint]
+            ,dribble:keys[mapping.dribble]
+            ,fire:keys[mapping.fire]
+            ,steal:keys[mapping.steal]};
+        player.vx = 0;
+        player.vy = 0;
+        if(actions.left) {
+            player.vx -= 5;
+        }
+        if(actions.right) {
+            player.vx += 5;
+        }
+        if(actions.up) {
+            player.vy -= 5;
+        }
+        if(actions.down) {
+            player.vy += 5;
+        }
+        if(actions.sprint) {
+            player.vx *= 1.5;
+            player.vy *= 1.5;
+        }
+        player.x += player.vx;
+        player.y += player.vy;
+    }
+    function handleGoalies() {
+        let goalDiff = Math.round((ball.y - goodGoalie.y) / 20);
+        if(goalDiff > 0) {
+            goodGoalie.y += 4;
+        } else if(goalDiff < 0) {
+            goodGoalie.y -= 4;
+        }
+        goalDiff = Math.round((ball.y - badGoalie.y) / 20);
+        if(goalDiff > 0) {
+            badGoalie.y += 4;
+        } else if(goalDiff < 0) {
+            badGoalie.y -= 4;
+        }
+    }
+    function handleEnemies() {
+        enemies.forEach(function(enemy){
+            enemy.rx = Math.floor(enemy.x / 10);
+            enemy.ry = Math.floor(enemy.y / 10);
+            ball.rx = Math.floor(ball.x / 10);
+            ball.ry = Math.floor(ball.y / 10);
+            // points.text = enemy.rx.toString() + " " + enemy.ry.toString() + " " + ball.rx.toString() + " " + ball.ry.toString();
+            enemy.vx = enemy.rx > ball.rx?enemy.speed * -1:enemy.rx < ball.rx?enemy.speed:0;
+            enemy.vy = enemy.ry > ball.ry?enemy.speed * -1:enemy.ry < ball.ry?enemy.speed:0;
+            if(hitTestRectangle(enemy,ball,-10)) {
+                if(enemy.vx < 0 && ball.x < innerWidth / 4) {
+                    enemy.fire = true;
+                    enemy.d = false;
+                } else {
+                    enemy.fire = false;
+                    if(enemy.guard || ball.vx <= 1) {
+                        enemy.d = true;
+                    }
+                }
+                enemy.vx = enemy.speed * -1;
+                if(enemy.y - 50 > player.y || enemy.y + 50 < player.y) {
+                    enemy.vy = 0;
+                } else {
+                    if(enemy.y < player.y) {
+                        enemy.vy = enemy.speed * -1;
+                    } else if(enemy.y > player.y) {
+                        enemy.vy = enemy.speed;
+                    } else if(enemy.y < innerHeight / 2) {
+                        enemy.vy = enemy.speed;
+                    } else {
+                        enemy.vy = enemy.speed * -1;
+                    }
+                }
+            } else {
+                enemy.fire = false;
+                enemy.d = false;
+            }
+            enemy.x += enemy.vx;
+            enemy.y += enemy.vy;
+        })
+        var check = false;
+        enemies.forEach(function(enemy){
+            if(hitTestRectangle(ball,enemy)) {
+                ballEnemy = enemy;
+                check = true;
+            }
+        });
+        if(!check) {
+            ballEnemy = false;
+        }
+    }
+    function handleFriends() {
+
+    }
+    function handleBall() {
+        if(hitTestRectangle(goodGoalie,ball)) {
+            /// Fire the ball to the player
+            let dir = pointTowards(goodGoalie.x,goodGoalie.y,player.x,player.y);
+            let data = direction(5,dir + 180);
+            // console.log(dir,data);
+            ball.vx = data.r * 2.5;
+            ball.vy = data.u * 2.5;
+            ball.x += ball.vx;
+            ball.y += ball.vy;
+        } else if(hitTestRectangle(badGoalie,ball)){
+            let dir = pointTowards(badGoalie.x,badGoalie.y,player.x,player.y);
+            let data = direction(5,dir + 180);
+            // console.log(dir,data);
+            ball.vx = data.r *2.5;
+            ball.vy = data.u * 2.5;
+            ball.x += ball.vx;
+            ball.y += ball.vy;
+        } else if(!actions.steal || !(hitTestRectangle(ball,player) && ballEnemy)) {
+            if(ballEnemy) {
+                if(ballEnemy.d) {
+                    ball.x = ballEnemy.x + ballEnemy.vx;
+                    ball.y = ballEnemy.y + ballEnemy.vy;
+                    ball.vx = ballEnemy.vx;
+                    ball.vy = ballEnemy.vy;
+                }
+                if(ballEnemy.fire) {
+                    // ball.x = player.x + player.vx;
+                    // ball.y = player.y + player.vy;
+                    ball.vx = ballEnemy.vx * 3;
+                    ball.vy = ballEnemy.vy * 3;
+                    ball.x += ball.vx;
+                    ball.y += ball.vy;
+                    ball.x += ball.vx;
+                    ball.y += ball.vy;
+                    ball.x += ball.vx;
+                    ball.y += ball.vy;
+                }
+            } else if(hitTestRectangle(ball,player)) {
+                // points.text = "1";
+                if(actions.dribble) {
+                    ball.x = player.x + player.vx;
+                    ball.y = player.y + player.vy;
+                    ball.vx = player.vx;
+                    ball.vy = player.vy;
+                    // energy.width -= 0.05 / energyDivision;
+                }
+                if(actions.fire) {
+                    // ball.x = player.x + player.vx;
+                    // ball.y = player.y + player.vy;
+                    ball.vx = player.vx * 2;
+                    ball.vy = player.vy * 2;
+                    ball.x += ball.vx * 5;
+                    ball.y += ball.vy * 5;
+                    // energy.width -= 10 / energyDivision;
+                    // if(energy.width < 0) {
+                    //     energy.width = 0;
+                    // }
+                }
+                if(actions.smallKick) {
+                    ball.vx = player.vx * 1.25;
+                    ball.vy = player.vy * 1.25;
+                    ball.x += ball.vx * 3;
+                    ball.y += ball.vy * 3;
+                    // energy.width -= 5 / energyDivision;
+                    // if(energy.width < 0) {
+                        // energy.width = 0;
+                    // }
+                }
+            }
+        } else if(hitTestRectangle(ball,player) && ballEnemy) {
+                // ball.x = player.x + player.vx;
+                // ball.y = player.y + player.vy;
+            ball.vx = player.vx * 2;
+            ball.vy = player.vy * 2;
+            ball.x += ball.vx * 5;
+            ball.y += ball.vy * 5;    
+        }
+            if(ball.vx > 0) {
+            if(ball.vx < friction) {
+                ball.vx = 0;
+            } else  {
+                ball.vx -= friction;
+            }
+        } else if(ball.vx < 0) {
+            if(ball.vx + friction > 0) {
+                ball.vx = 0;
+            } else {
+                ball.vx += friction;
+            }
+        }
+        if(ball.vy > 0) {
+            if(ball.vy < friction) {
+                ball.vy = 0;
+            } else  {
+                ball.vy -= friction;
+            }
+        } else if(ball.vy < 0) {
+            if(ball.vy + friction > 0) {
+                ball.vy = 0;
+            } else  {
+                ball.vy += friction;
+            }
+        }
+        // points.text = ball.vx.toString() + " " + ball.vy.toString();
+        ball.x += ball.vx;
+        ball.y += ball.vy;
+        // ball.x += ball.vx
+        if(ball.x > innerWidth) {
+            // q = true;
+            /// Score a point for the player
+            ++playerPoints;
+            ball.x = innerWidth / 2;
+            ball.y = innerHeight / 2;
+            ball.vx = 0;
+            ball.vy = 0;
+            points.text = playerPoints.toString() + " " + enemyPoints.toString();
+            enemies.forEach(function(enemy){
+                enemy.x = enemy.startingX;
+                enemy.y = enemy.startingY;
+            });
+            player.x = 100;
+            player.y = innerHeight / 2;
+        } else if(ball.x < 0) {
+            // q = true;
+            ++enemyPoints;
+            ball.x = innerWidth / 2;
+            ball.y = innerHeight / 2;
+            ball.vx = 0;
+            ball.vy = 0;
+            player.x = 100;
+            player.y = innerHeight / 2;
+            enemies.forEach(function(enemy){
+                enemy.x = enemy.startingX;
+                enemy.y = enemy.startingY;
+            });
+            points.text = playerPoints.toString() + " " + enemyPoints.toString();
+        } else if(ball.y < 0 || ball.y > innerHeight) {
+            // q = true;
+            ball.x = innerWidth / 2;
+            ball.y = innerHeight / 2;
+            ball.vx = 0;
+            ball.vy = 0;
+        }
+    }
+    function spawnEnemy(y){
+        let enemy = new Sprite(id["blob.png"]);
+        app.stage.addChild(enemy);
+        enemy.x = innerWidth - 100;
+        enemy.y = y || innerHeight / 2;
+        enemy.fire = false;
+        enemy.guard = false;
+        enemy.lastSec = Date.now();
+        enemy.startingX = innerWidth - 100;
+        enemy.startingY = y || innerHeight / 2;
+        enemy.speed = randNum(2.5,4.5);
+        enemies.push(enemy);
+    }
+    addEventListener("blur", function (){
+        keys = {};
+    });
+    addEventListener("keydown", function (e){
+        keys[e.key] = true;
+    });
+    addEventListener("keyup", function (e){
+        keys[e.key] = false;
+    });
+  </script>
+</body>
+</html>

@@ -60,7 +60,7 @@
         ball.y = innerHeight / 2;
         ball.scale.set(4);
         points = new PIXI.Text(playerPoints.toString() + " " + enemyPoints.toString());
-        app.stage.addChild(points)
+        app.stage.addChild(points);
         id = resources["sprites/treasureHunter.json"].textures;
         player = new Sprite(id["explorer.png"]);
         goalie = new Sprite(id["explorer.png"]);

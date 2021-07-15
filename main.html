@@ -21,9 +21,6 @@
 
     var difficultyThrottling = Number(params.difficultyThrottling) || 1;
     difficultyThrottling = Math.abs(difficultyThrottling);
-    while(difficultyThrottling < 1) {
-      difficultyThrottling *= 10
-    }
     var grandmaMode = params.grandmaMode || false;
     var grandpaMode = params.grandpaMode || false;
     /// Helper functions
@@ -111,6 +108,7 @@
     loader.add("sprites/treasureHunter.json").load(setup)
     var dungeon, gameScene, gameLostScene, gameWonScene, gameScene, explorer, id, treasure, door, blobs, savageBlobs, healthBar, innerBar, outerBar, gotTreasure, restarted;
     var level = Number(params.level) || 0;
+    var levelPins = [false,1243,6243,9928,1623,2346,2993,4049,1432,1563,1254,1982,1299,1300,9999,8287,1353];
     savageBlobs = [];
     var leftPress, rightPress, upPress, downPress = false;
     leftPress = rightPress = upPress = downPress;
@@ -207,6 +205,8 @@
       levelData[i].blobSpeedMax /= difficultyThrottling;
     }
     var cld = levelData[level];
+    var typeText;
+    var typeInPin = false;
     function setup() {
       gotTreasure = false;
       gameScene = new Container();
@@ -217,6 +217,10 @@
       app.stage.addChild(gameWonScene)
       gameWonScene.visible = false;
       gameLostScene.visible = false;
+      let redStyle= new PIXI.TextStyle({stroke:"#ff0000",fill:"red"})
+      typeText = new PIXI.Text("Type Here!",redStyle);
+      typeText.y = innerHeight - 100;
+      app.stage.addChild(typeText);
       let style = new PIXI.TextStyle({
         fontFamily: "Arial",
         fontSize: 36,
@@ -230,10 +234,10 @@
         dropShadowDistance: 6,
       });
       let message = new PIXI.Text("You lose!", style)
-      message.x = 68
-      message.y = message.x
-      message.height *= 2
-      message.width *= 2
+      message.x = 68;
+      message.y = message.x;
+      message.height *= 2;
+      message.width *= 2;
       gameLostScene.addChild(message)
       style = new PIXI.TextStyle({
         fontFamily: "Arial",
@@ -275,42 +279,6 @@
       treasure.x = cld.treasureX;
       treasure.y = cld.treasureY;
       gameScene.addChild(treasure);
-      var blobNum = cld.blobNum, spacing = 48, startX = 100, startY = 100, direction = 1;
-      blobs = [];
-      for(let i = 0; i < blobNum; i++) {
-        let newBlob;
-        if(grandpaMode){
-          newBlob = new Sprite(id["explorer.png"])
-        } else {
-          newBlob = new Sprite(id["blob.png"])
-        }
-        if(cld.blobVY) {
-          newBlob.x = spacing * i + startX;
-          newBlob.y = startY + randInt(0, 300);
-        } else {
-          newBlob.x = startX + randInt(0, 300);
-          newBlob.y = (spacing / 2) * i + startY;
-        }
-        newBlob.vx = randInt(cld.blobSpeedMin, cld.blobSpeedMax) * direction;
-        newBlob.vy = randInt(cld.blobSpeedMin, cld.blobSpeedMax) * direction;
-        direction *= -1;
-        newBlob.blobVY = cld.blobVY;
-        newBlob.blobVX = cld.blobVX;
-        gameScene.addChild(newBlob)
-        blobs.push(newBlob)
-      }
-      savageBlobs = [];
-        if(cld.savageBlobNum) {
-          var blobNum = cld.savageBlobNum, spacing = 48, startX = 100, startY = 100;
-          for(let i= 0; i < blobNum; i++) {
-            let savageBlob = new Sprite(id["blob.png"]);
-            savageBlob.x = startX + randInt(0,200);
-            savageBlob.y = startY + randInt(0,200);
-            savageBlob.speed = randInt(cld.blobSpeedMin, cld.blobSpeedMax);
-            gameScene.addChild(savageBlob);
-            savageBlobs.push(savageBlob);
-          }
-        }
       state = beginning;
       app.ticker.add(delta => gameLoop(delta));
       explorer.vx = 0;
@@ -322,12 +290,59 @@
       let enter = keyboard("Enter");
       enter.press = () => {
         if(state === wait) {
+          if(!pinConfirmed) {
+            level = 0;
+          }
+          cld = levelData[level];
+          explorer.x = cld.explorerX;
+          explorer.y = cld.explorerY;
+          explorer.vx = 0;
+          explorer.vy = 0;
+          levelText.text = "Level: "+(level+1).toString()+' "'+cld.name+'"';
+          var blobNum = cld.blobNum, spacing = 48, startX = 100, startY = 100, direction = 1;
+          blobs = [];
+          for(let i = 0; i < blobNum; i++) {
+            let newBlob;
+            if(grandpaMode){
+              newBlob = new Sprite(id["explorer.png"])
+            } else {
+              newBlob = new Sprite(id["blob.png"])
+            }
+            if(cld.blobVY) {
+              newBlob.x = spacing * i + startX;
+              newBlob.y = startY + randInt(0, 300);
+            } else {
+              newBlob.x = startX + randInt(0, 300);
+              newBlob.y = (spacing / 2) * i + startY;
+            }
+            newBlob.vx = randInt(cld.blobSpeedMin, cld.blobSpeedMax) * direction;
+            newBlob.vy = randInt(cld.blobSpeedMin, cld.blobSpeedMax) * direction;
+            direction *= -1;
+            newBlob.blobVY = cld.blobVY;
+            newBlob.blobVX = cld.blobVX;
+            gameScene.addChild(newBlob)
+            blobs.push(newBlob)
+          }
+          savageBlobs = [];
+          if(cld.savageBlobNum) {
+            var blobNum = cld.savageBlobNum, spacing = 48, startX = 100, startY = 100;
+            for(let i= 0; i < blobNum; i++) {
+              let savageBlob = new Sprite(id["blob.png"]);
+              savageBlob.x = startX + randInt(0,200);
+              savageBlob.y = startY + randInt(0,200);
+              savageBlob.speed = randInt(cld.blobSpeedMin, cld.blobSpeedMax);
+              gameScene.addChild(savageBlob);
+              savageBlobs.push(savageBlob);
+            }
+          }
           console.log(blobs);
           startText.visible = false;
+          app.stage.removeChild(typeText);
           gameScene.visible = true;
           app.renderer.backgroundColor = 0xFFFFFF;
           startTime = Date.now();
           state = play;
+          
         }
       }
       left.press = () => {
@@ -545,9 +560,10 @@
       return key;
     }
     function lose() {
+      alert("You lost this level. But if you want to try again, here's the PIN:\n"+levelPins[level].toString())
       gameLostScene.visible = true;
       gameScene.visible = false;
-      app.ticker.stop()
+      app.ticker.stop();
     }
     function grandFinale(){
       time.text = ("Time remaining: "+(Math.ceil((startTime - (Date.now() - (cld.time*1000)))/1000)));
@@ -683,13 +699,46 @@
       } else {
         startText = new PIXI.Text("Hello, noble explorer. You are wondering why we are speaking under your bed? I will tell you. \nYour king has tasked you with an important task. This of course must be kept in all secrecy.\nIt seems that some slimebag blobs have stolen all the treasure chests of the king! \nYou are the only one able to stop this madness. \nWhy not me? I don't know! I'm just reading off the paper! \nUse the arrow keys to get the treasure and head out the door, and beware of the bloodsucking blobs. \nPress Enter to start.", newStyle);
       }
+      startText.text += "\nNew: Choose the level to start on. Then type in the PIN. Remember it when you lose a level.\nHit the space bar to confirm when typing in the level or PIN, not Enter."
       startText.y = 50;
       app.stage.addChild(startText);
       gameScene.visible = false;
       state = wait;
     }
     var RSG;
+    var pinConfirmed = false;
     var waiting = false;
+    addEventListener("keydown",function(e){
+      if(e.key == " ") {
+        if(typeInPin) {
+          console.log(levelPins[level],typeText.text);
+          if(levelPins[level].toString() == parseInt(typeText.text).toString()) {
+            pinConfirmed = true;
+            typeText.text = "Ready to start on Level " + (level+1).toString();
+          }
+        } else {
+          if(Number(typeText.text) < 15 && Number(typeText.text) > 0) {
+            level = Number(typeText.text) - 1;
+            typeText.text = "Now put in the PIN for that level";
+            typeInPin = true;
+          } else {
+            typeText.text = "Invalid Level. You can't go to the Grand Finale.";
+          }
+          return;
+        }
+      }
+      if(typeText.text == "Type Here!" || typeText.text == "Now put in the PIN for that level" || typeText.text == "Invalid Level. You can't go to the Grand Finale." || typeText.text == "Invalid PIN") {
+        typeText.text = "";
+      }
+      for(let i = 0; i < 10; i++) {
+        if(i.toString() == e.key.toString()) {
+          typeText.text += e.key.toString();
+        }
+      }
+      if(e.key == "Backspace") {
+        typeText.text = "";
+      }
+    });
     function nextLevelSetup() {
       if(!waiting){
         app.renderer.backgroundColor = randInt(0,0xFFFFFF);

@@ -2,6 +2,13 @@ function getDistance(x1,y1,x2,y2) {
     /// Mine
     return Math.sqrt((x1-x2)**2+(y1-y2)**2);
 }
+Math.probability = function(percent,oneoneHundred){
+    if(oneoneHundred) {
+        return percent > Math.random();
+    } else {
+        return percent > Math.random() * 100;
+    }
+}
 function findVectorFromImpulse(x,y) {
     var distance = Math.sqrt(x**2+y**2);
     var direction = Math.atan(y/x) * 180/Math.PI;

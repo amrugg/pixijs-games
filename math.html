@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Math game</title>
+  <title>Direction ship</title>
 </head>
     <style>* {padding: 0; margin: 0}</style>
     <script src="pixi/pixi.min.js"></script>
@@ -23,7 +23,7 @@
         width: 800,
         height: 800,              
         antialias: true,
-        transparent: true,
+        transparent: false,
         resolution: 1
       }
     );
@@ -36,16 +36,92 @@
     document.body.appendChild(app.view);
     loader.add("sprites/treasureHunter.json").load(setup);
     var state;
+    var defaultRange = 0;
+    var addition = {minNum:0,maxNum:20};
     var keys = {};
+    var player;
+    var swordText;
+    var blobs = [];
     function setup() {
         state = play;
+        id = resources["sprites/treasureHunter.json"].textures;
+        player = new Sprite(id["explorer.png"]);
+        app.stage.addChild(player);
+        swordText = new PIXI.Text("");
+        swordText.y = innerHeight - 100;
+        app.stage.addChild(swordText);
         app.ticker.add(delta => gameLoop(delta));
+        for(let i = 0; i < 10; i++) {
+          var blobContainer = new Container();
+          blob = new Sprite(id["blob.png"]);
+          blob.x = randInt(0,innerWidth);
+          blob.scale.set;
+          blob.y = randInt(0,innerHeight);
+          blobContainer.addChild(blob);
+          var blobText = new PIXI.Text();
+          blobText.text = randomEquation();
+          blobText.scale.set(1);
+          blobText.anchor.set(0,-0.25);
+          blobText.x = blob.x;
+          blobText.y = blob.y;
+          blobContainer.addChild(blobText);
+          app.stage.addChild(blobContainer);
+          blobs.push(blobContainer);
+        }
     }
     function gameLoop(delta) {
-      state(delta)
+      state(delta);
     }
     function play(){
-        var data = prompt("1<0?");
+      player.vx = 0;
+      player.vy = 0;
+      if(keys.ArrowLeft) {
+        player.vx += -5;
+      }
+      if(keys.ArrowRight) {
+        player.vx += 5;
+      }
+      if(keys.ArrowUp) {
+        player.vy += -5;
+      }
+      if(keys.ArrowDown) {
+        player.vy += 5;
+      }
+      player.x += player.vx;
+      player.y += player.vy;
+      var keyPresses = [0,1,2,3,4,5,6,7,8,9]
+      for(let i = 0; i < keyPresses.length; i++) {
+        if(keys[keyPresses[i]]) {
+          swordText.text += (keyPresses[i]).toString();
+          keys[keyPresses[i]] = false;
+        }
+      }
+      if(keys.Backspace) {
+        swordText.text = "";
+      }
+    }
+    function randomEquation(range,minNum,maxNum) {
+        if(range === undefined) {
+          range = defaultRange;
+        }
+        range = randInt(0,range);
+        if(minNum === undefined) {
+            if(range == 0) {
+              minNum = addition.minNum;
+            }
+        }
+        if(maxNum === undefined) {
+            if(range == 0) {
+              maxNum = addition.maxNum;
+            }
+        }
+        var equation = "";
+        if(range == 0) {
+            equation += (randInt(minNum,maxNum)).toString();
+            equation += "+";
+            equation += (randInt(minNum,maxNum)).toString();
+        }
+        return equation;
     }
     addEventListener("blur", function (){
         keys = {};
