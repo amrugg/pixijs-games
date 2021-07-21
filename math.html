@@ -34,18 +34,27 @@
     app.renderer.autoResize = true;
     app.renderer.resize(window.innerWidth, window.innerHeight);
     document.body.appendChild(app.view);
-    loader.add("sprites/treasureHunter.json").load(setup);
+    loader.add("sprites/treasureHunter.json").add("sprites/butterknife.png").load(setup);
     var state;
     var defaultRange = 0;
     var addition = {minNum:0,maxNum:20};
     var keys = {};
     var player;
+    var sword;
     var swordText;
     var blobs = [];
     function setup() {
         state = play;
         id = resources["sprites/treasureHunter.json"].textures;
-        player = new Sprite(id["explorer.png"]);
+        player = new Container();
+        player1 = new Sprite(id["explorer.png"]);
+        player.addChild(player1);
+        sword = new Sprite(resources["sprites/butterknife.png"].texture);
+        player.addChild(sword);
+        sword.scale.set(5);
+        sword.anchor.set(0,1);
+        sword.x = 16;
+        sword.y = 22;
         app.stage.addChild(player);
         swordText = new PIXI.Text("");
         swordText.y = innerHeight - 100;
@@ -72,33 +81,105 @@
     function gameLoop(delta) {
       state(delta);
     }
+    var swordSwing = false;
     function play(){
       player.vx = 0;
       player.vy = 0;
-      if(keys.ArrowLeft) {
-        player.vx += -5;
-      }
-      if(keys.ArrowRight) {
-        player.vx += 5;
-      }
-      if(keys.ArrowUp) {
-        player.vy += -5;
-      }
-      if(keys.ArrowDown) {
-        player.vy += 5;
-      }
-      player.x += player.vx;
-      player.y += player.vy;
-      var keyPresses = [0,1,2,3,4,5,6,7,8,9]
-      for(let i = 0; i < keyPresses.length; i++) {
-        if(keys[keyPresses[i]]) {
-          swordText.text += (keyPresses[i]).toString();
-          keys[keyPresses[i]] = false;
+      if(!swordSwing) {
+        if(keys.ArrowLeft) {
+          player.vx += -5;
+          sword.x = 2;
+          sword.y = 22;
+          sword.rotation = 0;
+          player.direction = "left";
         }
+        if(keys.ArrowRight) {
+          player.vx += 5;
+          sword.x = 16;
+          sword.y = 22;
+          sword.rotation = 0;
+          player.direction = "right";
+        }
+        if(keys.ArrowUp) {
+          player.vy += -5;
+          sword.x = 8;
+          sword.y = 14;
+          sword.rotation = 0;
+          player.direction = "up";
+        }
+        if(keys.ArrowDown) {
+          player.vy += 5;
+          sword.x = 13;
+          sword.y = 22;
+          sword.rotation = Math.PI;
+          player.direction = "down";
+        }
+        player.x += player.vx;
+        player.y += player.vy;
+        var keyPresses = [0,1,2,3,4,5,6,7,8,9]
+        for(let i = 0; i < keyPresses.length; i++) {
+          if(keys[keyPresses[i]]) {
+            swordText.text += (keyPresses[i]).toString();
+            keys[keyPresses[i]] = false;
+          }
+        }
+        if(press("Backspace")) {
+          swordText.text = "";
+        }
+        if(press(" ")) {
+          swordSwing = true;
+          if(player.direction == "left" || player.direction == "right") {
+            sword.rotation = 0;
+          }
+          if(player.direction == "up") {
+            sword.rotation = Math.PI / 2;
+          }
+          if(player.direction == "down") {
+            sword.rotation = Math.PI / 2;
+          }
+        }
+      } else {
+        // if(press("Backspace")) {
+          // swordSwing = false;
+          // return;
+        // }
+        if(player.direction == "right") {
+          sword.rotation += 0.25;
+          if(sword.rotation >= 2.75) {
+            swordSwing = false;
+            sword.rotation = 0;
+          }
+        }
+        if(player.direction == "left") {
+          sword.rotation -= 0.25;
+          if(sword.rotation <= -2.75) {
+            swordSwing = false;
+            sword.rotation = 0;
+          }
+        }
+        if(player.direction == "up") {
+          sword.rotation -= 0.25
+          if(sword.rotation <= -1.6) {
+            swordSwing = false;
+            sword.rotation = 0;
+          }
+        }
+        if(player.direction == "down") {
+          sword.rotation += 0.25;
+          if(sword.rotation >= Math.PI * 1.5) {
+            swordSwing = false;
+            sword.rotation = 0;
+          }
+        }
+        // swordText.text = sword.rotation;
       }
-      if(keys.Backspace) {
-        swordText.text = "";
+    }
+    function press(key) {
+      if(keys[key]){
+        keys[key] = false;
+        return true;
       }
+      return false;
     }
     function randomEquation(range,minNum,maxNum) {
         if(range === undefined) {

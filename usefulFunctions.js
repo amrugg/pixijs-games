@@ -21,7 +21,7 @@ function findVectorFromImpulse(x,y) {
     if(y < 0 && x >= 0) {
         direction += 360;
     }
-    return {force:distance,direction:direction}
+    return {force:distance,direction:direction};
 }
 function rotatePoint(pointX, pointY, originX, originY, angle, degrees) {
     /// https://stackoverflow.com/questions/4465931/rotate-rectangle-around-a-point
