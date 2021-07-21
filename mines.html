@@ -48,7 +48,7 @@
     var keys = {};
     var boardArr = [];
     var mineNum = params.mines || 10;
-    var boardSize = Number(params.size);
+    var boardSize = Number(params.size) || 10.0;
     var board = new PIXI.Graphics();
     var mouseX, mouseY, startingX, startingY;
     var mineShots = Math.floor(mineNum*1.25);
