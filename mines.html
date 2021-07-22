@@ -47,12 +47,18 @@
     var state;
     var keys = {};
     var boardArr = [];
-    var mineNum = params.mines || 10;
+    var knownBoardArr = [];
     var boardSize = Number(params.size) || 10.0;
+    var mineNum = params.mines || boardSize;
+    var squareWidth = params.width || 50;
     var board = new PIXI.Graphics();
     var mouseX, mouseY, startingX, startingY;
     var mineShots = Math.floor(mineNum*1.25);
     var shotsText;
+    var turn;
+    var turnSec;
+    var delay = params.delay || 1000;
+    var cornersLeft = 4;
     function setup() {
         shotsText = new PIXI.Text("Mine Shots Left:");
         shotsText.text = "Mine Shots Left: " +mineShots.toString();
@@ -65,13 +71,16 @@
       state(delta);
     }
     function drawBoard(){
-        startingX = (innerWidth - (boardSize+1) * 50)/ 2 < innerWidth - ((boardSize+1)*50)?(innerWidth - (boardSize+1)*50) / 2:innerWidth - (500);
-        startingY = (innerHeight - (boardSize+1)*50) / 2
+        let testWidth = (innerHeight - 100) / boardSize;
+        squareWidth = testWidth// < 50?testWidth:50;
+        console.log(testWidth);
+        startingX = (innerWidth - (boardSize+1) * squareWidth)/ 2 < innerWidth - ((boardSize+1)*squareWidth)?(innerWidth - (boardSize+1)*squareWidth) / 2:innerWidth - (500);
+        startingY = (innerHeight - (boardSize+1)*squareWidth) / 2
         for(let j = boardSize; j > 0; j--) {
             for(let i = boardSize; i > 0; i--) {
                 board.lineStyle(2,0,1);
                 board.beginFill(0xFFFFFF);
-                board.drawRect(startingX + i*50,startingY+j*50,50,50);
+                board.drawRect(startingX + i*squareWidth,startingY+j*squareWidth,squareWidth,squareWidth);
                 board.endFill();
             }
         }
@@ -94,7 +103,9 @@
             }
         }
         for(let i = 0; i < boardArr.length; i++) {
+            knownBoardArr.push([]);
             for(let j = 0; j < boardArr.length; j++) {
+                knownBoardArr[i].push("UNKNOWN");
                 if(boardArr[i][j] == "CONSIDER") {
                     let thisSquareCount = 0;
                     if (i < boardSize-1) {
@@ -141,18 +152,316 @@
                 }
             }
         }
-        console.log(boardArr);
-        state = play;
+        if(!params.automate) {
+            state = play;
+        } else {
+            state = solveAI;
+            cornersLeft = 4;
+            turn = 1;
+            turnSec = Date.now();
+        }
+    }
+    function solveAI(){
+        if(turn == 0) {
+            if(cornersLeft > 0) {
+                if(cornersLeft == 4) {
+                    chooseSquare(1,1);
+                } else if(cornersLeft == 3) {
+                    chooseSquare(boardSize,1);
+                } else if(cornersLeft == 2) {
+                    chooseSquare(boardSize,boardSize);
+                } else if(cornersLeft == 1) {
+                    chooseSquare(1,boardSize);
+                    console.log(knownBoardArr);
+                }
+                --cornersLeft;
+            } else {
+                var turnDone = false;
+                var shouldContinue = true;
+                for(let i = 0; i < knownBoardArr.length; i++) {
+                    for(let j = 0; j < knownBoardArr.length; j++) {
+                        if(shouldContinue && knownBoardArr[i][j] != "UNKNOWN" && knownBoardArr[i][j] != "M") {
+                            /// We know that something is here
+                            var count = Number(knownBoardArr[i][j]);
+                            if(i > 0) {
+                                if(knownBoardArr[i-1][j] == "M") {
+                                    --count;
+                                }
+                                if(j < boardSize -1) {
+                                    if(knownBoardArr[i-1][j+1] == "M") {
+                                        --count;
+                                    }
+                                }
+                                if(j > 0) {
+                                    if(knownBoardArr[i-1][j-1] == "M") {
+                                        --count;
+                                    }
+                                }
+                            }
+                            if(j < boardSize -1) {
+                                if(knownBoardArr[i][j+1] == "M") {
+                                    --count;
+                                }
+                            }
+                            if(j > 0) {
+                                if(knownBoardArr[i][j-1] == "M") {
+                                    --count;
+                                }
+                            }
+                            if(i < boardSize -1) {
+                                if(knownBoardArr[i+1][j] == "M") {
+                                    --count;
+                                }
+                                if(j < boardSize -1) {
+                                    if(knownBoardArr[i+1][j+1] == "M") {
+                                        --count;
+                                    }
+                                }
+                                if(j > 0) {
+                                    if(knownBoardArr[i+1][j-1] == "M") {
+                                        --count;
+                                    }
+                                }
+                            }
+                            if(count == 0) {
+                                console.log("B");
+                                var STOP = false;
+                                if(i > 0) {
+                                    if(!STOP) {
+                                        if(knownBoardArr[i-1][j] == "UNKNOWN") {
+                                            chooseSquare(j+1,i);
+                                            turnDone = true;
+                                            console.log("WHAT HAPPENED");
+                                            STOP = true;
+                                            console.log("Should choose ",i-1,j,knownBoardArr[i-1][j] );
+                                        }
+                                    }
+                                    if(j < boardSize -1 && !STOP) {
+                                        if(knownBoardArr[i-1][j+1] == "UNKNOWN") {
+
+                                            console.log("WHAT HAPPENED");
+                                            chooseSquare(j+2,i);
+                                            turnDone = true;
+                                            STOP = true;
+                                            console.log("Should choose ",i-1,j+1,knownBoardArr[j+1][i-1]);
+                                        }
+                                    }
+                                    if(j > 0 && !STOP) {
+                                        if(knownBoardArr[i-1][j-1] == "UNKNOWN") {
+
+                                            console.log("WHAT HAPPENED");
+                                            chooseSquare(j,i);
+                                            STOP = true;
+                                            turnDone = true;
+                                            console.log("Should choose ",i-1,j-1,knownBoardArr[j-1][i-1]);
+                                        }
+                                    }
+                                }
+                                if(j < boardSize -1 && !STOP) {
+                                    if(knownBoardArr[j+1][i] == "UNKNOWN") {
+                                        chooseSquare(j+2,i+1);
+
+                                        console.log("WHAT HAPPENED");
+                                        turnDone = true;
+                                        STOP = true;
+                                        console.log("Should choose ",i,j+1,knownBoardArr[i][j+1]);
+                                    }
+                                }
+                                if(j > 0 && !STOP) {
+                                    if(knownBoardArr[i][j-1] == "UNKNOWN") {
+                                        chooseSquare(j,i+1);
+                                        turnDone = true;
+
+                                        console.log("WHAT HAPPENED");
+                                        STOP = true;
+                                        console.log("Should choose ",i,j-1,knownBoardArr[i][j-1]);
+                                    }
+                                }
+                                if(i < boardSize -1 && !STOP) {
+                                    if(knownBoardArr[i+1][j] == "UNKNOWN") {
+                                        chooseSquare(j+1,i+2);
+
+                                        console.log("WHAT HAPPENED");
+                                        turnDone = true;
+                                        STOP = true;
+                                        console.log("Should choose ",i+1,j,knownBoardArr[i+1][j]);
+                                    }
+                                    if(j < boardSize -1 && !STOP) {
+                                        if(knownBoardArr[i+1][j+1] == "UNKNOWN") {
+                                            chooseSquare(j+2,i+2);
+                                            console.log("WHAT HAPPENED");
+                                            STOP = true;
+                                            turnDone = true;
+                                            console.log("Should choose ",i+1,j+1,knownBoardArr[i+1][j+1]);
+                                        }
+                                    }
+                                    if(j > 0 && !STOP) {
+                                        if(knownBoardArr[i+1][j-1] == "UNKNOWN") {
+                                            chooseSquare(j,i+2);
+                                            console.log("WHAT HAPPENED");
+                                            STOP = true;
+                                            turnDone = true;
+                                            console.log("Should choose ",i+1,j-1,knownBoardArr[i+1][j-1]);
+                                        }
+                                    }
+                                }
+                                if(STOP) {
+                                    shouldContinue = false;
+                                }
+                                // console.log(i,j);
+                            }
+                        }
+                    }
+                    turn = 1;
+                }
+                if(!turnDone) {//A
+                    console.log("A");
+                    for(let i = 0; i < knownBoardArr.length; i++) {
+                        for(let j = 0; j < knownBoardArr.length; j++) {
+                            if(shouldContinue && knownBoardArr[i][j] != "UNKNOWN" && knownBoardArr[i][j] != "M") {
+                                /// Are the only number of open spaces
+                                /// equal to the count? If so, fill them.
+                                var count = Number(knownBoardArr[i][j]);
+                                console.log()
+                                if(count>0) {
+                                    if(i > 0) {
+                                        if(knownBoardArr[i-1][j] == "UNKNOWN") {
+                                            --count;
+                                        }
+                                        if(j < boardSize -1) {
+                                            if(knownBoardArr[i-1][j+1] == "UNKNOWN") {
+                                                --count;
+                                            }
+                                        }
+                                        if(j > 0) {
+                                            if(knownBoardArr[i-1][j-1] == "UNKNOWN") {
+                                                --count;
+                                            }
+                                        }
+                                    }
+                                    if(j < boardSize -1) {
+                                        if(knownBoardArr[i][j+1] == "UNKNOWN") {
+                                            --count;
+                                        }
+                                    }
+                                    if(j > 0) {
+                                        if(knownBoardArr[i][j-1] == "UNKNOWN") {
+                                            --count;
+                                        }
+                                    }
+                                    if(i < boardSize -1) {
+                                        if(knownBoardArr[i+1][j] == "UNKNOWN") {
+                                            --count;
+                                        }
+                                        if(j < boardSize -1) {
+                                            if(knownBoardArr[i+1][j+1] == "UNKNOWN") {
+                                                --count;
+                                            }
+                                        }
+                                        if(j > 0) {
+                                            if(knownBoardArr[i+1][j-1] == "UNKNOWN") {
+                                                --count;
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    count = 5;
+                                }
+                                if(count == 0 && false) {
+                                    var STOP = false;
+                                    if(i > 0) {
+                                        if(!STOP) {
+                                            if(knownBoardArr[i-1][j] == "UNKNOWN") {
+                                                chooseSquare(j+1,i);
+                                                turnDone = true;
+                                                STOP = true;
+                                                console.log("Should bomb ",i-1,j,knownBoardArr[i-1][j] );
+                                            }
+                                        }
+                                        if(j < boardSize -1 && !STOP) {
+                                            if(knownBoardArr[i-1][j+1] == "UNKNOWN") {
+                                                chooseSquare(j+2,i);
+                                                turnDone = true;
+                                                STOP = true;
+                                                console.log("Should bomb ",i-1,j+1,knownBoardArr[i-1][j+1]);
+                                            }
+                                        }
+                                        if(j > 0 && !STOP) {
+                                            if(knownBoardArr[i-1][j-1] == "UNKNOWN") {
+                                                chooseSquare(j,i);
+                                                STOP = true;
+                                                turnDone = true;
+                                                console.log("Should bomb ",i-1,j-1,knownBoardArr[i-1][j-1]);
+                                            }
+                                        }
+                                    }
+                                    if(j < boardSize -1 && !STOP) {
+                                        if(knownBoardArr[i][j+1] == "UNKNOWN") {
+                                            chooseSquare(j+2,i+1);
+                                            turnDone = true;
+                                            STOP = true;
+                                            console.log("Should bomb ",i,j+1,knownBoardArr[i][j+1]);
+                                        }
+                                    }
+                                    if(j > 0 && !STOP) {
+                                        if(knownBoardArr[i][j-1] == "UNKNOWN") {
+                                            chooseSquare(j,i+1);
+                                            turnDone = true;
+                                            STOP = true;
+                                            console.log("Should bomb ",i,j-1,knownBoardArr[i][j-1]);
+                                        }
+                                    }
+                                    if(i < boardSize -1 && !STOP) {
+                                        if(knownBoardArr[i+1][j] == "UNKNOWN") {
+                                            chooseSquare(j+1,i+2);
+                                            turnDone = true;
+                                            STOP = true;
+                                            console.log("Should bomb ",i+1,j,knownBoardArr[i+1][j]);
+                                        }
+                                        if(j < boardSize -1 && !STOP) {
+                                            if(knownBoardArr[i+1][j+1] == "UNKNOWN") {
+                                                chooseSquare(j+2,i+2);
+                                                STOP = true;
+                                                turnDone = true;
+                                                console.log("Should bomb ",i+1,j+1,knownBoardArr[i+1][j+1]);
+                                            }
+                                        }
+                                        if(j > 0 && !STOP) {
+                                            if(knownBoardArr[i+1][j-1] == "UNKNOWN") {
+                                                chooseSquare(j,i+2);
+                                                STOP = true;
+                                                turnDone = true;
+                                                console.log("Should bomb ",i+1,j-1,knownBoardArr[i+1][j-1]);
+                                            }
+                                        }
+                                    }
+                                    if(STOP) {
+                                        shouldContinue = false;
+                                    }
+                                    console.log(i,j);
+                                }
+                            }
+                        }
+                    }
+                }//B
+            }
+            turn = 1;
+        } else if(turn == 1) {
+            if(Date.now() - delay > turnSec) {
+                turn = 0;
+                turnSec = Date.now();
+            }
+        }
     }
     function play(){
         if(press("mouse")) {
             let testMouseX = mouseX - startingX;
             let testMouseY = mouseY - startingY;
             /// Chosen square will be Math.floor
-            var chosenX = Math.floor(testMouseX / 50);
-            var chosenY = Math.floor(testMouseY / 50);
-            if((startingX + (chosenX * 50) - 50 >= startingX && (startingY + (chosenY * 50) - 50) >= startingY)) {
-                if((startingX + (chosenX * 50) - 50) < startingX + boardSize * 50 && startingY + (chosenY * 50) - 50 < startingY + boardSize*50) {
+            var chosenX = Math.floor(testMouseX / squareWidth);
+            var chosenY = Math.floor(testMouseY / squareWidth);
+            if((startingX + (chosenX * squareWidth) - squareWidth >= startingX && (startingY + (chosenY * squareWidth) - squareWidth) >= startingY)) {
+                if((startingX + (chosenX * squareWidth) - squareWidth) < startingX + boardSize * squareWidth && startingY + (chosenY * squareWidth) - squareWidth < startingY + boardSize*squareWidth) {
                     chooseSquare(chosenX,chosenY);
                 }
             }
@@ -161,10 +470,10 @@
             let testMouseX = mouseX - startingX;
             let testMouseY = mouseY - startingY;
             /// Chosen square will be Math.floor
-            var chosenX = Math.floor(testMouseX / 50);
-            var chosenY = Math.floor(testMouseY / 50);
-            if((startingX + (chosenX * 50) - 50 >= startingX && (startingY + (chosenY * 50) - 50) >= startingY)) {
-                if((startingX + (chosenX * 50) - 50) < startingX + boardSize * 50 && startingY + (chosenY * 50) - 50 < startingY + boardSize * 50) {
+            var chosenX = Math.floor(testMouseX / squareWidth);
+            var chosenY = Math.floor(testMouseY / squareWidth);
+            if((startingX + (chosenX * squareWidth) - squareWidth >= startingX && (startingY + (chosenY * squareWidth) - squareWidth) >= startingY)) {
+                if((startingX + (chosenX * squareWidth) - squareWidth) < startingX + boardSize * squareWidth && startingY + (chosenY * squareWidth) - squareWidth < startingY + boardSize * squareWidth) {
                     if(boardArr[chosenY-1][chosenX-1] == "M") {
                         drawBoardSquare(chosenX,chosenY,0x00FF00);
                         mineShots--;
@@ -196,6 +505,8 @@
             drawBoardSquare(x,y,0xFF0000);
             state = lose;
         } else if(boardArr[y-1][x-1] !== "FINISHED") {
+            knownBoardArr[y-1][x-1] = boardArr[y-1][x-1];
+            console.log("Chose",y-1,x-1);
             drawBoardSquare(x,y);
             var complete = true;
             boardArr.forEach(function(e,j){
@@ -219,13 +530,16 @@
             var boardSquareText = new PIXI.Text("");
             // console.log(x,y);
             boardSquareText.text = boardArr[y-1][x-1].toString();
-            boardSquareText.x = startingX + x*50;
-            boardSquareText.y = startingY + y*50;
+            boardSquareText.x = startingX + x*squareWidth;
+            boardSquareText.y = startingY + y*squareWidth;
+            if(boardSize > 25) {
+                boardSquareText.scale.set(1 - ((boardSize - 5)* 0.01))
+            }
             app.stage.addChild(boardSquareText);
             if(color) {
                 board.lineStyle(2,0,1);
                 board.beginFill(color);
-                board.drawRect(startingX + x * 50, startingY + y * 50, 50,50);
+                board.drawRect(startingX + x * squareWidth, startingY + y * squareWidth, squareWidth,squareWidth);
                 board.endFill();
             }
             boardArr[y-1][x-1] = "FINISHED";
