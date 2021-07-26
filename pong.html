@@ -1,0 +1,176 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Direction ship</title>
+</head>
+    <style>* {padding: 0; margin: 0}</style>
+    <script src="pixi/pixi.min.js"></script>
+    <script src="usefulFunctions.js"></script>
+<body>
+  <script type="text/javascript">
+    var params = getParams();
+    function getParams() {
+      var params = {};
+      location.search.substr(1).split("&").forEach(function(el) {
+        var data = el.replace(/\+/g, " ").split("=");
+        params[decodeURIComponent(data[0])] = data[1] ? decodeURIComponent(data[1]) : true;
+      });
+      return params;
+    }
+    PIXI.utils.skipHello();
+    PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
+    let Application = PIXI.Application,
+        Container = PIXI.Container,
+        loader = PIXI.loader,
+        resources = PIXI.loader.resources,
+        TextureCache = PIXI.utils.TextureCache,
+        Sprite = PIXI.Sprite,
+        Rectangle = PIXI.Rectangle,
+        Graphics = PIXI.Graphics;
+    let app = new Application({ 
+        width: 800,
+        height: 800,              
+        antialias: true,
+        transparent: false,
+        resolution: 1
+      }
+    );
+    app.renderer.backgroundColor = 0x000000;
+    /// Fill the screen 
+    app.renderer.view.style.position = "absolute";
+    app.renderer.view.style.display = "block";
+    app.renderer.autoResize = true;
+    app.renderer.resize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(app.view);
+    loader.add("sprites/treasureHunter.json").load(setup);
+    var state;
+    var keys = {};
+    var enemy;
+    var balls = [];
+    var player;
+    function setup() {
+        enemy = new PIXI.Graphics();
+        app.stage.addChild(enemy);
+        enemy.beginFill(0xDD5555);
+        enemy.drawRect(0,0,10,100);
+        enemy.width = 10;
+        enemy.height = 100;
+        enemy.endFill();
+        enemy.x = 100;
+        enemy.y = innerHeight / 2;
+        player = new PIXI.Graphics();
+        app.stage.addChild(player);
+        player.beginFill(0x55DD55);
+        player.drawRect(0,0,10,100);
+        player.width = 10;
+        player.height = 100;
+        player.endFill();
+        player.x = innerWidth - 100;
+        player.y = innerHeight / 2;
+        spawnBall();
+        state = play;
+        app.ticker.add(delta => gameLoop(delta));
+    }
+    function spawnBall(count){
+        count = Number(count) || 1;
+        for(let i = 0; i < count; i++) {
+            let ball = new PIXI.Graphics();
+            app.stage.addChild(ball);
+            ball.beginFill(0xFFFFFF);
+            ball.drawCircle(0,0,15);
+            ball.width = 30;
+            ball.height = 30;
+            ball.endFill();
+            ball.x = innerWidth / 2;
+            ball.y = innerHeight / 2;
+            ball.direction = 95;
+            ball.speed = randNum(2.75 * 3,3.25 * 3);
+            balls.push(ball);
+        }
+    }
+    function gameLoop(delta) {
+      state(delta)
+    }
+    function play(){
+        player.vy = 0;
+        if(keys.ArrowUp) {
+            player.y -= 3;
+            player.vy -= 3;
+        }
+        if(keys.ArrowDown) {
+            player.y += 3;
+            player.vy += 3;
+        }
+        if(Math.floor((closestBall(enemy).y - enemy.y) / 20) > 0) {
+            enemy.y += 3;
+            enemy.vy = 3;
+        } else {
+            enemy.y -= 3;
+            enemy.vy = -3;
+        }
+        balls.forEach(function(ball){
+            let data = direction(ball.speed,ball.direction);
+            ball.x += data.r;
+            ball.y += data.u;
+            var hitData = hit(ball);
+            if(hitData) {
+                // console.log("A")
+                if(Math.abs(Number(hitData.vy))) { 
+                    ball.direction = hitData.vy * 5 - ball.direction;
+                } else {
+                    ball.direction = 0 - ball.direction;
+                }
+                let data = direction(ball.speed,ball.direction);
+                ball.x += data.r;
+                ball.y += data.u;
+            }
+        });
+        if(hitTestRectangle(balls[0],player)) {
+            balls[0].x++;
+        }
+    }
+    function closestBall(sprite) {
+        let dist = Infinity;
+        let returnSprite = false;
+        for(let i = 0; i < balls.length; i++) {
+            if(getDistance(balls[i].x,balls[i].y,sprite.x,sprite.y) < dist) {
+                dist = getDistance(balls[i].x,balls[i].y,sprite.x,sprite.y);
+                returnSprite = balls[i];
+            }
+        }
+        return returnSprite;
+    }
+    var hitted = false;
+    function hit(sprite) {
+        if(hitted) {
+            return false;
+        }
+        if(sprite.y < 60) {
+            hitted = true;
+            return true;
+        } else if(sprite.y > innerHeight-60) {
+            
+            return true;
+        }
+        if(hitTestRectangle(sprite,player)) {
+            // hitted = true;
+            return {general:true,vy:player.vy};
+        }
+        if(hitTestRectangle(sprite,enemy)) {
+            // hitted = true;
+            return {general:true,vy:enemy.vy};
+        }
+    }
+    addEventListener("blur", function (){
+        keys = {};
+    });
+    addEventListener("keydown", function (e){
+        keys[e.key] = true;
+    });
+    addEventListener("keyup", function (e){
+        keys[e.key] = false;
+    });
+  </script>
+</body>
+</html>
