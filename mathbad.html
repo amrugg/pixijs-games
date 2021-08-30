@@ -9,15 +9,6 @@
     <script src="usefulFunctions.js"></script>
 <body>
   <script type="text/javascript">
-    var params = getParams();
-    function getParams() {
-      var params = {};
-      location.search.substr(1).split("&").forEach(function(el) {
-        var data = el.replace(/\+/g, " ").split("=");
-        params[decodeURIComponent(data[0])] = data[1] ? decodeURIComponent(data[1]) : true;
-      });
-      return params;
-    }
     PIXI.utils.skipHello();
     PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
     let Application = PIXI.Application,
@@ -45,8 +36,6 @@
     document.body.appendChild(app.view);
     loader.add("sprites/treasureHunter.json").add("sprites/butterknife.png").load(setup);
     var state;
-    var mouseX = 0;
-    var mouseY = 0;
     var defaultRange = 0;
     var addition = {minNum:0,maxNum:20};
     var keys = {};
@@ -64,51 +53,42 @@
         player.addChild(sword);
         sword.scale.set(5);
         sword.anchor.set(0,1);
-        makeBlob();
         sword.x = 16;
         sword.y = 22;
         app.stage.addChild(player);
         swordText = new PIXI.Text("");
         swordText.y = innerHeight - 100;
-        sword.length = 10;
         app.stage.addChild(swordText);
         app.ticker.add(delta => gameLoop(delta));
+        for(let i = 0; i < 1; i++) {
+          var blobContainer = new Container();
+          let blob = new Sprite(id["blob.png"]);
+          blob.x = randInt(0,innerWidth);
+          blob.scale.set(1);
+          blob.y = randInt(0,innerHeight);
+          blobContainer.addChild(blob);
+          var blobText = new PIXI.Text();
+          blobText.text = randomEquation();
+          blobText.scale.set(1);
+          blobText.anchor.set(0,-0.25);
+          blobText.x = blob.x;
+          blobText.y = blob.y;
+          blobContainer.addChild(blobText);
+          app.stage.addChild(blobContainer);
+          blobs.push(blobContainer);
+        }
     }
     function gameLoop(delta) {
       state(delta);
     }
-    function makeBlob(count) {
-      count = count || 1;
-      for(let i = 0; i < count; i++) {
-        var blobContainer = new Container();
-        let blob = new Sprite(id["blob.png"]);
-        blobContainer.x = randInt(0,innerWidth);
-        blob.scale.set(1);
-        blobContainer.y = randInt(0,innerHeight);
-        blobContainer.addChild(blob);
-        var blobText = new PIXI.Text();
-        blobText.text = randomEquation();
-        blobText.scale.set(1);
-        blobText.anchor.set(0,-0.25);
-        blobText.x = blob.x;
-        blobText.y = blob.y;
-        blobContainer.addChild(blobText);
-        app.stage.addChild(blobContainer);
-        blobs.push(blobContainer);
-      }
-    }
-    var swordHeld = true;
     var swordSwing = false;
     var slowTick = 0;
     function play(){
-      if(Date.now() - 100 < slowTick && params.slowTick == "true") {
+      if(Date.now() - 100 < slowTick) {
         return;
       } else {
         slowTick = Date.now();
       }
-      if(!keys[" "]) {
-        swordHeld = false;
-      } 
       player.vx = 0;
       player.vy = 0;
       if(!swordSwing) {
@@ -116,25 +96,15 @@
           player.vx += -5;
           sword.x = 2;
           sword.y = 22;
-          if(swordHeld) {
-            sword.rotation = -Math.PI/2;
-            player.direction = "left";
-          } else {
-            sword.rotation = 0;
-            player.direction = "left";
-          }
+          sword.rotation = 0;
+          player.direction = "left";
         }
         if(keys.ArrowRight) {
           player.vx += 5;
           sword.x = 16;
           sword.y = 22;
-          if(swordHeld) {
-            sword.rotation = Math.PI/2;
-            player.direction = "right";
-          } else {
-            sword.rotation = 0;
-            player.direction = "right";
-          }
+          sword.rotation = 0;
+          player.direction = "right";
         }
         if(keys.ArrowUp) {
           player.vy += -5;
@@ -162,7 +132,7 @@
         if(press("Backspace")) {
           swordText.text = "";
         }
-        if(keys[" "] && !swordSwing && !swordHeld) {
+        if(press(" ")) {
           swordSwing = true;
           if(player.direction == "left" || player.direction == "right") {
             sword.rotation = 0;
@@ -183,78 +153,40 @@
           sword.rotation += 0.25;
           if(sword.rotation >= 2.75) {
             swordSwing = false;
-            if(keys[" "]) {
-              swordHeld = true;
-              sword.rotation = Math.PI/2;
-            } else {
-              sword.rotation = 0;
-            }
+            sword.rotation = 0;
           }
         }
         if(player.direction == "left") {
           sword.rotation -= 0.25;
           if(sword.rotation <= -2.75) {
             swordSwing = false;
-            if(keys[" "]) {
-              swordHeld = true;
-              sword.rotation = -Math.PI/2;
-            } else {
-              sword.rotation = 0;
-            }
+            sword.rotation = 0;
           }
         }
         if(player.direction == "up") {
           sword.rotation -= 0.25
           if(sword.rotation <= -1.6) {
             swordSwing = false;
-            if(keys[" "]) {
-              swordHeld = true;
-              sword.rotation = 0;
-            } else {
-              sword.rotation = 0;
-            }
+            sword.rotation = 0;
           }
         }
         if(player.direction == "down") {
           sword.rotation += 0.25;
           if(sword.rotation >= Math.PI * 1.5) {
             swordSwing = false;
-            if(keys[" "]) {
-              swordHeld = true;
-              sword.rotation = Math.PI;
-            } else {
-              sword.rotation = Math.PI;
-            }
+            sword.rotation = Math.PI;
           }
         }
         // swordText.text = sword.rotation;
       }
-      sword.point1 = {x:sword.x,y:sword.y};
-      sword.point2 = rotatePoint(sword.x,sword.y+sword.length,sword.x,sword.y,-sword.rotation);
-      sword.l1 = {p1:sword.point1,p2:sword.point2};
       blobs.forEach(function(blob){
-        blob.point1 = {x:blob.x - blob.width,y:blob.y-blob.height};
-        blob.point2 = {x:blob.x + blob.width,y:blob.y-blob.height};
-        blob.point3 = {x:blob.x + blob.width,y:blob.y+blob.height};
-        blob.point4 = {x:blob.x - blob.width,y:blob.y+blob.height};
-        blob.l1 = {p1:blob.point1,p2:blob.point2};
-        blob.l2 = {p1:blob.point2,p2:blob.point3};
-        blob.l3 = {p1:blob.point3,p2:blob.point4};
-        blob.l4 = {p1:blob.point4,p2:blob.point1};
-        if(lineCollideLine(blob.l1,sword.l1) || lineCollideLine(blob.l2,sword.l1) || lineCollideLine(blob.l3,sword.l1) || lineCollideLine(blob.l4,sword.l1)) {
-          blob.visible = false; 
-        }
-        if(getDistance(mouseX,mouseY,blob.x,blob.y) < 300 || getDistance(player.x,player.y,blob.x,blob.y) < 350) {
-          console.log(sword.l1,blob.l1,blob.l2,blob.l3,blob.l4);
-          blob.children[1].visible = true;
-        } else {
-          blob.children[1].visible = false;
-        }
+        console.log(blob);
+        debugger
         let rpx = Math.round(player.x / 20);
         let rpy = Math.round(player.y / 20);
         let rbx = Math.round(blob.x / 20);
         let rby = Math.round(blob.y / 20);
-        // console.log(player.x,player.y,blob.x,blob.y);
+        console.log(player.x,player.y,blob.x,blob.y);
         if(rbx > rpx) {
           blob.x -= 2;
         } else if(rbx < rpx) {
@@ -297,28 +229,8 @@
         }
         return equation;
     }
-    addEventListener("mousedown",function(e){
-        if(e.button == 0) {
-            keys.mouse = true;
-        } else if(e.button == 2) {
-            keys.rightMouse = true;
-        }
-        mouseX = e.pageX;
-        mouseY = e.pageY;
-    });
-    addEventListener("mouseup",function(e){
-        if(e.button == 0) { 
-            keys.mouse = false;
-        } else if(e.button == 2) {
-            keys.rightMouse = true;
-        }
-    });
     addEventListener("blur", function (){
         keys = {};
-    });
-    addEventListener("mousemove",function(e){
-        mouseX = e.pageX;
-        mouseY = e.pageY;
     });
     addEventListener("keydown", function (e){
         keys[e.key] = true;

@@ -34,13 +34,24 @@
     app.renderer.autoResize = true;
     app.renderer.resize(window.innerWidth, window.innerHeight);
     document.body.appendChild(app.view);
-    loader.add("sprites/treasureHunter.json").load(setup);
+    loader.add("sprites/treasureHunter.json").add("sprites/arrow.png").load(setup);
     var state, id, explorer;
     var castle;
     var blobs = [];
     var wave = 0;
+    var health = 200;
     var waveChanged = true;
-    var waves = [5];
+    var keys = {};
+    var waves = [5,10,15,20,50];
+    var mouseX, mouseY;
+    var arrows = [];
+    var bow = {
+      name: "branch-bow",
+      power: 10,
+      range: 1000/*px*/,
+      accuracy: 99/*percent*/,
+      fireSpeed: 2/*sec*/,
+    }
     function setup() {
         id = resources["sprites/treasureHunter.json"].textures;
         explorer = new Sprite(id["explorer.png"]);
@@ -50,24 +61,94 @@
         castle = new Sprite(id["dungeon.png"]);
         castle.scale.set(2);
         castle.x = -512;
+        rangeGraphics = new PIXI.Graphics();
+        app.stage.addChild(rangeGraphics);
         app.stage.addChild(castle)
         app.stage.addChild(explorer);
         state = play;
         app.ticker.add(delta => gameLoop(delta));
     }
     function gameLoop(delta) {
-      state(delta)
+      state(delta);
     }
+    var mouseMoved = false;
+    var rangeGraphics;
     function play(){
         if(waveChanged){
             for(let i = 0; i < waves[wave]; i++) {
                 spawnBlob();
             }
             waveChanged = false;
+            return;
         }
+        if(mouseMoved) {
+          rangeGraphics.clear();
+          var mouseDirection = pointTowards(explorer.x,explorer.y,mouseX,mouseY) + 180;
+          var target1,target2;
+          for(let i = 2; i < 12; i++) {
+              target1 = direction((bow.range/10)*i,mouseDirection + 360*((100-bow.accuracy)/100));
+              rangeGraphics.lineStyle(0); // draw a circle, set the lineStyle to zero so the circle doesn't have an outline
+              rangeGraphics.beginFill(0x990000, 1);
+              rangeGraphics.drawCircle(target1.r+explorer.x, target1.u+explorer.y, 12.5);
+              rangeGraphics.endFill();
+          }
+          for(let i = 2; i < 12; i++) {
+              target1 = direction((bow.range/10)*i,mouseDirection - 360*((100-bow.accuracy)/100));
+              rangeGraphics.lineStyle(0); // draw a circle, set the lineStyle to zero so the circle doesn't have an outline
+              rangeGraphics.beginFill(0x990000, 1);
+              rangeGraphics.drawCircle(target1.r+explorer.x, target1.u+explorer.y, 12.5);
+              rangeGraphics.endFill();
+          }
+          for(let i = 2; i < 12; i++) {
+              target1 = direction((bow.range/10)*i,mouseDirection);
+              rangeGraphics.lineStyle(0); // draw a circle, set the lineStyle to zero so the circle doesn't have an outline
+              rangeGraphics.beginFill(0x009900, 1);
+              rangeGraphics.drawCircle(target1.r+explorer.x, target1.u+explorer.y, 12.5);
+              rangeGraphics.endFill();
+          }
+        }
+        if(press("mouse")) {
+          spawnArrow(explorer.x,explorer.y,mouseX, mouseY);
+        }
+        arrows.forEach(function(arrow,i){
+          // console.log(arrow.speed)
+          let data = direction(arrow.speed,arrow.direction);
+          arrow.x += data.r;
+          arrow.y += data.u;
+          blobs.forEach(function(blob,j){
+            if(hitTestRectangle(blob,arrow)) {
+              app.stage.removeChild(blob);
+              blobs.splice(j,1);
+              app.stage.removeChild(arrow);
+              arrows.splice(i,1);
+              // console.log("Delete");
+            }
+          });
+          if(arrow.x < -100 || arrow.x > innerWidth + 100 || arrow.y < -100 || arrow.y > innerHeight+100) {
+            app.stage.removeChild(arrow);
+            arrows.splice(i,1);
+            // console.log("Delete");
+          }
+        });
+        var noBlobs = true;
         blobs.forEach(function(blob){
-            if(blob.attack) {
-
+          noBlobs = false;  
+          if(blob.attack) {
+              if(blob.scale.x < 1.5 && !blob.returning) {
+                blob.scale.x += 0.025;
+                blob.scale.y += 0.025;
+              } else if(blob.scale.x >= 1.5 && !blob.returning) {
+                blob.returning = true;
+              } else if(blob.scale.x > 1){
+                // console.log(blob.returning);
+                blob.scale.x -= 0.025;
+                blob.scale.y -= 0.025;
+              } else {
+                // console.log(blob.scale.x,blob.scale.y);
+                blob.returning = false;
+                blob.attack = false;
+                --health;
+              }
             } else {
                 if(blob.x > 512 + blob.width / 2) {
                     blob.x--;
@@ -76,6 +157,16 @@
                 }
             }
         });
+        if(noBlobs) {
+          waveChanged = true;
+          ++wave;
+        }
+        if(keys.ArrowUp) {
+          explorer.y--;
+        }
+        if(keys.ArrowDown) {
+          explorer.y++;
+        }
     }
     function spawnBlob(){
         let newBlob = new Sprite(id["blob.png"]);
@@ -83,6 +174,7 @@
         newBlob.anchor.set(0.5);
         newBlob.x = innerWidth + newBlob.width;
         newBlob.y = randInt(newBlob.height,innerHeight - newBlob.height);
+        newBlob.returning = false;
         while(yDist(newBlob.y) < newBlob.height) {
             newBlob.y = randInt(newBlob.height,innerHeight - newBlob.height);
         }
@@ -98,52 +190,60 @@
         });
         return dist;
     }
-    function keyboard(value) {
-      let key = {};
-      key.value = value;
-      key.isDown = false;
-      key.isUp = true;
-      key.press = undefined;
-      key.release = undefined;
-      //The `downHandler`
-      key.downHandler = event => {
-        if (event.key === key.value) {
-          if (key.isUp && key.press) key.press();
-          key.isDown = true;
-          key.isUp = false;
-          event.preventDefault();
-        }
-      };
-
-      //The `upHandler`
-      key.upHandler = event => {
-        if (event.key === key.value) {
-          if (key.isDown && key.release) key.release();
-          key.isDown = false;
-          key.isUp = true;
-          event.preventDefault();
-        }
-      };
-
-      //Attach event listeners
-      const downListener = key.downHandler.bind(key);
-      const upListener = key.upHandler.bind(key);
-      
-      window.addEventListener(
-        "keydown", downListener, false
-      );
-      window.addEventListener(
-        "keyup", upListener, false
-      );
-      
-      // Detach event listeners
-      key.unsubscribe = () => {
-        window.removeEventListener("keydown", downListener);
-        window.removeEventListener("keyup", upListener);
-      };
-      
-      return key;
+    function spawnArrow(x1,y1,x2,y2) {
+      console.log("Spawn")
+      var arrow = new Sprite(resources["sprites/arrow.png"].texture);
+      app.stage.addChild(arrow);
+      // arrow.scale.set(5,5);
+      arrow.x = x1;
+      arrow.y = y1;
+      var offset = 360*((100-bow.accuracy)/100);
+      // console.log(offset)
+      arrow.direction = pointTowards(x1,y1,x2,y2) + 180 + (randNum(-1*offset,offset));
+      // console.log((360/(100-bow.accuracy)));
+      arrow.speed = bow.power;
+      arrow.rotation = pointInDirection(arrow.direction + 180);
+      arrows.push(arrow);
     }
+
+
+    function press(key){
+        if(keys[key]){
+            keys[key] = false;
+            return true;
+        }
+        return false;
+    }
+    addEventListener("mousedown",function(e){
+        if(e.button == 0) {
+            keys.mouse = true;
+        } else if(e.button == 2) {
+            keys.rightMouse = true;
+        }
+        mouseX = e.pageX;
+        mouseY = e.pageY;
+    });
+    addEventListener("mouseup",function(e){
+        if(e.button == 0) { 
+            keys.mouse = false;
+        } else if(e.button == 2) {
+            keys.rightMouse = true;
+        }
+    });
+    addEventListener("mousemove",function(e){
+        mouseX = e.pageX;
+        mouseY = e.pageY;
+        mouseMoved = true;
+    });
+    addEventListener("blur", function (){
+        keys = {};
+    });
+    addEventListener("keydown", function (e){
+        keys[e.key] = true;
+    });
+    addEventListener("keyup", function (e){
+        keys[e.key] = false;
+    });
   </script>
 </body>
 </html>

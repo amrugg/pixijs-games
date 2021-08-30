@@ -9,6 +9,16 @@ Math.probability = function(percent,oneoneHundred){
         return percent > Math.random() * 100;
     }
 }
+function gcd(a,b) {
+    if(a == 0) {
+        return b;
+    }
+    if(b == 0) {
+        return a;
+    }
+    var r = a%b;
+    return gcd(b,r)
+}
 function findVectorFromImpulse(x,y) {
     var distance = Math.sqrt(x**2+y**2);
     var direction = Math.atan(y/x) * 180/Math.PI;
@@ -267,3 +277,4 @@ console.log(test(-0.5,0.5));
 console.log(test(-0.5,0.5));
 console.log(test(-0.5,0.5));
 console.log(test(-0.5,0.5));*/
+console.log(gcd(270,192))

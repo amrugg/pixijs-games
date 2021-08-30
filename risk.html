@@ -32,29 +32,63 @@
         width: 800,
         height: 800,              
         antialias: true,
-        transparent: true,
+        transparent: false,
         resolution: 1
       }
     );
-    app.renderer.backgroundColor = 0x55DD55;
+    app.renderer.backgroundColor = 0x999999;
     /// Fill the screen 
     app.renderer.view.style.position = "absolute";
     app.renderer.view.style.display = "block";
     app.renderer.autoResize = true;
     app.renderer.resize(window.innerWidth, window.innerHeight);
     document.body.appendChild(app.view);
-    loader.add("sprites/treasureHunter.json").load(setup);
+    loader.add("sprites/riskBoard2.png").load(setup);
     var state;
     var keys = {};
+    var titles = [{name: "alaska",x:130,y:150,scale:0.5},{name: "greenland",x:420,y:75,scale:0.51},{name: "NW\nTerritory",x:220,y:150,scale:0.39},{name: "alberia",x:217,y:200,scale:0.51},{name: "Western\nUnited\nStates",x:230,y:250,scale:0.5},{name: "Eastern\nUnited\nStates",x:290,y:265,scale:0.5},{name:"Central\nAmerica",x:244,y:296,scale:0.37}];
+    var board, mouseX, mouseY;
+    mouseX = 0;
+    mouseY = 0;
+    var stageWidth, stageHeight;
+    var debugText;
     function setup() {
         state = play;
+        
+        /// ADD BOARD FIRST!
+        board = new Sprite(resources["sprites/riskBoard2.png"].texture);
+        stageWidth = window.innerWidth;
+        stageHeight = window.innerHeight;
+        let boardHeight = board.height;
+        let boardWidth = board.width;
+        let heightScale = stageHeight / boardHeight;
+        // board.scale.set(heightScale);
+        app.stage.addChild(board);
+
+        debugText = new PIXI.Text();
+        app.stage.addChild(debugText);
+        positionTitles();
         app.ticker.add(delta => gameLoop(delta));
     }
     function gameLoop(delta) {
       state(delta)
     }
     function play(){
-
+        debugText.text = mouseX.toString() + ", " + mouseY.toString();
+    }
+    function positionTitles() {
+        for(let i = 0; i < titles.length; i++) {
+            var currentTitle = titles[i];
+            var text = new PIXI.Text();
+            text.anchor.set(0.5,0.5)
+            text.text = currentTitle.name.toUpperCase();
+            text.x = currentTitle.x;
+            text.y = currentTitle.y;
+            if(currentTitle.scale) {
+                text.scale.set(currentTitle.scale);
+            }
+            app.stage.addChild(text);
+        }
     }
     function press(key){
         if(keys[key]){
