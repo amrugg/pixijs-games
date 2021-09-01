@@ -1,0 +1,135 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Direction ship</title>
+</head>
+    <style>* {padding: 0; margin: 0}</style>
+    <script src="pixi/pixi.min.js"></script>
+    <script src="usefulFunctions.js"></script>
+<body>
+  <script type="text/javascript">
+    var params = getParams();
+    function getParams() {
+      var params = {};
+      location.search.substr(1).split("&").forEach(function(el) {
+        var data = el.replace(/\+/g, " ").split("=");
+        params[decodeURIComponent(data[0])] = data[1] ? decodeURIComponent(data[1]) : true;
+      });
+      return params;
+    }
+    PIXI.utils.skipHello();
+    PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
+    let Application = PIXI.Application,
+        Container = PIXI.Container,
+        loader = PIXI.loader,
+        resources = PIXI.loader.resources,
+        TextureCache = PIXI.utils.TextureCache,
+        Sprite = PIXI.Sprite,
+        Rectangle = PIXI.Rectangle,
+        Graphics = PIXI.Graphics;
+    let app = new Application({ 
+        width: 800,
+        height: 800,              
+        antialias: true,
+        transparent: true,
+        resolution: 1
+      }
+    );
+    app.renderer.backgroundColor = 0x55DD55;
+    /// Fill the screen 
+    app.renderer.view.style.position = "absolute";
+    app.renderer.view.style.display = "block";
+    app.renderer.autoResize = true;
+    app.renderer.resize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(app.view);
+    var spritesToLoad = ["sprites/mace.png","sprites/sword.png","sprites/axe.png","sprites/helmet.png","sprites/arrow.png"];
+    loader.add("sprites/treasureHunter.json").add(spritesToLoad).load(setup);
+    var state;
+    var keys = {};
+    function setup() {
+        fillArea(8,8,100,50);
+        state = play;
+        app.ticker.add(delta => gameLoop(delta));
+    }
+    function gameLoop(delta) {
+      state(delta)
+    }
+    var updated = false;
+    function play(){
+        if(!updated) {
+            updated = true;
+            update();
+        }
+    }
+    function update() {
+        
+    }
+    function fillArea(width,height,x,y) {
+        for(let i = 0; i < height; i++) {
+            for(let j = 0; j < width; j++) {
+                var sprite;
+                var rand = Math.random();
+                if(rand > 0.75) {
+                    sprite = new Sprite(resources["sprites/mace.png"].texture);
+                    sprite.scale.set(3);
+                } else if(rand > 0.5) {
+                    sprite = new Sprite(resources["sprites/sword.png"].texture);
+                    sprite.scale.set(3);
+                } else if(rand > 0.25) {
+                    sprite = new Sprite(resources["sprites/axe.png"].texture);    
+                    sprite.scale.set(3);
+                } else {
+                    sprite = new Sprite(resources["sprites/arrow.png"].texture);
+                }
+                app.stage.addChild(sprite);
+                sprite.x = x + j * 50;
+                sprite.y = y + i * 50;
+            }
+        }
+    }
+    function spawnRow(count){
+        for(let i = 0; i < count; i++) {
+        
+    }
+        
+    }
+    function press(key){
+        if(keys[key]){
+            keys[key] = false;
+            return true;
+        }
+        return false;
+    }
+    addEventListener("mousedown",function(e){
+        if(e.button == 0) {
+            keys.mouse = true;
+        } else if(e.button == 2) {
+            keys.rightMouse = true;
+        }
+        mouseX = e.pageX;
+        mouseY = e.pageY;
+    });
+    addEventListener("mouseup",function(e){
+        if(e.button == 0) { 
+            keys.mouse = false;
+        } else if(e.button == 2) {
+            keys.rightMouse = true;
+        }
+    });
+    addEventListener("blur", function (){
+        keys = {};
+    });
+    addEventListener("mousemove",function(e){
+        mouseX = e.pageX;
+        mouseY = e.pageY;
+    });
+    addEventListener("keydown", function (e){
+        keys[e.key] = true;
+    });
+    addEventListener("keyup", function (e){
+        keys[e.key] = false;
+    });
+  </script>
+</body>
+</html>
