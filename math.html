@@ -70,7 +70,7 @@
         app.stage.addChild(player);
         swordText = new PIXI.Text("");
         swordText.y = innerHeight - 100;
-        sword.length = 10;
+        sword.length = 5;
         app.stage.addChild(swordText);
         app.ticker.add(delta => gameLoop(delta));
     }
@@ -84,12 +84,13 @@
         let blob = new Sprite(id["blob.png"]);
         blobContainer.x = randInt(0,innerWidth);
         blob.scale.set(1);
+        blob.anchor.set(0.5);
         blobContainer.y = randInt(0,innerHeight);
         blobContainer.addChild(blob);
         var blobText = new PIXI.Text();
         blobText.text = randomEquation();
         blobText.scale.set(1);
-        blobText.anchor.set(0,-0.25);
+        blobText.anchor.set(0.5);
         blobText.x = blob.x;
         blobText.y = blob.y;
         blobContainer.addChild(blobText);
@@ -117,10 +118,10 @@
           sword.x = 2;
           sword.y = 22;
           if(swordHeld) {
-            sword.rotation = -Math.PI/2;
+            sword.rotation = -Math.PI/2 + 0.001;
             player.direction = "left";
           } else {
-            sword.rotation = 0;
+            sword.rotation = 0.001;
             player.direction = "left";
           }
         }
@@ -129,10 +130,10 @@
           sword.x = 16;
           sword.y = 22;
           if(swordHeld) {
-            sword.rotation = Math.PI/2;
+            sword.rotation = Math.PI/2 + 0.001;
             player.direction = "right";
           } else {
-            sword.rotation = 0;
+            sword.rotation = 0.001;
             player.direction = "right";
           }
         }
@@ -140,14 +141,14 @@
           player.vy += -5;
           sword.x = 8;
           sword.y = 14;
-          sword.rotation = 0;
+          sword.rotation = 0.001;
           player.direction = "up";
         }
         if(keys.ArrowDown) {
           player.vy += 5;
           sword.x = 13;
           sword.y = 22;
-          sword.rotation = Math.PI;
+          sword.rotation = Math.PI + 0.001;
           player.direction = "down";
         }
         player.x += player.vx;
@@ -165,13 +166,13 @@
         if(keys[" "] && !swordSwing && !swordHeld) {
           swordSwing = true;
           if(player.direction == "left" || player.direction == "right") {
-            sword.rotation = 0;
+            sword.rotation = 0.001;
           }
           if(player.direction == "up") {
-            sword.rotation = Math.PI / 2;
+            sword.rotation = Math.PI / 2 + 0.001;
           }
           if(player.direction == "down") {
-            sword.rotation = Math.PI / 2;
+            sword.rotation = Math.PI / 2 + 0.001;
           }
         }
       } else {
@@ -185,9 +186,9 @@
             swordSwing = false;
             if(keys[" "]) {
               swordHeld = true;
-              sword.rotation = Math.PI/2;
+              sword.rotation = Math.PI/2 + 0.001;
             } else {
-              sword.rotation = 0;
+              sword.rotation = 0.001;
             }
           }
         }
@@ -197,9 +198,9 @@
             swordSwing = false;
             if(keys[" "]) {
               swordHeld = true;
-              sword.rotation = -Math.PI/2;
+              sword.rotation = -Math.PI/2 + 0.001;
             } else {
-              sword.rotation = 0;
+              sword.rotation = 0.001;
             }
           }
         }
@@ -209,9 +210,9 @@
             swordSwing = false;
             if(keys[" "]) {
               swordHeld = true;
-              sword.rotation = 0;
+              sword.rotation = 0.001;
             } else {
-              sword.rotation = 0;
+              sword.rotation = 0.001;
             }
           }
         }
@@ -221,16 +222,16 @@
             swordSwing = false;
             if(keys[" "]) {
               swordHeld = true;
-              sword.rotation = Math.PI;
+              sword.rotation = Math.PI + 0.001;
             } else {
-              sword.rotation = Math.PI;
+              sword.rotation = Math.PI + 0.001;
             }
           }
         }
         // swordText.text = sword.rotation;
       }
-      sword.point1 = {x:sword.x,y:sword.y};
-      sword.point2 = rotatePoint(sword.x,sword.y+sword.length,sword.x,sword.y,-sword.rotation);
+      sword.point1 = {x:sword.getGlobalPosition().x,y:sword.getGlobalPosition().y};
+      sword.point2 = rotatePoint(sword.getGlobalPosition().x,sword.getGlobalPosition().y+sword.length,sword.getGlobalPosition().x,sword.getGlobalPosition().y,-sword.rotation);
       sword.l1 = {p1:sword.point1,p2:sword.point2};
       blobs.forEach(function(blob){
         blob.point1 = {x:blob.x - blob.width,y:blob.y-blob.height};
@@ -246,6 +247,7 @@
         }
         if(getDistance(mouseX,mouseY,blob.x,blob.y) < 300 || getDistance(player.x,player.y,blob.x,blob.y) < 350) {
           console.log(sword.l1,blob.l1,blob.l2,blob.l3,blob.l4);
+          debugger;
           blob.children[1].visible = true;
         } else {
           blob.children[1].visible = false;

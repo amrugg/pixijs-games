@@ -1,0 +1,294 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Matrix Knockdown: The Game</title>
+</head>
+    <style>* {padding: 0; margin: 0}</style>
+    <style>
+        .all{
+            /* position:absolute; */
+            float: down;
+        }
+    </style>
+    <script src="pixi/pixi.min.js"></script>
+    <script src="usefulFunctions.js"></script>
+    <button id="move"class="all">Play move</button><br/>
+    <button id="reset"class="all">Reset Move</button>
+    <p id="turnP"class="all">Player 1's turn</p>
+    <p id="moveP"class="all">Move 1</p>
+<body>
+  <script type="text/javascript">
+    var params = getParams();
+    function getParams() {
+      var params = {};
+      location.search.substr(1).split("&").forEach(function(el) {
+        var data = el.replace(/\+/g, " ").split("=");
+        params[decodeURIComponent(data[0])] = data[1] ? decodeURIComponent(data[1]) : true;
+      });
+      return params;
+    }
+    PIXI.utils.skipHello();
+    PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
+    let Application = PIXI.Application,
+        Container = PIXI.Container,
+        loader = PIXI.loader,
+        resources = PIXI.loader.resources,
+        TextureCache = PIXI.utils.TextureCache,
+        Sprite = PIXI.Sprite,
+        Rectangle = PIXI.Rectangle,
+        Graphics = PIXI.Graphics;
+    let app = new Application({ 
+        width: 1200,
+        height: 1000,              
+        antialias: true,
+        transparent: true,
+        resolution: 1
+      }
+    );
+    document.body.appendChild(app.view);
+    loader.add("sprites/treasureHunter.json").load(setup);
+    var playMoveButton = document.getElementById("move");
+    var turn = 1;
+    var move = 1;
+    var move1amount = -1;
+    var move2amount = -1;
+    var move3amount = -1;
+    var turnEl = document.getElementById("turnP");
+    var moveEl = document.getElementById("moveP");
+    playMoveButton.onclick = function(){
+        var allX = true;
+        var allY = true;
+        var otherFalse = false;
+        selected.sort(function(a,b){
+            return a.j - b.j;
+        });
+        console.log(selected);
+        for(let i = 1; i < selected.length; i++) {
+            var cur = selected[i];
+            var last = selected[i-1];
+            // if(last == "CENTER")
+            if(boardArr[cur.i][cur.j] == false || boardArr[last.i][last.j] == false) {
+                otherFalse = true;
+            }
+            if((last.j+1 == cur.j && last.i == cur.i) || cur.j-1 == 2 && cur.i == 2) {
+
+            } else {
+                allX = false;
+            }
+        }
+        selected.sort(function(a,b){
+            return a.i - b.i;
+        });
+        for(let i = 1; i < selected.length; i++) {
+            var cur = selected[i];
+            var last = selected[i-1];
+            // if(last == "CENTER")
+            if((last.i+1 == cur.i && last.j == cur.j) || cur.j == 2 && cur.i-1 == 2) {
+                
+            } else {
+                allY = false;
+            }
+        }
+        console.log(allX,allY);
+        if(boardArr[selected[0].i][selected[0].j] == false) {
+            otherFalse = true;
+        }
+        if(move == 2) {
+            if(move1amount == selected.length) {
+                otherFalse = true;
+            }
+        } else if(move == 3) {
+            if(move1amount == selected.length || move2amount == selected.length) {
+                otherFalse = true;
+            }
+        }
+        if((allX ^ allY || selected.length == 1) && !otherFalse) {
+            if(move == 1) {
+                move1amount = selected.length;
+            } else if(move == 2) {
+                move2amount = selected.length;
+            } else if(move == 3) {
+                move3amount = selected.length;
+            }
+            selected.forEach(function(ij){
+                boardArr[ij.i][ij.j] = false;
+                board.beginFill(0xDD5555);
+                board.drawCircle(startingX + xInc * ij.j,startingY + yInc * ij.i,25);
+                board.endFill();
+            });
+            console.log(boardArr);
+            selected = [];
+            turn = 3-turn;
+            move++;
+            turnEl.textContent = "Player "+turn.toString()+"'s turn";
+            moveEl.textContent = "Move "+move.toString();
+        } else {
+            resetMove();
+        }
+    }
+    var resetMoveButton = document.getElementById("reset");
+    resetMoveButton.onclick = resetMove;
+    function resetMove(){
+        selected.forEach(function(ij){
+            if(boardArr[ij.i][ij.j] == false) {
+                board.beginFill(0xDD5555);
+            } else {
+                board.beginFill(0x5555DD);
+            }
+            board.drawCircle(startingX + xInc * ij.j,startingY + yInc * ij.i,25);
+            board.endFill();
+        });
+        selected = [];
+    }
+    var state;
+    var keys = {};
+    var boardArr = [];
+    var boardPos = [];
+    var knownBoardArr = [];
+    var boardSize = Number(params.size) || 10.0;
+    var mineNum = params.mines || boardSize;
+    var squareWidth = params.width || 50;
+    var board = new PIXI.Graphics();
+    var mouseX, mouseY, startingX, startingY;
+    var mineShots = Math.floor(mineNum*1.25);
+    var shotsText;
+    var turn;
+    var turnSec,startingX,startingY,xInc,yInc;
+    var delay = params.delay || 1000;
+    var cornersLeft = 4;
+    var boardArr = [];
+    var selected = [];
+    var instructions;
+    function setup() {
+        // shotsText = new PIXI.Text("Mine Shots Left:");
+        // shotsText.text = "Mine Shots Left: " +mineShots.toString();
+        // app.stage.addChild(shotsText);
+        instructions = new PIXI.Text();
+        instructions.text = "Rules for playing Matrix Knockdown:\nThe goal of the game is to make the last move.\nTo make a move, select some tiles in a straight line.\nSelected tiles are green, unselected are blue, and played are red.\nThey must be a straight line horizontally or vertically.\nYou may move through the center multiple times.\nFor the first move, one can knock down any number of tiles.\nTo prevent copying, the second move must not be\nthe same number of tiles as the first.\nFor the third move, one cannot copy the first or second.\nThen you can move as you like. Have fun!\nCopyright 2021"
+        app.stage.addChild(instructions);
+        instructions.x = 400;
+        instructions.scale.set(1);
+        startingX = 100;
+        startingY = 50;
+        xInc = 60;
+        yInc = 60;
+        state = generateBoard;
+        app.stage.addChild(board);
+        app.ticker.add(delta => gameLoop(delta));
+    }
+    function gameLoop(delta) {
+      state(delta);
+    }
+    function generateBoard() {
+        for(let i = 0; i < 5; i++) {
+            boardArr.push([]);
+            boardPos[i] = [];
+            for(let j = 0; j < 5; j++) {
+                if(j == 2 && i == 2) {
+                    boardArr[i].push("CENTER");
+                    boardPos[i].push("CENTER")
+                } else {
+                    boardArr[i].push(true);
+                    board.beginFill(0x5555DD);
+                    board.drawCircle(startingX + xInc * j,startingY + yInc * i,25);
+                    board.endFill();
+                    boardPos[i].push({x:startingX + xInc * j,y:startingY + yInc * i + 36.5*2});
+                }
+            }
+        }
+        state = play;
+        console.log(boardArr,boardPos);
+    }
+    function wait() {
+
+    }
+    function solveAI(){
+        
+    }
+    function play(){
+        if(keys.mouse) {
+            var bestDistance = Infinity;
+        var lastIJ = {i:0,j:0};
+        for(let i = 0; i < boardPos.length; i++) {
+            for(let j = 0; j < boardPos[i].length; j++) {
+                if(boardPos[i][j] !== "CENTER") {
+                    if(getDistance(boardPos[i][j].x,boardPos[i][j].y,mouseX,mouseY) < bestDistance) {
+                        bestDistance = getDistance(boardPos[i][j].x,boardPos[i][j].y,mouseX,mouseY);
+                        lastIJ.i = i;
+                        lastIJ.j = j;
+                    }
+                } else {
+                }
+            }
+        }
+        if(bestDistance < 25) {
+            let push = true;
+            for(let i = 0; i < selected.length; i++) {
+                if(selected[i].j == lastIJ.j && selected[i].i == lastIJ.i) {
+                    push = false;
+                    break;
+                }
+            }
+            if(push) {
+                selected.push(lastIJ);
+            }
+            board.beginFill(0x55DD55);
+            board.drawCircle(startingX + xInc * lastIJ.j,startingY + yInc * lastIJ.i,25);
+            board.endFill();
+            // boardPos[i].push({x:startingX + xInc * lastIJ.j,y:startingY + yInc * lastIJ.i})
+        } else {
+        }
+        }
+    }
+    function chooseSquare(x,y) {
+    }
+    function lose(){
+        alert("You hit a mine! You lose!");
+        app.ticker.stop();
+    }
+    function press(key){
+        if(keys[key]){
+            keys[key] = false;
+            return true;
+        }
+        return false;
+    }
+    function onMouseDown() {
+        
+    }
+    addEventListener("blur", function (){
+        keys = {};
+    });
+    addEventListener("mousedown",function(e){
+        if(e.button == 0) {
+            keys.mouse = true;
+        } else if(e.button == 2) {
+            keys.rightMouse = true;
+        }
+        mouseX = e.pageX;
+        mouseY = e.pageY;
+    });
+    addEventListener("mouseup",function(e){
+        if(e.button == 0) { 
+            keys.mouse = false;
+        } else if(e.button == 2) {
+            keys.rightMouse = true;
+        }
+    });
+    window.addEventListener("contextmenu",function(e){
+        e.preventDefault();
+    });
+    addEventListener("mousemove",function(e){
+        mouseX = e.pageX;
+        mouseY = e.pageY;
+    });
+    addEventListener("keydown", function (e){
+        keys[e.key] = true;
+    });
+    addEventListener("keyup", function (e){
+        keys[e.key] = false;
+    });
+  </script>
+</body>
+</html>
