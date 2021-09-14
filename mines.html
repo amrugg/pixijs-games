@@ -530,6 +530,9 @@
             var boardSquareText = new PIXI.Text("");
             // console.log(x,y);
             boardSquareText.text = boardArr[y-1][x-1].toString();
+            if(boardSquareText.text !== "0") {
+                keys.mouse = false;
+            }
             boardSquareText.x = startingX + x*squareWidth;
             boardSquareText.y = startingY + y*squareWidth;
             if(boardSize > 25) {
