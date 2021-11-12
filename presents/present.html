@@ -1,0 +1,132 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Direction ship</title>
+</head>
+    <style>* {padding: 0; margin: 0}</style>
+    <script src="pixi/pixi.min.js"></script>
+    <script src="/usefulFunctions.js"></script>
+<body>
+  <script type="text/javascript">
+    var params = getParams();
+    function getParams() {
+      var params = {};
+      location.search.substr(1).split("&").forEach(function(el) {
+        var data = el.replace(/\+/g, " ").split("=");
+        params[decodeURIComponent(data[0])] = data[1] ? decodeURIComponent(data[1]) : true;
+      });
+      return params;
+    }
+    PIXI.utils.skipHello();
+    PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
+    let Application = PIXI.Application,
+        Container = PIXI.Container,
+        loader = PIXI.loader,
+        resources = PIXI.loader.resources,
+        TextureCache = PIXI.utils.TextureCache,
+        Sprite = PIXI.Sprite,
+        Rectangle = PIXI.Rectangle,
+        Graphics = PIXI.Graphics;
+    let app = new Application({ 
+        width: 800,
+        height: 800,              
+        antialias: true,
+        transparent: false,
+        resolution: 1
+      }
+    );
+    // app.renderer.backgroundColor = 0x55DD55;
+    app.renderer.backgroundColor = 0x000000;
+    /// Fill the screen 
+    app.renderer.view.style.position = "absolute";
+    app.renderer.view.style.display = "block";
+    app.renderer.autoResize = true;
+    app.renderer.resize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(app.view);
+    loader.add("sprites/treasureHunter.json").load(setup);
+    var state;
+    var keys = {};
+    var graphicsButtons;
+    var activeButtons = [];
+    var buttonsArray = [{name:"Grocery Store",width:180,scale:1},{name:"Gardener Store",width:200,scale:1},{name:"Plant",width:80,scale:1},{name:"Wait",width:75,scale:1},{name:"Tend",width:80,scale:1},{name:"Place Traps",width:160,scale:1},{name:"Call Friends",width:160,scale:1},{name:"Process Food",width:180,scale:1},{name:"Help",width:73,scale:1}];
+    function setup() {
+        graphicsButtons = new PIXI.Graphics();
+        app.stage.addChild(graphicsButtons);
+        genButtons();
+        state = play;
+        app.ticker.add(delta => gameLoop(delta));
+    }
+    function genButtons() {
+        graphicsButtons.lineStyle(10,0xAA00AA,1);
+        graphicsButtons.beginFill(0x000000);
+        var x = 0, y = 0;
+        for(let i = 0; i < buttonsArray.length; i++) {
+            var button = {};
+            graphicsButtons.drawRect(10 + x,10 + y,buttonsArray[i].width,75);
+            button.x = x;
+            button.y = y;
+            button.width = buttonsArray[i].width;
+            button.height = 75;
+            x += buttonsArray[i].width + 20;
+            var text = new PIXI.Text(buttonsArray[i].name);
+            text.style.fill = "#00AA00";
+            app.stage.addChild(text);
+            text.scale.set(buttonsArray[i].scale);
+            text.x = x - buttonsArray[i].width;
+            text.y = y + 30;
+            button.text = text;
+            if(x + 200 > innerWidth) {
+                y += 100;
+                x = 0;
+            }
+            activeButtons.push(button);
+            // graphicsButtons.endFill();
+        }
+        graphicsButtons.endFill();
+    }
+    function gameLoop(delta) {
+      state(delta);
+    }
+    function play(){
+
+    }
+    function press(key){
+        if(keys[key]){
+            keys[key] = false;
+            return true;
+        }
+        return false;
+    }
+    addEventListener("mousedown",function(e){
+        if(e.button == 0) {
+            keys.mouse = true;
+        } else if(e.button == 2) {
+            keys.rightMouse = true;
+        }
+        mouseX = e.pageX;
+        mouseY = e.pageY;
+    });
+    addEventListener("mouseup",function(e){
+        if(e.button == 0) { 
+            keys.mouse = false;
+        } else if(e.button == 2) {
+            keys.rightMouse = true;
+        }
+    });
+    addEventListener("blur", function (){
+        keys = {};
+    });
+    addEventListener("mousemove",function(e){
+        mouseX = e.pageX;
+        mouseY = e.pageY;
+    });
+    addEventListener("keydown", function (e){
+        keys[e.key] = true;
+    });
+    addEventListener("keyup", function (e){
+        keys[e.key] = false;
+    });
+  </script>
+</body>
+</html>
