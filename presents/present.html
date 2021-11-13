@@ -49,11 +49,30 @@
     var keys = {};
     var graphicsButtons;
     var activeButtons = [];
-    var buttonsArray = [{name:"Grocery Store",width:180,scale:1},{name:"Gardener Store",width:200,scale:1},{name:"Plant",width:80,scale:1},{name:"Wait",width:75,scale:1},{name:"Tend",width:80,scale:1},{name:"Place Traps",width:160,scale:1},{name:"Call Friends",width:160,scale:1},{name:"Process Food",width:180,scale:1},{name:"Help",width:73,scale:1}];
+    var startText;
+    var helpText;
+    var buttonsArray = [{name:"Go to Store",width:150,scale:1,function:store},{name:"Plant",width:80,scale:1,function:plant},{name:"Wait",width:75,scale:1,function:wait},{name:"Tend",width:80,scale:1,function:tend},{name:"Place Traps",width:160,scale:1,function:trap},{name:"Call Friends",width:160,scale:1,function:friends},{name:"Process Food",width:180,scale:1,function:process},{name:"Help",width:73,scale:1,function:help}];
     function setup() {
         graphicsButtons = new PIXI.Graphics();
         app.stage.addChild(graphicsButtons);
         genButtons();
+        startText = "1. Go to the store.[Going to the store allows you to buy anything you need. You can trade money for food (or food for money), or you can buy seeds or traps or fertilizer, etc. etc.[Health Ratio: 1[2. Plant garden.[Planting your garden allows you to deploy seeds into your garden. They will later grow if they are done right. If they have no water, or they are planted too early, or too late, they will probably die.[Health Ratio: 1.5[3. Wait for it to grow.[Does nothing but wait for it to grow. EXCEPT if squirrels, pigs, bunnies, deer, or other things go for the garden. Then it goes into another mode where you chase the offending animal. If you catch them, you can have fresh meat. It will get bad though, unless you smoke it in the smokehouse.[Health Ratio: -2 unless you chase an animal, in which case it is 0.[4. Tend garden.[Water the garden, place fertilizer, till land, you can do any of these actions here.[Health Ratio: 1.25[5. Place traps and other things in the garden.[Places scarecrows or traps in the garden. You can get meat from animals stuck in the traps.[Health Ratio: 2[6. Call your friends.[Nels can come over and for a small sum improve your traps better. Tongorango can come over and he can help you sell your produce higher. He may eat some, though.[Health Ratio: 0.5[7. Process food.[All the food will rot after a time. If you can or ferment produce or smoke or salt meat it will last much longer.[Health Ratio: 0[8. Learn about these actions.[Shows this help screen."
+        helpText = "";
+        var charactersGone = 0;
+        for(let i = 0; i < startText.length; i++) {
+            var cur = startText[i];
+            charactersGone++;
+            if(cur === "[") {
+                // console.log(cur);
+                helpText += "\n";
+                charactersGone = 0;
+            } else if(charactersGone > innerWidth / 13 && cur == " ") {
+                helpText += "\n";
+                charactersGone = 0;
+            } else {
+                helpText += cur;
+            }
+        }
         state = play;
         app.ticker.add(delta => gameLoop(delta));
     }
@@ -80,16 +99,81 @@
                 y += 100;
                 x = 0;
             }
+            button.function = buttonsArray[i].function;
             activeButtons.push(button);
             // graphicsButtons.endFill();
         }
         graphicsButtons.endFill();
     }
+    var sceneSetting = 0;
+    var sceneText = new PIXI.Text("");
+    var buttonsActive = true;
+    app.stage.addChild(sceneText);
+    sceneText.style.fill = "#FFFFFF";
+    function store() {
+
+    }
+    function plant() {
+
+    }
+    function wait() {
+        
+    }
+    function tend() {
+        
+    }
+    function trap() {
+        
+    }
+    function friends() {
+        
+    }
+    function process() {
+        
+    }
+    function help() {
+        if(sceneSetting == 0) {
+            sceneText.text = helpText;
+            makeButtonsInvisible();
+        }
+    }
+    function makeButtonsInvisible() {
+        graphicsButtons.visible = false;
+        activeButtons.forEach(function(e,i){
+            e.text.visible = false;
+        });
+        buttonsActive = false;
+    }
+    function makeButtonsVisible() {
+        graphicsButtons.visible = true;
+        activeButtons.forEach(function(e,i){
+            e.text.visible = true;
+        });
+        buttonsActive = true;
+    }
     function gameLoop(delta) {
       state(delta);
     }
     function play(){
-
+        if(press("mouse")) {
+            var buttonPressed = false;
+            activeButtons.forEach(function(e,i){
+                if(mouseX < e.x) {
+                    return false;
+                } else if(mouseY < e.y) {
+                    return false;
+                } else if(mouseX > e.x + e.width){
+                    return false;
+                } else if(mouseY > e.y + e.height) {
+                    return false;
+                } else {
+                    buttonPressed = i;
+                }
+            });
+            if(typeof buttonPressed === "number") {
+                state = activeButtons[buttonPressed].function;
+            }
+        }
     }
     function press(key){
         if(keys[key]){

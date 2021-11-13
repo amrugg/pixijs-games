@@ -13,38 +13,33 @@ On your turn you will be able to do one of 9 things:
 9. Learn about these actions.
 
 About these actions:
-1. Go to the grocery store.
-Going to the grocery store allows you to trade money for food. Prices get higher in the winter and lower
-in the summer.
+1. Go to the store.
+Going to the store allows you to buy anything you need. You can trade money for food (or food for money), or you can buy seeds or traps or fertilizer, etc. etc.
 Health Ratio: 1
-2. Go to the gardener's store.
-Going to the gardener's store allows you to buy all possible seeds and plants. It also allows you to buy
-hoses, watering cans, scarecrows, fertilizer, etc. etc.
-Health Ratio: 1
-3. Plant garden.
+2. Plant garden.
 Planting your garden allows you to deploy seeds into your garden. They will later grow if they are done
 right. If they have no water, or they are planted too early, or too late, they will probably die.
 Health Ratio: 1.5
-4. Wait for it to grow.
+3. Wait for it to grow.
 Does nothing but wait for it to grow. EXCEPT if squirrels, pigs, bunnies, deer, or other things go for
 the garden. Then it goes into another mode where you chase the offending animal. If you catch them, you can
 have fresh meat. It will get bad though, unless you smoke it in the smokehouse.
 Health Ratio: -2
-5. Tend garden.
+4. Tend garden.
 Water the garden, place fertilizer, till land, you can do any of these actions here.
 Health Ratio: 1.25
-6. Place traps and other things in the garden.
+5. Place traps and other things in the garden.
 Places scarecrows or traps in the garden. You can get meat from animals stuck in the traps.
 Health Ratio: 2
-7. Call your friends.
+6. Call your friends.
 Nels can come over and for a small sum improve your traps better. Tongorango can come over and he can
 help you sell your produce higher. He may eat some, though.
 Health Ratio: 0.5
-8. Process food.
+7. Process food.
 All the food will rot after a time. If you can or ferment produce or smoke or salt meat it will last much
 longer.
 Health Ratio: 0
-9. Learn about these actions.
+8. Learn about these actions.
 Shows this help screen.
 
 All these actions take a toll on Sam's health. The stronger Sam is, the better he will be able to fight
