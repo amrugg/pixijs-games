@@ -134,7 +134,20 @@
     function help() {
         if(sceneSetting == 0) {
             sceneText.text = helpText;
+            sceneText.visible = true;
+            sceneText.y = 0;
             makeButtonsInvisible();
+            sceneSetting++;
+        } else if(sceneSetting == 1) {
+            if(press("mouse")) {
+                sceneText.y -= 100;
+                if(sceneText.y < (-innerHeight-200)) {
+                    makeButtonsVisible();
+                    sceneText.visible = false;
+                    sceneSetting = 0;
+                    state = play;
+                }
+            }
         }
     }
     function makeButtonsInvisible() {
