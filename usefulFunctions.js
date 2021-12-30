@@ -1,3 +1,71 @@
+function inside(point, vs) {
+
+    // ray-casting algorithm based on
+    // https://wrf.ecse.rpi.edu/Research/Short_Notes/pnpoly.html/pnpoly.html
+    
+    var x = point[0], y = point[1];
+    
+    var inside = false;
+    for (var i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+        var xi = vs[i][0], yi = vs[i][1];
+        var xj = vs[j][0], yj = vs[j][1];
+        
+        var intersect = ((yi > y) != (yj > y))
+        && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+    }
+    
+    return inside;
+};
+function isInside(polygon,n,p)
+{
+    let INF = 10000;
+    class Point
+    {
+        constructor(x,y)
+        {
+            this.x = x;
+            this.y = y;
+        }
+    }
+    // There must be at least 3 vertices in polygon[]
+    if (n < 3)
+    {
+        return false;
+    }
+
+    // Create a point for line segment from p to infinite
+    let extreme = new Point(INF, p.y);
+
+    // Count intersections of the above line
+    // with sides of polygon
+    let count = 0, i = 0;
+    do
+    {
+        let next = (i + 1) % n;
+
+        // Check if the line segment from 'p' to
+        // 'extreme' intersects with the line
+        // segment from 'polygon[i]' to 'polygon[next]'
+        if (doIntersect(polygon[i], polygon[next], p, extreme))
+        {
+            // If the point 'p' is colinear with line
+            // segment 'i-next', then check if it lies
+            // on segment. If it lies, return true, otherwise false
+            if (orientation(polygon[i], p, polygon[next]) == 0)
+            {
+                return onSegment(polygon[i], p,
+                                polygon[next]);
+            }
+
+            count++;
+        }
+        i = next;
+    } while (i != 0);
+
+    // Return true if count is odd, false otherwise
+    return (count % 2 == 1); // Same as (count%2 == 1)
+}
 function getDistance(x1,y1,x2,y2) {
     /// Mine
     return Math.sqrt((x1-x2)**2+(y1-y2)**2);

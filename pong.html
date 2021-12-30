@@ -43,124 +43,150 @@
     app.renderer.autoResize = true;
     app.renderer.resize(window.innerWidth, window.innerHeight);
     document.body.appendChild(app.view);
-    loader.add("sprites/treasureHunter.json").load(setup);
+    loader.add("sprites/redbar.png").add("sprites/bluebar.png").add("sprites/ball.png").load(setup);
     var state;
     var keys = {};
     var enemy;
     var balls = [];
     var player;
+    var playerText = new PIXI.Text("Health: 1000\nGold: 0");
+    playerText.style.fill = "#ffff00";
+    app.stage.addChild(playerText);
+    var enemyText = new PIXI.Text("Health: 1000\nGold: 0");
+    enemyText.style.fill = "#ff5500";
+    app.stage.addChild(enemyText);
+    enemyText.x = innerWidth - 150;
     function setup() {
-        enemy = new PIXI.Graphics();
-        app.stage.addChild(enemy);
-        enemy.beginFill(0xDD5555);
-        enemy.drawRect(0,0,10,100);
-        enemy.width = 10;
-        enemy.height = 100;
-        enemy.endFill();
-        enemy.x = 100;
-        enemy.y = innerHeight / 2;
-        player = new PIXI.Graphics();
+        player = new Sprite(resources["sprites/bluebar.png"].texture);
+        enemy = new Sprite(resources["sprites/redbar.png"].texture);
+        spawnBall(-90);
         app.stage.addChild(player);
-        player.beginFill(0x55DD55);
-        player.drawRect(0,0,10,100);
-        player.width = 10;
-        player.height = 100;
-        player.endFill();
-        player.x = innerWidth - 100;
-        player.y = innerHeight / 2;
-        spawnBall();
+        app.stage.addChild(enemy);
+        player.anchor.set(0.5);
+        enemy.anchor.set(0.5);
+        player.x += 20;
+        enemy.x = innerWidth - 20;
+        player.y = enemy.y = innerHeight / 2;
+        player.health = 1000;
+        enemy.health = 1000;
+        player.gold = 0;
+        enemy.gold = 0;
+        player.income = 1;
+        enemy.income = 1;
         state = play;
         app.ticker.add(delta => gameLoop(delta));
     }
-    function spawnBall(count){
-        count = Number(count) || 1;
-        for(let i = 0; i < count; i++) {
-            let ball = new PIXI.Graphics();
-            app.stage.addChild(ball);
-            ball.beginFill(0xFFFFFF);
-            ball.drawCircle(0,0,15);
-            ball.width = 30;
-            ball.height = 30;
-            ball.endFill();
-            ball.x = innerWidth / 2;
-            ball.y = innerHeight / 2;
-            ball.direction = 95;
-            ball.speed = randNum(2.75 * 3,3.25 * 3);
-            balls.push(ball);
-        }
-    }
     function gameLoop(delta) {
-      state(delta)
+        state(delta);
     }
-    function play(){
-        player.vy = 0;
-        if(keys.ArrowUp) {
-            player.y -= 3;
-            player.vy -= 3;
-        }
-        if(keys.ArrowDown) {
-            player.y += 3;
-            player.vy += 3;
-        }
-        if(Math.floor((closestBall(enemy).y - enemy.y) / 20) > 0) {
-            enemy.y += 3;
-            enemy.vy = 3;
-        } else {
-            enemy.y -= 3;
-            enemy.vy = -3;
-        }
-        balls.forEach(function(ball){
-            let data = direction(ball.speed,ball.direction);
-            ball.x += data.r;
-            ball.y += data.u;
-            var hitData = hit(ball);
-            if(hitData) {
-                // console.log("A")
-                if(Math.abs(Number(hitData.vy))) { 
-                    ball.direction = hitData.vy * 5 - ball.direction;
-                } else {
-                    ball.direction = 0 - ball.direction;
+    function spawnBall(direction) {
+        var ball = new Sprite(resources["sprites/ball.png"].texture);
+        app.stage.addChild(ball);
+        ball.x = innerWidth / 2;
+        ball.y = innerHeight / 2;
+        ball.scale.set(0.2);
+        ball.speed = 5;
+        ball.friction = 0.001;
+        ball.direction = typeof direction == "number" ? direction : Math.random() * 360;
+        ball.damage = 5;
+        ball.anchor.set(0.5);
+        balls.push(ball);
+    }
+    function play() {
+        balls.forEach(function(ball,i){
+            function bounceBall(dir,vy){
+                if(dir === "vertically") {
+                    ball.direction = 180 - ball.direction;
+                } else if(dir === "horizontally") {
+                    ball.direction *= -1;
+                } else if(dir === "diagonally") {
+                    ball.direction += 180;
                 }
-                let data = direction(ball.speed,ball.direction);
+                ball.direction += 5 * vy;
+                player.gold += player.income;
+                enemy.gold += enemy.income;
+                    
+                var data = direction(5,ball.direction);
                 ball.x += data.r;
                 ball.y += data.u;
             }
-        });
-        if(hitTestRectangle(balls[0],player)) {
-            balls[0].x++;
-        }
-    }
-    function closestBall(sprite) {
-        let dist = Infinity;
-        let returnSprite = false;
-        for(let i = 0; i < balls.length; i++) {
-            if(getDistance(balls[i].x,balls[i].y,sprite.x,sprite.y) < dist) {
-                dist = getDistance(balls[i].x,balls[i].y,sprite.x,sprite.y);
-                returnSprite = balls[i];
+            var data = direction(ball.speed,ball.direction);
+            ball.x += data.r;
+            ball.y += data.u;
+            if(ball.y > innerHeight - 10) {
+                bounceBall("vertically");
+            } else if(ball.y < 10) {
+                bounceBall("vertically");
             }
+            if(ball.x > innerWidth - 10) {
+                enemy.health -= ball.damage;
+                player.gold += ball.damage;
+                app.stage.removeChild(ball);
+                balls.splice(i,1);
+            } else if(ball.x < 10) {
+                player.health -= ball.damage;
+                enemy.gold += ball.damage;
+                app.stage.removeChild(ball);
+                balls.splice(i,1);
+            }
+            if(Math.abs(ball.x-player.x) < 20 && Math.abs(ball.y-player.y) < 37){
+                var side = 0;
+                if(Math.abs((ball.x - data.r) - player.x) < 20) {
+                    side += 0.5;
+                }
+                if(Math.abs((ball.y - data.u) - player.y) < 37) {
+                    side += 1;
+                }
+                if(side > 1 || side < 0.2) {
+                    bounceBall("diagonally",player.vy);
+                } else if(side > 0.5) {
+                    bounceBall("horizontally",player.vy);
+                } else {
+                    bounceBall("vertically",player.vy);
+                }
+            }
+            if(Math.abs(ball.x-enemy.x) < 20 && Math.abs(ball.y-enemy.y) < 37){
+                var side = 0;
+                if(Math.abs((ball.x - data.r) - enemy.x) < 20) {
+                    side += 0.5;
+                }
+                if(Math.abs((ball.y - data.u) - enemy.y) < 37) {
+                    side += 1;
+                }
+                if(side > 1 || side < 0.2) {
+                    bounceBall("diagonally",enemy.vy);
+                } else if(side > 0.5) {
+                    bounceBall("horizontally",enemy.vy);
+                } else {
+                    bounceBall("vertically",enemy.vy);
+                }
+            }
+            ball.speed -= ball.friction;
+            if(ball.speed < 1) {
+                app.stage.removeChild(ball);
+                balls.splice(i,1);
+            }
+            player.vy = 0;
+            if(keys.ArrowUp) {
+                player.vy -= 3;
+            }
+            if(keys.ArrowDown) {
+                player.vy += 3;
+            }
+            player.y += player.vy;
+            if(Math.floor((ball.y-enemy.y)/20) > 0) {
+                enemy.y += 5;
+                enemy.vy = 5;
+            } else if(Math.floor((ball.y-enemy.y)/20) < 0){
+                enemy.y -= 5;
+                enemy.vy = -5;
+            }
+        });
+        if(!balls.length) {
+            spawnBall();
         }
-        return returnSprite;
-    }
-    var hitted = false;
-    function hit(sprite) {
-        if(hitted) {
-            return false;
-        }
-        if(sprite.y < 60) {
-            hitted = true;
-            return true;
-        } else if(sprite.y > innerHeight-60) {
-            
-            return true;
-        }
-        if(hitTestRectangle(sprite,player)) {
-            // hitted = true;
-            return {general:true,vy:player.vy};
-        }
-        if(hitTestRectangle(sprite,enemy)) {
-            // hitted = true;
-            return {general:true,vy:enemy.vy};
-        }
+        playerText.text = "Health: " + player.health + "\nGold: " + player.gold;
+        enemyText.text = "Health: " + enemy.health + "\nGold: " + enemy.gold;
     }
     addEventListener("blur", function (){
         keys = {};

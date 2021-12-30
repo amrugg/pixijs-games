@@ -77,7 +77,11 @@
             }
         }
         dot.drawColoredDot = function (color,radius,x,y) {
-            dot.beginFill(color || 0xFF0000);
+            if(typeof color == "number") {
+                dot.beginFill(color)
+            } else {
+                dot.beginFill(0xFF0000);
+            }
             dot.drawCircle(x || 0, y || 0, radius || 10);
             dot.endFill();
         }
@@ -106,7 +110,7 @@
             ship.beginFill(col1 || 0xFF0000);
             ship.drawCircle(x1 || dot.x, y1 || dot.y, rad1 || 20);
             ship.endFill();
-            ship.beginFill(col2 || 0x00FF00);
+            ship.beginFill(col2 || 0xAA0000);
             ship.drawCircle(x2 || dot.x, y2 || dot.y, rad2 || 10);
             ship.endFill();
         }
@@ -123,16 +127,16 @@
         dot.y = 100;
         dot.gx = 0;
         dot.gy = 0;
-        for(let i = -1; i < boardSize; i++) {
+        for(let i = -1; i < boardSize + 1; i++) {
             arr[i] = [];
-            for(let j = -1; j < boardSize; j++) {
+            for(let j = -1; j < boardSize + 1; j++) {
                 arr[i][j] = "";
             }
         }
         /// Note: The -1 is because this goes by squares, not by lines.
-        for(let i = -1; i < boardSize - 1; i++) {
+        for(let i = -1; i < boardSize; i++) {
             panelArr[i] = [];
-            for(let j = -1; j < boardSize - 1; j++) {
+            for(let j = -1; j < boardSize; j++) {
                 panelArr[i][j] = "";
             }
         }
@@ -305,6 +309,7 @@
             if(press("Enter")) {
                 sceneText.text = "Choose a gun to put on your ship. T1 is green, T2 is blue, T3 is red. Hit 1, 2, and 3 to change them."
                 setting = 2;
+                brushSetting = 0;
                 dot.drawNestedCircles();
                 // dot.clear();
                 // dot.beginFill(0x00FF00);
@@ -374,6 +379,7 @@
                 sceneText.text = "Paneling mode."
                 dot.gy = 0.5;
                 dot.gx = 0.5;
+                brushSetting = 0;
                 dot.drawPatternOfCircles(0xFF0000);
             }
         } else if(setting == 3) {
@@ -409,28 +415,293 @@
                 brushSetting = 1;
             }
             var surByPanel = true;
-            if(arr[dot.gy - 0.5][dot.gx - 0.5] == "") {
+            if(arr[Math.floor(dot.gy)][Math.floor(dot.gx)] !== ".") {
                 surByPanel = false;
-            } else if(arr[dot.gy - 0.5][dot.gx + 0.5] == "") {
+                // debugger;
+            } else if(arr[Math.floor(dot.gy)][Math.ceil(dot.gx)] !== ".") {
                 surByPanel = false;
-            } else if(arr[dot.gy + 0.5][dot.gx - 0.5] == "") {
+                // debugger;
+            } else if(arr[Math.ceil(dot.gy)][Math.floor(dot.gx)] !== ".") {
                 surByPanel = false;
-            } else if(arr[dot.gy + 0.5][dot.gx + 0.5] == "") {
+                // debugger;
+            } else if(arr[Math.ceil(dot.gy)][Math.ceil(dot.gx)] !== ".") {
                 surByPanel = false;
+                // debugger;
             }
             if(press(" ") && surByPanel) {
                 if(brushSetting == 0) {
                     panelArr[dot.gy - 0.5][dot.gx - 0.5] = "S1";
+                    ship.drawColoredDot(0xFFFFFF,20);
                     ship.drawPatternOfCircles();
                 }
                 if(brushSetting == 1) {
                     panelArr[dot.gy - 0.5][dot.gx - 0.5] = "R1";
+                    ship.drawColoredDot(0xFFFFFF,20);
+                    ship.drawNestedCircles();
                 }
                 console.log(panelArr);
             }
             dot.x = 300 + dot.gx * 50;
             dot.y = 50 + dot.gy * 50;
+            if(press("Enter")) {
+                dot.gx = 0;
+                dot.gy = 0;
+                dot.clear();
+                dot.drawColoredDot();
+                setting = 4;
+                brushSetting = 0;
+                sceneText.text = "Remove dots or guns.";
+            }
+        } else if(setting == 4) {
+            if(press("ArrowUp")) {
+                if(dot.gy > 0) {
+                    dot.gy--;
+                }
+            }
+            if(press("ArrowLeft")) {
+                if(dot.gx > 0) {
+                    dot.gx--;
+                }
+            }
+            if(press("ArrowRight")) {
+                if(dot.gx < boardSize-1) {
+                    dot.gx++;
+                }
+            }
+            if(press("ArrowDown")) {
+                if(dot.gy < boardSize-1) {
+                    dot.gy++;
+                }
+            }
+            if(press(" ")) {
+                if(arr[dot.gy][dot.gx] == ".") {
+                    arr[dot.gy][dot.gx] = "";
+                    ship.drawColoredDot(0xFFFFFF);
+                } else if(arr[dot.gy][dot.gx] !== "") {
+                    arr[dot.gy][dot.gx] = "."
+                    ship.drawColoredDot(0x000000);
+                }
+            }
+            dot.x = 300 + dot.gx * 50;
+            dot.y = 50 + dot.gy * 50;
+            if(press("Enter")) {
+                setting = 5;
+                sceneText.text = "Remove paneling."
+                dot.gx = 0.5;
+                dot.gy = 0.5;
+                brushSetting = 0;
+                dot.drawColoredDot(0x666666);
+            }
+        } else if(setting == 5) {
+            if(press("ArrowUp")) {
+                if(dot.gy > 0) {
+                    dot.gy--;
+                }
+            }
+            if(press("ArrowLeft")) {
+                if(dot.gx > 0) {
+                    dot.gx--;
+                }
+            }
+            if(press("ArrowRight")) {
+                if(dot.gx < boardSize-1) {
+                    dot.gx++;
+                }
+            }
+            if(press("ArrowDown")) {
+                if(dot.gy < boardSize-1) {
+                    dot.gy++;
+                }
+            }
+            if(press(" ")) {
+                panelArr[Math.floor(dot.gy)][Math.floor(dot.gx)] = "";
+                ship.drawColoredDot(0xFFFFFF,20);
+            }
+            dot.x = 300 + dot.gx * 50;
+            dot.y = 50 + dot.gy * 50;
+            if(press("Enter")) {
+                setting = 6;
+                brushSetting = 0;
+                sceneText.text = "Press Space Bar to go back. Press Enter to continue."
+            }
+        } else if(setting == 6) {
+            if(press(" ")) {
+                setting = 1;
+                sceneText.text = "Place dots next to other dots."
+                dot.gx = getActivePoint().x;
+                dot.gy = getActivePoint().y;
+                dot.drawColoredDot();
+            } else if(press("Enter")){
+                setting = 7;
+                sceneText.text = "Checkup";
+            }
+        } else if(setting == 7) {
+            for(let i = 0; i < arr.length; i++) {
+                for(let j = 0; j < arr[0].length; j++) {
+                    var cur = arr[i][j];
+                    if(cur !== "") {
+                        var canStay = false;
+                        console.log("Ch");
+                        if(arr[i-1][j-1]) {
+                            canStay = true;
+                        } else if(arr[i-1][j+1]) {
+                            canStay = true;
+                        } else if(arr[i-1][j]) {
+                            canStay = true;
+                            // console.log(arr[i-1][j])
+                        } else if(arr[i][j-1]) {
+                            canStay = true;
+                        } else if(arr[i][j+1]) {
+                            canStay = true;
+                        } else if(arr[i+1][j-1]) {
+                            canStay = true;
+                        } else if(arr[i+1][j]) {
+                            canStay = true;
+                        } else if(arr[i+1][j+1]) {
+                            canStay = true;
+                        }
+                        if(!canStay) {
+                            setting = 1;
+                            j = arr.length + 1;
+                            i = arr.length + 1;
+                            sceneText.text = "Error: Some dots are not connected.";
+                            dot.drawColoredDot();
+                            dot.gx = getActivePoint().x;
+                            dot.gy = getActivePoint().y;
+                            return;
+                        }
+                    }
+                }
+            }
+            for(let i = 0; i < panelArr.length; i++) {
+                var cur = panelArr[i];
+                for(let j = 0; j < cur.length; j++) {
+                    if(cur[j] !== "") {
+                        var canStay = true;
+                        if(arr[i][j] !== ".") {
+                            canStay = false;
+                            console.log(arr[i-1][j-1]);
+                        }
+                        if(arr[i+1][j] !== ".") {
+                            canStay = false;
+                            console.log(arr[i+1][j-1]);
+                        }
+                        if(arr[i][j+1] !== ".") {
+                            canStay = false;
+                            console.log(arr[i-1][j+1]);
+                        }
+                        if(arr[i+1][j+1] !== ".") {
+                            console.log(arr[i+1][j+1]);
+                            canStay = false;
+                        }
+                        if(!canStay) {
+                            setting = 1;
+                            j = arr.length + 1;
+                            i = arr.length + 1;
+                            sceneText.text = "Error: Some panels are not complete.";
+                            dot.drawColoredDot();
+                            dot.gx = getActivePoint().x;
+                            dot.gy = getActivePoint().y;
+                            // return;
+                        }
+                    }
+                }
+            }
+            sceneText.text = "Your ship has been approved. Building...";
+            sceneText.text = "";
+            setting = 0;
+            // ship.clear();
+            app.stage.removeChild(dot);
+            // app.stage.removeChild(board);
+            state = build;
         }
+    }
+    var curPoint;
+    var skip = 0;
+    var boardStartX = 300;
+    var squareSize = 50;
+    var boardStartY = 50;
+    var poly;
+    function build() {
+        poly = turnIntoPolygon(arr);
+        for(let i = 0; i < arr.length - 1; i++) {
+            var cur = arr[i];
+            for(let j = 0; j < cur.length - 1; j++) {
+                if(triangleInPolygon([i,j],[i,j+1,],[i+1,j])) {
+                    ship.beginFill(0xAAAAAA);
+                    ship.drawPolygon([i * squareSize + boardStartX,j * squareSize + boardStartY,i * squareSize + boardStartX,(j+1) * squareSize + boardStartY,(i+1) * squareSize + boardStartX,j * squareSize + boardStartY])
+                    ship.endFill();
+                }
+                if(triangleInPolygon([i+1,j+1],[i,j+1],[i+1,j])) {
+                    ship.beginFill(0xAAAAAA);
+                    ship.drawPolygon([(i+1) * squareSize + boardStartX,(j+1) * squareSize + boardStartY,i * squareSize + boardStartX,(j+1) * squareSize + boardStartY,(i+1) * squareSize + boardStartX,j * squareSize + boardStartY])
+                    ship.endFill();
+                }
+                if(triangleInPolygon([i,j],[i,j+1],[i+1,j+1])) {
+                    ship.beginFill(0xAAAAAA);
+                    ship.drawPolygon([i * squareSize + boardStartX,j * squareSize + boardStartY,i * squareSize + boardStartX,(j+1) * squareSize + boardStartY,(i+1) * squareSize + boardStartX,(j+1) * squareSize + boardStartY])
+                    ship.endFill();
+                }
+                if(triangleInPolygon([i,j],[i+1,j],[i+1,j+1])) {
+                    ship.beginFill(0xAAAAAA);
+                    ship.drawPolygon([i * squareSize + boardStartX,j * squareSize + boardStartY,(i+1) * squareSize + boardStartX,j * squareSize + boardStartY,(i+1) * squareSize + boardStartX,(j+1) * squareSize + boardStartY])
+                    ship.endFill();
+                }
+            }
+        }
+        state = play;
+    }
+    function triangleInPolygon(p1,p2,p3) {
+        var tri = true;
+        if(arr[p1[1]][p1[0]] == "") {
+            if(!inside(p1,poly)) {
+                tri = false;
+            }
+        }
+        if(arr[p2[1]][p2[0]] == "") {
+            if(!inside(p2,poly)) {
+                tri = false;
+            }
+        }
+        if(arr[p3[1]][p3[0]] == "") {
+            if(!inside(p3,poly)) {
+                tri = false;
+            }
+        }
+        return tri;
+    };
+    function turnIntoPolygon(arr) {
+        var reArr = [];
+        for(let i = 0; i < arr.length; i++) {
+            var cur = arr[i];
+            for(let j = 0; j < arr.length; j++) {
+                if(cur[j]) {
+                    if(cur[j-1] && cur[j+1]) {
+
+                    } else {
+                        reArr.push([j,i]);
+                    }
+                }
+            }
+        }
+        console.log(arr,reArr);
+        return reArr;
+    }
+    function getActivePoint(index) {
+        index = index || 0;
+        for(let i = 0; i < arr.length; i++) {
+            var cur = arr[i];
+            for(let j = 0; j < arr.length; j++) {
+                if(cur[j] !== "") {
+                    if(index < 1) {
+                        return {x:j,y:i};
+                    } else {
+                        --index;
+                    }
+                }
+            }
+        }
+        return {end:true};
     }
     function press(key){
         if(keys[key]){
