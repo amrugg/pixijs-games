@@ -61,6 +61,8 @@
     buttonText.x += 200;
     buttonText.style.fill = "#55ff55";
     app.stage.addChild(buttonText);
+    var lightning;
+    var spawners = [];
     function setup() {
         player = new Sprite(resources["sprites/bluebar.png"].texture);
         enemy = new Sprite(resources["sprites/redbar.png"].texture);
@@ -78,6 +80,11 @@
         enemy.gold = 0;
         player.income = 1;
         enemy.income = 1;
+
+        /// Tower sprites
+        lightning = new Sprite(resources["sprites/lightning.png"].texture);
+        app.stage.addChild(lightning);
+        spawners.push(lightning);
         state = play;
         app.ticker.add(delta => gameLoop(delta));
     }
