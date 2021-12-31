@@ -146,7 +146,30 @@
       state(delta);
     }
     function play(){
-
+        sceneText.text = "Enemy ship encountered. Loading systems..."
+        setTimeout(function(){
+        spawnButtons();
+        sceneText.text = "Press 1,2,and 3 to fire guns." + (hasRadar() ? "\nPress 4 to fire radar." : "");
+        state = buttons;},1000);
+        state = wait;
+    }
+    function hasRadar(){
+        for(let i = 0; i < panelArr.length; i++) {
+            for(let j = 0; j < panelArr.length; j++) {
+                if(panelArr[i][j][0] == "R") {
+                    return Number(panelArr[i][j][1]);
+                }
+            }
+        }
+        return false;
+    }
+    var level = 0;
+    function spawnButtons() {
+        if(level < 1) {
+            return;
+        }
+    }
+    function buttons(){
     }
     function create() {
         if(setting == 0) {
@@ -175,8 +198,7 @@
             if(press(" ")) {
                 setting = 1;
                 sceneText.text = "Place dots next to other dots."
-                arr[dot.gy][dot.gx] = "."
-                console.log(arr);
+                arr[dot.gy][dot.gx] = ".";
                 ship.beginFill(0x000000);
                 ship.drawCircle(dot.x,dot.y,10);
                 ship.endFill();
@@ -299,8 +321,7 @@
             dot.x = 300 + dot.gx * 50;
             dot.y = 50 + dot.gy * 50;
             if(press(" ")) {
-                arr[dot.gy][dot.gx] = "."
-                console.log(arr);
+                arr[dot.gy][dot.gx] = ".";
                 // lastPoint = {x:dot.gx,y:dot.gy};
                 ship.beginFill(0x000000);
                 ship.drawCircle(dot.x,dot.y,10);
@@ -439,7 +460,6 @@
                     ship.drawColoredDot(0xFFFFFF,20);
                     ship.drawNestedCircles();
                 }
-                console.log(panelArr);
             }
             dot.x = 300 + dot.gx * 50;
             dot.y = 50 + dot.gy * 50;
@@ -541,14 +561,12 @@
                     var cur = arr[i][j];
                     if(cur !== "") {
                         var canStay = false;
-                        console.log("Ch");
                         if(arr[i-1][j-1]) {
                             canStay = true;
                         } else if(arr[i-1][j+1]) {
                             canStay = true;
                         } else if(arr[i-1][j]) {
                             canStay = true;
-                            // console.log(arr[i-1][j])
                         } else if(arr[i][j-1]) {
                             canStay = true;
                         } else if(arr[i][j+1]) {
@@ -580,18 +598,14 @@
                         var canStay = true;
                         if(arr[i][j] !== ".") {
                             canStay = false;
-                            console.log(arr[i-1][j-1]);
                         }
                         if(arr[i+1][j] !== ".") {
                             canStay = false;
-                            console.log(arr[i+1][j-1]);
                         }
                         if(arr[i][j+1] !== ".") {
                             canStay = false;
-                            console.log(arr[i-1][j+1]);
                         }
                         if(arr[i+1][j+1] !== ".") {
-                            console.log(arr[i+1][j+1]);
                             canStay = false;
                         }
                         if(!canStay) {
@@ -607,14 +621,22 @@
                     }
                 }
             }
-            sceneText.text = "Your ship has been approved. Building...";
-            sceneText.text = "";
+            sceneText.text = "Starting on mission!";
             setting = 0;
             // ship.clear();
             app.stage.removeChild(dot);
             // app.stage.removeChild(board);
-            state = build;
+            state = wait;
+            timePlay(1000);
         }
+    }
+    function timePlay(time) {
+        setTimeout(function(){
+            state = play;
+        },time);
+    }
+    function wait(){
+
     }
     var curPoint;
     var skip = 0;
@@ -673,15 +695,18 @@
     function turnIntoPolygon(arr) {
         var reArr = [];
         for(let i = 0; i < arr.length; i++) {
+            for(let j = 0; j < arr[i].length; j++) {
+                if(arr[i][j]) {
+                    if((arr[i-1][j] && arr[i+1][j]) || (arr[i][j-1] || arr[i][j+1])) {
+                        arr[i][j] = "";
+                    }
+                }       
+            }
+        }
+        for(let i = 0; i < arr.length; i++) {
             var cur = arr[i];
             for(let j = 0; j < arr.length; j++) {
-                if(cur[j]) {
-                    if(cur[j-1] && cur[j+1]) {
-
-                    } else {
-                        reArr.push([j,i]);
-                    }
-                }
+                reArr.push([j,i]);
             }
         }
         console.log(arr,reArr);

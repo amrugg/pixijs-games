@@ -42,15 +42,48 @@
     var health = 200;
     var waveChanged = true;
     var keys = {};
-    var waves = [5,10,15,20,50];
+    var waves = [{
+      blobs:5,
+      fastBlobs:0,
+      warriorBlobs:0,
+      speed: 0.5,
+      files:1,
+    },
+    {
+      blobs:10,
+      fastBlobs:0,
+      warriorBlobs:0,
+      speed: 0.5,
+      files:1,
+    },
+    {
+      blobs:15,
+      fastBlobs:0,
+      warriorBlobs:0,
+      speed: 0.5,
+      files:2,
+    },
+    {
+      blobs:10,
+      fastBlobs:2,
+      warriorBlobs:0,
+      speed: 1,
+      files:1,
+    },];
     var mouseX, mouseY;
+    var quiver = 100;
     var arrows = [];
     var bow = {
-      name: "branch-bow",
-      power: 10,
-      range: 1000/*px*/,
-      accuracy: 99/*percent*/,
-      fireSpeed: 2/*sec*/,
+      name: "Branch-bow",
+      power: 5,
+      range: 300/*px*/,
+      accuracy: 90/*percent*/,
+      fireSpeed: 1/*sec*/,
+    }
+    var statsText;
+    var offsetValue = 180;
+    function resetStatsText(){
+      statsText.text = "Bow:"+bow.name+" Arrows Left:" + quiver + " Health: " + health +"\nWave:" + wave;
     }
     function setup() {
         id = resources["sprites/treasureHunter.json"].textures;
@@ -67,17 +100,25 @@
         app.stage.addChild(explorer);
         state = play;
         app.ticker.add(delta => gameLoop(delta));
+        statsText = new PIXI.Text();
+        app.stage.addChild(statsText);
+        resetStatsText();
     }
     function gameLoop(delta) {
       state(delta);
     }
     var mouseMoved = false;
     var rangeGraphics;
+    function compareSqDistance(x1,y1,x2,y2,dist) {
+      /// Mine
+      return ((x1-x2)**2+(y1-y2)**2) < dist**2;
+    }
     function play(){
+        resetStatsText();
         if(waveChanged){
-            for(let i = 0; i < waves[wave]; i++) {
-                spawnBlob();
-            }
+            newWave(waves[wave]);
+            console.log(wave);
+            wave++;
             waveChanged = false;
             return;
         }
@@ -85,22 +126,23 @@
           rangeGraphics.clear();
           var mouseDirection = pointTowards(explorer.x,explorer.y,mouseX,mouseY) + 180;
           var target1,target2;
-          for(let i = 2; i < 12; i++) {
-              target1 = direction((bow.range/10)*i,mouseDirection + 360*((100-bow.accuracy)/100));
+          var dotNum = 10;
+          for(let i = 2; i < dotNum; i++) {
+              target1 = direction((bow.range/(dotNum-1))*i,mouseDirection + offsetValue*((100-bow.accuracy)/100));
               rangeGraphics.lineStyle(0); // draw a circle, set the lineStyle to zero so the circle doesn't have an outline
               rangeGraphics.beginFill(0x990000, 1);
               rangeGraphics.drawCircle(target1.r+explorer.x, target1.u+explorer.y, 12.5);
               rangeGraphics.endFill();
           }
-          for(let i = 2; i < 12; i++) {
-              target1 = direction((bow.range/10)*i,mouseDirection - 360*((100-bow.accuracy)/100));
+          for(let i = 2; i < dotNum; i++) {
+              target1 = direction((bow.range/(dotNum-1))*i,mouseDirection - offsetValue*((100-bow.accuracy)/100));
               rangeGraphics.lineStyle(0); // draw a circle, set the lineStyle to zero so the circle doesn't have an outline
               rangeGraphics.beginFill(0x990000, 1);
               rangeGraphics.drawCircle(target1.r+explorer.x, target1.u+explorer.y, 12.5);
               rangeGraphics.endFill();
           }
-          for(let i = 2; i < 12; i++) {
-              target1 = direction((bow.range/10)*i,mouseDirection);
+          for(let i = 2; i < dotNum; i++) {
+              target1 = direction((bow.range/(dotNum-1))*i,mouseDirection);
               rangeGraphics.lineStyle(0); // draw a circle, set the lineStyle to zero so the circle doesn't have an outline
               rangeGraphics.beginFill(0x009900, 1);
               rangeGraphics.drawCircle(target1.r+explorer.x, target1.u+explorer.y, 12.5);
@@ -109,6 +151,7 @@
         }
         if(press("mouse")) {
           spawnArrow(explorer.x,explorer.y,mouseX, mouseY);
+          quiver--;
         }
         arrows.forEach(function(arrow,i){
           // console.log(arrow.speed)
@@ -124,6 +167,10 @@
               // console.log("Delete");
             }
           });
+          if(!compareSqDistance(arrow.x,arrow.y,arrow.launchX,arrow.launchY,arrow.bowRange)) {
+            app.stage.removeChild(arrow);
+            arrows.splice(i,1);
+          }
           if(arrow.x < -100 || arrow.x > innerWidth + 100 || arrow.y < -100 || arrow.y > innerHeight+100) {
             app.stage.removeChild(arrow);
             arrows.splice(i,1);
@@ -151,7 +198,7 @@
               }
             } else {
                 if(blob.x > 512 + blob.width / 2) {
-                    blob.x--;
+                    blob.x -= blob.speed;
                 } else {
                     blob.attack = true;
                 }
@@ -159,7 +206,6 @@
         });
         if(noBlobs) {
           waveChanged = true;
-          ++wave;
         }
         if(keys.ArrowUp) {
           explorer.y--;
@@ -168,17 +214,35 @@
           explorer.y++;
         }
     }
-    function spawnBlob(){
-        let newBlob = new Sprite(id["blob.png"]);
-        app.stage.addChild(newBlob);
-        newBlob.anchor.set(0.5);
-        newBlob.x = innerWidth + newBlob.width;
-        newBlob.y = randInt(newBlob.height,innerHeight - newBlob.height);
-        newBlob.returning = false;
-        while(yDist(newBlob.y) < newBlob.height) {
-            newBlob.y = randInt(newBlob.height,innerHeight - newBlob.height);
+    function spawnBlob(x,y,speed,type){
+        if(type = "blob") {
+          let newBlob = new Sprite(id["blob.png"]);
+          app.stage.addChild(newBlob);
+          newBlob.anchor.set(0.5);
+          newBlob.x = x;
+          newBlob.y = y;
+          newBlob.speed = speed;
+          newBlob.type = type;
+          newBlob.returning = false;
+          blobs.push(newBlob);
         }
-        blobs.push(newBlob);
+    }
+    function newWave(wave){
+      var col = 0;
+      console.log(wave);
+      var blobs = wave.blobs;
+      var fastBlobs = wave.fastBlobs;
+      var warriorBlobs = wave.warriorBlobs;
+      var columns = wave.columns;
+      var speed = wave.speed;
+      for(let i = 0; i < columns - 1; i++) {
+        
+        ++col;
+      }
+      var width = innerHeight/blobs-10;
+      for(let i = 0; i < blobs; i++) {
+        spawnBlob(innerWidth+64+col*(64*2),i*width+30,speed,"blob");
+      }
     }
     function yDist(y){
         var dist = Infinity;
@@ -191,13 +255,15 @@
         return dist;
     }
     function spawnArrow(x1,y1,x2,y2) {
-      console.log("Spawn")
       var arrow = new Sprite(resources["sprites/arrow.png"].texture);
       app.stage.addChild(arrow);
       // arrow.scale.set(5,5);
       arrow.x = x1;
       arrow.y = y1;
-      var offset = 360*((100-bow.accuracy)/100);
+      arrow.launchX = x1;
+      arrow.launchY = y1;
+      arrow.bowRange = bow.range;
+      var offset = offsetValue*((100-bow.accuracy)/100);
       // console.log(offset)
       arrow.direction = pointTowards(x1,y1,x2,y2) + 180 + (randNum(-1*offset,offset));
       // console.log((360/(100-bow.accuracy)));

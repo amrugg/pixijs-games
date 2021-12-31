@@ -43,8 +43,9 @@
     app.renderer.autoResize = true;
     app.renderer.resize(window.innerWidth, window.innerHeight);
     document.body.appendChild(app.view);
-    loader.add("sprites/redbar.png").add("sprites/bluebar.png").add("sprites/ball.png").load(setup);
+    loader.add("sprites/redbar.png").add("sprites/bluebar.png").add("sprites/ball.png").add("sprites/fireball.png").load(setup);
     var state;
+    var mouseX, mouseY;
     var keys = {};
     var enemy;
     var balls = [];
@@ -56,6 +57,10 @@
     enemyText.style.fill = "#ff5500";
     app.stage.addChild(enemyText);
     enemyText.x = innerWidth - 150;
+    var buttonText = new PIXI.Text("Ball: 5 gold. Targeted Ball: 10 gold. Fireball: 50 gold. Targeted Fireball: 75 gold.");
+    buttonText.x += 200;
+    buttonText.style.fill = "#55ff55";
+    app.stage.addChild(buttonText);
     function setup() {
         player = new Sprite(resources["sprites/bluebar.png"].texture);
         enemy = new Sprite(resources["sprites/redbar.png"].texture);
@@ -69,7 +74,7 @@
         player.y = enemy.y = innerHeight / 2;
         player.health = 1000;
         enemy.health = 1000;
-        player.gold = 0;
+        player.gold = 1000;
         enemy.gold = 0;
         player.income = 1;
         enemy.income = 1;
@@ -79,34 +84,65 @@
     function gameLoop(delta) {
         state(delta);
     }
-    function spawnBall(direction) {
-        var ball = new Sprite(resources["sprites/ball.png"].texture);
-        app.stage.addChild(ball);
-        ball.x = innerWidth / 2;
-        ball.y = innerHeight / 2;
-        ball.scale.set(0.2);
-        ball.speed = 5;
-        ball.friction = 0.001;
-        ball.direction = typeof direction == "number" ? direction : Math.random() * 360;
-        ball.damage = 5;
-        ball.anchor.set(0.5);
-        balls.push(ball);
+    function spawnBall(options) {
+        options = options || {};
+        if(options.type == "fireball") {
+            var ball = new Sprite(resources["sprites/fireball.png"].texture);
+            app.stage.addChild(ball);
+            ball.x = innerWidth / 2;
+            ball.y = innerHeight / 2;
+            ball.scale.set(0.2);
+            ball.speed = 15 || options.speed;
+            ball.friction = 0.001 || options.friction;
+            ball.direction = typeof options.direction == "number" ? options.direction : Math.random() * 360;
+            ball.damage = 40 || options.damage;
+            ball.health = 5 || options.health;
+            ball.anchor.set(0.5);
+            balls.push(ball);
+        } else {
+            var ball = new Sprite(resources["sprites/ball.png"].texture);
+            app.stage.addChild(ball);
+            ball.x = innerWidth / 2;
+            ball.y = innerHeight / 2;
+            ball.scale.set(0.2);
+            ball.speed = 5;
+            ball.friction = 0.001;
+            ball.direction = typeof options.direction == "number" ? options.direction : Math.random() * 360;
+            ball.damage = 5;
+            ball.health = 50;
+            ball.anchor.set(0.5);
+            balls.push(ball);
+        }
     }
     function play() {
         balls.forEach(function(ball,i){
             function bounceBall(dir,vy){
                 if(dir === "vertically") {
                     ball.direction = 180 - ball.direction;
+                    var data = direction(5,ball.direction);
+                    if(vy < 0) {
+                    ball.direction += 5 * vy;
+                    }
+                    if(vy > 0) {
+                        ball.direction += 5 * vy;
+                    }
                 } else if(dir === "horizontally") {
                     ball.direction *= -1;
+                    var data = direction(5,ball.direction);
+                    if(vy < 0) {
+                        ball.direction += 5 * vy;
+                    }
+                    if(vy > 0) {
+                        ball.direction += 5 * vy;
+                    }
                 } else if(dir === "diagonally") {
                     ball.direction += 180;
+                    var data = direction(10,ball.direction);
                 }
-                ball.direction += 5 * vy;
+                
                 player.gold += player.income;
                 enemy.gold += enemy.income;
-                    
-                var data = direction(5,ball.direction);
+                --ball.health;
                 ball.x += data.r;
                 ball.y += data.u;
             }
@@ -162,18 +198,11 @@
                 }
             }
             ball.speed -= ball.friction;
-            if(ball.speed < 1) {
+            if(ball.speed < 1 || ball.health < 1) {
                 app.stage.removeChild(ball);
                 balls.splice(i,1);
             }
-            player.vy = 0;
-            if(keys.ArrowUp) {
-                player.vy -= 3;
-            }
-            if(keys.ArrowDown) {
-                player.vy += 3;
-            }
-            player.y += player.vy;
+            
             if(Math.floor((ball.y-enemy.y)/20) > 0) {
                 enemy.y += 5;
                 enemy.vy = 5;
@@ -185,9 +214,55 @@
         if(!balls.length) {
             spawnBall();
         }
+        player.vy = 0;
+        if(keys.ArrowUp) {
+            player.vy -= 3;
+        }
+        if(keys.ArrowDown) {
+            player.vy += 3;
+        }
+        player.y += player.vy;
         playerText.text = "Health: " + player.health + "\nGold: " + player.gold;
         enemyText.text = "Health: " + enemy.health + "\nGold: " + enemy.gold;
+        if(press("mouse")){
+            if(mouseX > 200 && mouseX < 330 && mouseY < 50 && player.gold > 4) {
+                spawnBall();
+                player.gold -= 5;
+            } else if(mouseX > 330 && mouseX < 620 && mouseY < 50 && player.gold > 9) {
+                spawnBall({direction: Math.random() * 180});
+                player.gold -= 10;
+            } else if(mouseX > 620 && mouseX < 800&& mouseY < 50 && player.gold > 49) {
+                spawnBall({type: "fireball"});
+                player.gold -= 50;
+            } else if(mouseX > 800 && mouseY < 50 && player.gold > 74) {
+                spawnBall({type: "fireball",direction: Math.random() * 180});
+                player.gold -= 75;
+            }
+        } 
     }
+    function press(key){
+        if(keys[key]){
+            keys[key] = false;
+            return true;
+        }
+        return false;
+    }
+    addEventListener("mousedown",function(e){
+        if(e.button == 0) {
+            keys.mouse = true;
+        } else if(e.button == 2) {
+            keys.rightMouse = true;
+        }
+        mouseX = e.pageX;
+        mouseY = e.pageY;
+    });
+    addEventListener("mouseup",function(e){
+        if(e.button == 0) { 
+            keys.mouse = false;
+        } else if(e.button == 2) {
+            keys.rightMouse = true;
+        }
+    });
     addEventListener("blur", function (){
         keys = {};
     });
