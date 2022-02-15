@@ -1,0 +1,163 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Direction ship</title>
+</head>
+    <style>* {padding: 0; margin: 0}</style>
+    <script src="pixi/pixi.min.js"></script>
+    <script src="usefulFunctions.js"></script>
+<body>
+  <script type="text/javascript">
+    var params = getParams();
+    function getParams() {
+      var params = {};
+      location.search.substr(1).split("&").forEach(function(el) {
+        var data = el.replace(/\+/g, " ").split("=");
+        params[decodeURIComponent(data[0])] = data[1] ? decodeURIComponent(data[1]) : true;
+      });
+      return params;
+    }
+    PIXI.utils.skipHello();
+    PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
+    let Application = PIXI.Application,
+        Container = PIXI.Container,
+        loader = PIXI.loader,
+        resources = PIXI.loader.resources,
+        TextureCache = PIXI.utils.TextureCache,
+        Sprite = PIXI.Sprite,
+        Rectangle = PIXI.Rectangle,
+        Graphics = PIXI.Graphics;
+    let app = new Application({ 
+        width: 800,
+        height: 800,              
+        antialias: true,
+        transparent: false,
+        resolution: 1
+      }
+    );
+    app.renderer.backgroundColor = 0x6666DD;
+    /// Fill the screen 
+    app.renderer.view.style.position = "absolute";
+    app.renderer.view.style.display = "block";
+    app.renderer.autoResize = true;
+    app.renderer.resize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(app.view);
+    loader.add("sprites/treasureHunter.json").add("sprites/platform.png").load(setup);
+    var state;
+    var keys = {};
+    var hero;
+    var id;
+    var fall = 0.05;
+    var friction = 0.03;
+    var platforms = [{x:100,y:500},{x:300,y:300},{x:500,y:100},{x:700,y:100},];
+    var platformSprites = [];
+    function setup() {
+        state = play;
+        id = resources["sprites/treasureHunter.json"].textures;
+        hero = new Sprite(id["explorer.png"]);
+        app.stage.addChild(hero);
+        hero.vy = hero.vx = 0;
+        hero.vvx = 1.6;
+        hero.anchor.set(0.5);
+        platforms.forEach(function(p){
+            var plata = new Sprite(resources["sprites/platform.png"].texture);
+            app.stage.addChild(plata);
+            plata.x = p.x;
+            plata.y = p.y;
+            plata.scale.set(3);
+            plata.anchor.set(0.5);
+        });
+        app.ticker.add(delta => gameLoop(delta));
+    }
+    function gameLoop(delta) {
+      state(delta);
+    }
+    function play(){
+        hero.vy += fall;
+        hero.y += hero.vy;
+        if(getPlatformUnder(hero) < hero.height - hero.height / 2) {
+            hero.y -= hero.vy;
+            hero.vy *= -0.4;
+        }
+        if(keys.ArrowLeft) {
+            hero.vx = -hero.vvx;
+            if(clipPlatform(hero)) {
+                hero.vx = 0;
+            }
+        }
+        if(keys.ArrowRight) {
+            hero.vx = hero.vvx;
+            if(clipPlatform(hero)) {
+                hero.vx = 0;
+            }
+        }
+        if(keys.ArrowUp) {
+            if(getPlatformUnder(hero) < hero.height / 0.6) {
+                hero.vy = -5;
+            }
+        }
+        hero.x += hero.vx;
+        hero.vx = hero.vx > friction ? hero.vx -= friction : hero.vx > 0 ? hero.vx = 0 : hero.vx < -friction ? hero.vx += friction : hero.vx = 0;
+    }
+    function getPlatformUnder(sprite) {
+        var lowestDistance = innerHeight - sprite.y;
+        platforms.forEach(function(p){
+            if(sprite.x > p.x - 75 && sprite.x < p.x + 75) {
+                if(p.y - sprite.y < lowestDistance && p.y >= sprite.y - 30) {
+                    lowestDistance = p.y - sprite.y;
+                }
+            }
+        });
+        return lowestDistance;
+    }
+    function clipPlatform(sprite){
+        var res = false;
+        platforms.forEach(function(p){
+            if(sprite.y - sprite.height / 2 > p.y - 32 && sprite.y + sprite.height / 2 < p.y + 50) {
+                if(sprite.x + sprite.width / 2 > p.x - 70 && sprite.x - sprite.width / 2 < p.x + 70) {
+                    res = true;
+                }
+            }
+        });
+        return res;
+    }
+    function press(key){
+        if(keys[key]){
+            keys[key] = false;
+            return true;
+        }
+        return false;
+    }
+    addEventListener("mousedown",function(e){
+        if(e.button == 0) {
+            keys.mouse = true;
+        } else if(e.button == 2) {
+            keys.rightMouse = true;
+        }
+        mouseX = e.pageX;
+        mouseY = e.pageY;
+    });
+    addEventListener("mouseup",function(e){
+        if(e.button == 0) { 
+            keys.mouse = false;
+        } else if(e.button == 2) {
+            keys.rightMouse = true;
+        }
+    });
+    addEventListener("blur", function (){
+        keys = {};
+    });
+    addEventListener("mousemove",function(e){
+        mouseX = e.pageX;
+        mouseY = e.pageY;
+    });
+    addEventListener("keydown", function (e){
+        keys[e.key] = true;
+    });
+    addEventListener("keyup", function (e){
+        keys[e.key] = false;
+    });
+  </script>
+</body>
+</html>
