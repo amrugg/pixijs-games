@@ -9,6 +9,8 @@
     <script src="usefulFunctions.js"></script>
 <body>
   <script type="text/javascript">
+    "use strict";
+
     var params = getParams();
     function getParams() {
       var params = {};
@@ -43,7 +45,7 @@
     app.renderer.autoResize = true;
     app.renderer.resize(window.innerWidth, window.innerHeight);
     document.body.appendChild(app.view);
-    loader.add("sprites/redbar.png").add("sprites/bluebar.png").add("sprites/ball.png").add("sprites/fireball.png").load(setup);
+    loader.add("sprites/redbar.png").add("sprites/bluebar.png").add("sprites/ball.png").add("sprites/fireball.png").add("sprites/lightning.png").add("sprites/smlightning.png").add("sprites/vaccum.png").load(setup);
     var state;
     var mouseX, mouseY;
     var keys = {};
@@ -62,7 +64,10 @@
     buttonText.style.fill = "#55ff55";
     app.stage.addChild(buttonText);
     var lightning;
+    var smlightning;
+    var vaccum;
     var spawners = [];
+    var towers = [];
     function setup() {
         player = new Sprite(resources["sprites/bluebar.png"].texture);
         enemy = new Sprite(resources["sprites/redbar.png"].texture);
@@ -82,11 +87,71 @@
         enemy.income = 1;
 
         /// Tower sprites
+
+        /// Lightning tower-- speeds up balls going through it.
         lightning = new Sprite(resources["sprites/lightning.png"].texture);
+        lightning.type = "lightning";
+        lightning.cost = 25;
+        lightning.x = 100;
+        lightning.begX = lightning.x;
+        lightning.y = innerHeight - 100;
+        lightning.begY = lightning.y;
+        lightning.anchor.set(0.5);
         app.stage.addChild(lightning);
         spawners.push(lightning);
-        state = play;
-        app.ticker.add(delta => gameLoop(delta));
+        lightning.clone = function(x,y){
+            var tower = new Sprite(resources["sprites/lightning.png"].texture);
+            app.stage.addChild(tower);
+            tower.anchor.set(0.5);
+            tower.x = x;
+            tower.y = y;
+            tower.type = "lightning";
+            tower.health = 1000;
+            towers.push(tower);
+        }
+
+        /// Manned lightning tower-- speeds up balls going towards the enemy and spins ones going towards yours.
+        smlightning = new Sprite(resources["sprites/smlightning.png"].texture);
+        app.stage.addChild(smlightning);
+        spawners.push(smlightning);
+        smlightning.type = "smlightning";
+        smlightning.cost = 75;
+        smlightning.x = smlightning.begX = 200;
+        smlightning.y = smlightning.begY = innerHeight - 100;
+        smlightning.anchor.set(0.5);
+        smlightning.clone = function(x,y){
+            var tower = new Sprite(resources["sprites/smlightning.png"].texture);
+            app.stage.addChild(tower);
+            tower.x = x;
+            tower.y = y;
+            tower.anchor.set(0.5);
+            tower.health = 1000;
+            tower.type = "smlightning";
+            towers.push(tower);
+        }
+
+        /// Vaccum tower-- sucks in balls. Useful last line of defense.
+        smlightning = new Sprite(resources["sprites/smlightning.png"].texture);
+        app.stage.addChild(smlightning);
+        spawners.push(smlightning);
+        smlightning.type = "smlightning";
+        smlightning.cost = 75;
+        smlightning.x = smlightning.begX = 200;
+        smlightning.y = smlightning.begY = innerHeight - 100;
+        smlightning.anchor.set(0.5);
+        smlightning.clone = function(x,y){
+            var tower = new Sprite(resources["sprites/smlightning.png"].texture);
+            app.stage.addChild(tower);
+            tower.x = x;
+            tower.y = y;
+            tower.anchor.set(0.5);
+            tower.type = "smlightning";
+            towers.push(tower);
+        }
+        setTimeout(function(){
+            state = play;
+            app.ticker.add(delta => gameLoop(delta));
+        },10);
     }
     function gameLoop(delta) {
         state(delta);
@@ -231,21 +296,86 @@
         player.y += player.vy;
         playerText.text = "Health: " + player.health + "\nGold: " + player.gold;
         enemyText.text = "Health: " + enemy.health + "\nGold: " + enemy.gold;
-        if(press("mouse")){
+        if(keys.mouse){
             if(mouseX > 200 && mouseX < 330 && mouseY < 50 && player.gold > 4) {
                 spawnBall();
                 player.gold -= 5;
+                keys.mouse = false;
             } else if(mouseX > 330 && mouseX < 620 && mouseY < 50 && player.gold > 9) {
                 spawnBall({direction: Math.random() * 180});
                 player.gold -= 10;
+                keys.mouse = false;
             } else if(mouseX > 620 && mouseX < 800&& mouseY < 50 && player.gold > 49) {
                 spawnBall({type: "fireball"});
                 player.gold -= 50;
+                keys.mouse = false;
             } else if(mouseX > 800 && mouseY < 50 && player.gold > 74) {
                 spawnBall({type: "fireball",direction: Math.random() * 180});
                 player.gold -= 75;
+                keys.mouse = false;
             }
-        } 
+            var otherChosen = false;
+            spawners.forEach(function(tower){
+                if(tower.chosen === true) {
+                    otherChosen = true;
+                }
+            });
+            spawners.forEach(function(tower){
+                if(getDistance(tower.x,tower.y,mouseX,mouseY) < 30 && player.gold > tower.cost && otherChosen === false) {
+                    tower.chosen = true;
+                }
+                if(tower.chosen) {
+                    tower.x = mouseX;
+                    tower.y = mouseY;
+                    otherChosen = true;
+                }
+            });
+        } else {
+            spawners.forEach(function(tower){
+                if(!(tower.x === tower.begX) || !(tower.y === tower.begY)) {
+                    console.log(tower.x,tower.begX,tower.y,tower.begY,tower.cost);
+                    tower.clone(tower.x,tower.y);
+                    tower.x = tower.begX;
+                    tower.y = tower.begY;
+                    player.gold -= tower.cost;
+                }
+                tower.chosen = false;
+            });
+        }
+        towers.forEach(function(tower,i){
+            if(tower.type === "lightning") {
+                balls.forEach(function(ball){
+                    if(getDistance(ball.x,ball.y,tower.x,tower.y) < 32) {
+                        ball.speed *= 1.25;
+                        tower.health -= 0.25;
+                        ball.health -= 0.25;
+                        ball.friction += 0.001;
+                    }
+                });
+                if(tower.health < 990) {
+                    app.stage.removeChild(tower);
+                    towers.splice(i,1);
+                }
+            } else if(tower.type === "smlightning") {
+                balls.forEach(function(ball){
+                    if(getDistance(ball.x,ball.y,tower.x,tower.y) < 32) {
+                        var data = direction(ball.speed,ball.direction) 
+                        if(data.r > 3/ball.speed) {
+                            ball.speed *= 1.25;
+                            ball.friction += 0.001;
+                        } else {
+                            if(data.u > 0) {
+                                ball.direction += 2; 
+                            } else {
+                                ball.direction -= 2;
+                            }
+                        }
+                        tower.health -= 0.25;
+                        ball.health -= 0.25;
+                    }
+                });
+            }
+        });
     }
     function press(key){
         if(keys[key]){
@@ -269,6 +399,10 @@
         } else if(e.button == 2) {
             keys.rightMouse = true;
         }
+    });
+    addEventListener("mousemove",function(e){
+        mouseX = e.pageX;
+        mouseY = e.pageY;
     });
     addEventListener("blur", function (){
         keys = {};
