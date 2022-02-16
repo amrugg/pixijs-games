@@ -110,6 +110,7 @@
         if(keys.ArrowUp) {
             if(getPlatformUnder(hero) < hero.height) {
                 hero.vy = -5;
+                hero.grounded = false;
             }
         }
         hero.x += hero.vx;
