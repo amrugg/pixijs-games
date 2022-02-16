@@ -50,7 +50,7 @@
     var id;
     var fall = 0.05;
     var friction = 0.03;
-    var platforms = [{x:100,y:500},{x:300,y:300},{x:500,y:100},{x:700,y:100},];
+    var platforms = [{x:100,y:innerHeight - 250},{x:300,y:innerHeight - 450},{x:500,y:innerHeight - 650},{x:700,y:innerHeight - 650},{x:900,y:innerHeight - 450},{x:1100,y:innerHeight - 250}];
     var platformSprites = [];
     function setup() {
         state = play;
@@ -74,26 +74,41 @@
       state(delta);
     }
     function play(){
-        hero.vy += fall;
-        hero.y += hero.vy;
-        if(getPlatformUnder(hero) < hero.height - hero.height / 2) {
-            hero.y -= hero.vy;
-            hero.vy *= -0.4;
+        if(hero.grounded === getPlatformUnder(hero)) {
+
+        } else {
+            hero.vy += fall;
+            hero.y += hero.vy;
+            hero.grounded = false;
+        }
+        if(getPlatformUnder(hero) < 0) {
+            console.log("Crash");
+            while(getPlatformUnder(hero) < 0) {
+                hero.y += 0.1;
+            }
+            hero.vy *= -0.8;
+        } else if(getPlatformUnder(hero) < hero.height - hero.height / 3) {
+            if(hero.vy < 0.2) {
+                hero.grounded = getPlatformUnder(hero);
+            } else {
+                hero.y -= hero.vy;
+                hero.vy *= -0.4;
+            }
         }
         if(keys.ArrowLeft) {
             hero.vx = -hero.vvx;
-            if(clipPlatform(hero)) {
+            if(clipPlatform(hero) && !hero.grounded) {
                 hero.vx = 0;
             }
         }
         if(keys.ArrowRight) {
             hero.vx = hero.vvx;
-            if(clipPlatform(hero)) {
+            if(clipPlatform(hero) && !hero.grounded) {
                 hero.vx = 0;
             }
         }
         if(keys.ArrowUp) {
-            if(getPlatformUnder(hero) < hero.height / 0.6) {
+            if(getPlatformUnder(hero) < hero.height) {
                 hero.vy = -5;
             }
         }
