@@ -52,6 +52,7 @@
     var friction = 0.03;
     var platforms = [{x:100,y:innerHeight - 250},{x:300,y:innerHeight - 450},{x:500,y:innerHeight - 650},{x:700,y:innerHeight - 650},{x:900,y:innerHeight - 450},{x:1100,y:innerHeight - 250}];
     var platformSprites = [];
+    var blobs = [];
     function setup() {
         state = play;
         id = resources["sprites/treasureHunter.json"].textures;
@@ -60,6 +61,7 @@
         hero.vy = hero.vx = 0;
         hero.vvx = 1.6;
         hero.anchor.set(0.5);
+        spawnBlobs(20);
         platforms.forEach(function(p){
             var plata = new Sprite(resources["sprites/platform.png"].texture);
             app.stage.addChild(plata);
@@ -68,7 +70,21 @@
             plata.scale.set(3);
             plata.anchor.set(0.5);
         });
+        hero.y = innerHeight - hero.height * 2;
+        hero.x = innerWidth / 2;
         app.ticker.add(delta => gameLoop(delta));
+    }
+    function spawnBlobs(x) {
+        x = x || 1;
+        for(let i = 0; i < x; i++) {
+            var blob = new Sprite(id["blob.png"]);
+            blobs.push(blob);
+            app.stage.addChild(blob);    
+            blob.vy = blob.vx = 0;
+            blob.vvx = randNum(1,2);
+            blob.x = randInt(-100,innerWidth + 100);
+            blob.y = randInt(-100,200)
+        }
     }
     function gameLoop(delta) {
       state(delta);
@@ -115,6 +131,119 @@
         }
         hero.x += hero.vx;
         hero.vx = hero.vx > friction ? hero.vx -= friction : hero.vx > 0 ? hero.vx = 0 : hero.vx < -friction ? hero.vx += friction : hero.vx = 0;
+        blobs.forEach(function(blob){
+            /// Physics
+            if(blob.grounded === getPlatformUnder(blob)) {
+
+            } else {
+                blob.vy += fall;
+                blob.y += blob.vy;
+                blob.grounded = false;
+            }
+            if(getPlatformUnder(blob) < 0) {
+                console.log("Crash");
+                while(getPlatformUnder(blob) < 0) {
+                    blob.y += 0.1;
+                }
+                blob.vy *= -0.8;
+            } else if(getPlatformUnder(blob) < blob.height - blob.height / 3) {
+                if(blob.vy < 0.2) {
+                    blob.grounded = getPlatformUnder(blob);
+                } else {
+                    blob.y -= blob.vy;
+                    blob.vy *= -0.4;
+                }
+            }
+            /// AI
+            /// If the player is on the same platform level or a lower one...
+            if(blob.y - hero.y < 275 && ! blob.jump){
+                if(hero.x < blob.x) {
+                    blob.vx = -blob.vvx;
+                    if(clipPlatform(blob) && !blob.grounded) {
+                        blob.vx = 0;
+                    }
+                }
+                if(hero.x > blob.x) {
+                    blob.vx = blob.vvx;
+                    if(clipPlatform(blob) && !blob.grounded) {
+                        blob.vx = 0;
+                    }
+                }
+                if(hero.y < blob.y) {
+                    if(getPlatformUnder(blob) < blob.height) {
+                        blob.vy = -5;
+                        blob.grounded = false;
+                    }
+                }
+            } else {
+                /// Make for the nearest low platform.
+                if(blob.jump) {
+                    console.log(blob.target,blob.x);
+                    if(blob.target.x < blob.x && blob.x - blob.target.x > 20) {
+                        blob.vx = -blob.vvx;
+                        if(clipPlatform(blob) && !blob.grounded) {
+                            blob.vx = 0;
+                        }
+                    }
+                    if(blob.target.x > blob.x && -blob.x + blob.target.x > 20) {
+                        blob.vx = blob.vvx;
+                        if(clipPlatform(blob) && !blob.grounded) {
+                            blob.vx = 0;
+                        }
+                    }
+                    if(blob.grounded) {
+                        blob.jump = false;
+                    }
+                } else {
+                    var nearestPlatform = {x:Infinity,y:Infinity};
+                    platforms.forEach(function(platform){
+                        if(blob.y - platform.y < 250 && blob.y - platform.y > 150 ) {
+                            if(getDistance(nearestPlatform.x,nearestPlatform.y,blob.x,blob.y) > getDistance(platform.x,platform.y,blob.x,blob.y)) {
+                                nearestPlatform = platform;
+                            }
+                        }
+                    });
+                    console.log(nearestPlatform,blob.x);
+                    if(Math.abs(blob.x - nearestPlatform.x) < 200 && Math.abs(blob.x - nearestPlatform.x) > 175) {
+                        if(getPlatformUnder(blob) < blob.height) {
+                            blob.vy = -6;
+                            blob.grounded = false;
+                            blob.jump = true;
+                            blob.target = nearestPlatform;
+                        }
+                    }
+                    if(blob.grounded) {
+                        if(nearestPlatform.x + 200 < blob.x && blob.x - nearestPlatform.x + 200 > 20) {
+                            blob.vx = -blob.vvx;
+                            if(clipPlatform(blob) && !blob.grounded) {
+                                blob.vx = 0;
+                            }
+                        }
+                        if(nearestPlatform.x + 200 > blob.x  && -blob.x + nearestPlatform.x + 200 > 20) {
+                            blob.vx = blob.vvx;
+                            if(clipPlatform(blob) && !blob.grounded) {
+                                blob.vx = 0;
+                            }
+                        }
+                    } else {
+                        if(nearestPlatform.x < blob.x && blob.x - nearestPlatform.x > 20) {
+                            blob.vx = -blob.vvx;
+                            if(clipPlatform(blob) && !blob.grounded) {
+                                blob.vx = 0;
+                            }
+                        }
+                        if(nearestPlatform.x > blob.x && -blob.x + nearestPlatform.x < 20) {
+                            blob.vx = blob.vvx;
+                            if(clipPlatform(blob) && !blob.grounded) {
+                                blob.vx = 0;
+                            }
+                        }
+                    }
+                }
+            }
+            blob.x += blob.vx;
+            blob.vx = blob.vx > friction ? blob.vx -= friction : blob.vx > 0 ? blob.vx = 0 : blob.vx < -friction ? blob.vx += friction : blob.vx = 0;
+        });
     }
     function getPlatformUnder(sprite) {
         var lowestDistance = innerHeight - sprite.y;
