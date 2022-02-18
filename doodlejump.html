@@ -53,6 +53,8 @@
     var platforms = [{x:100,y:innerHeight - 250},{x:300,y:innerHeight - 450},{x:500,y:innerHeight - 650},{x:700,y:innerHeight - 650},{x:900,y:innerHeight - 450},{x:1100,y:innerHeight - 250}];
     var platformSprites = [];
     var blobs = [];
+    var treasures = [];
+    var healthBar;
     function setup() {
         state = play;
         id = resources["sprites/treasureHunter.json"].textures;
@@ -61,7 +63,22 @@
         hero.vy = hero.vx = 0;
         hero.vvx = 1.6;
         hero.anchor.set(0.5);
-        spawnBlobs(20);
+        spawnBlobs(1);
+
+        healthBar = new Container();
+        healthBar.position.set(512-170, 4)
+        app.stage.addChild(healthBar)
+        var innerBar = new Graphics();
+        innerBar.beginFill(0x000000);
+        innerBar.drawRect(0, 0, 128, 8);
+        innerBar.endFill();
+        healthBar.addChild(innerBar);
+        var outerBar = new Graphics();
+        outerBar.beginFill(0xFF3300);
+        outerBar.drawRect(0,0,128,8);
+        outerBar.endFill();
+        healthBar.addChild(outerBar);
+        healthBar.outer = outerBar;
         platforms.forEach(function(p){
             var plata = new Sprite(resources["sprites/platform.png"].texture);
             app.stage.addChild(plata);
@@ -69,9 +86,17 @@
             plata.y = p.y;
             plata.scale.set(3);
             plata.anchor.set(0.5);
+            plata.rep = p;
+            platformSprites.push(plata);
         });
         hero.y = innerHeight - hero.height * 2;
         hero.x = innerWidth / 2;
+        var treasure = new Sprite(id["treasure.png"]);
+        treasure.x = 700;
+        treasure.y = innerHeight - 700;
+        treasure.vy = 0;
+        treasures.push(treasure);
+        app.stage.addChild(treasure);
         app.ticker.add(delta => gameLoop(delta));
     }
     function spawnBlobs(x) {
@@ -94,16 +119,36 @@
 
         } else {
             hero.vy += fall;
+            if(keys.ArrowDown) {
+                hero.vy += fall;
+                hero.slam = true;
+            } else {
+                hero.slam = false;
+            }
             hero.y += hero.vy;
             hero.grounded = false;
         }
         if(getPlatformUnder(hero) < 0) {
-            console.log("Crash");
             while(getPlatformUnder(hero) < 0) {
                 hero.y += 0.1;
             }
             hero.vy *= -0.8;
         } else if(getPlatformUnder(hero) < hero.height - hero.height / 3) {
+            if(hero.slam && hero.vy > 6) {
+                var slam = returnPlatformUnder(hero);
+                if(slam) {
+                    if(slam.x > hero.x + 30) {
+                        slam.flip = "left";
+                        slam.flipper = 62;
+                    } else if(slam.x < hero.x - 30) {
+                        slam.flip = "right";
+                        slam.flipper = 62;
+                    } else {
+                        slam.y += 90;
+                        slam.rep.y += 90;
+                    }
+                }
+            } 
             if(hero.vy < 0.2) {
                 hero.grounded = getPlatformUnder(hero);
             } else {
@@ -141,7 +186,6 @@
                 blob.grounded = false;
             }
             if(getPlatformUnder(blob) < 0) {
-                console.log("Crash");
                 while(getPlatformUnder(blob) < 0) {
                     blob.y += 0.1;
                 }
@@ -178,7 +222,6 @@
             } else {
                 /// Make for the nearest low platform.
                 if(blob.jump) {
-                    console.log(blob.target,blob.x);
                     if(blob.target.x < blob.x && blob.x - blob.target.x > 20) {
                         blob.vx = -blob.vvx;
                         if(clipPlatform(blob) && !blob.grounded) {
@@ -203,7 +246,6 @@
                             }
                         }
                     });
-                    console.log(nearestPlatform,blob.x);
                     if(Math.abs(blob.x - nearestPlatform.x) < 200 && Math.abs(blob.x - nearestPlatform.x) > 175) {
                         if(getPlatformUnder(blob) < blob.height) {
                             blob.vy = -6;
@@ -243,12 +285,88 @@
             }
             blob.x += blob.vx;
             blob.vx = blob.vx > friction ? blob.vx -= friction : blob.vx > 0 ? blob.vx = 0 : blob.vx < -friction ? blob.vx += friction : blob.vx = 0;
+            if(hitTestRectangle(hero,blob,5,5)) {
+                healthBar.outer.width -= 1;
+                if(healthBar.outer.width < 1) {
+                    state = lose;
+                }
+            }
         });
+        platformSprites.forEach(function(p){
+            if(p.flip === "left") {
+                --p.flipper;
+                p.rotation -= 0.1;
+                if(p.flipper === 0) {
+                    p.rotation = 0;
+                    p.flip = false;
+                    if(clipPlatform(hero)) {
+                        hero.y += hero.vy;
+                        var tally = 0;
+                        while(clipPlatform(hero)) {
+                            hero.y += 0.1;
+                            tally += 0.1;
+                        }
+                        hero.y -= tally + hero.vy;
+                        hero.vy += tally / 2;
+                    }
+                }
+            }
+            if(p.flip === "right") {
+                --p.flipper;
+                p.rotation += 0.1;
+                if(p.flipper === 0) {
+                    p.rotation = 0;
+                    p.flip = false;
+                    while(clipPlatform(hero)) {
+                        hero.y += 0.1;
+                    }
+                }
+                if(clipPlatform(hero)) {
+                    hero.y += hero.vy;
+                    var tally = 0;
+                    while(clipPlatform(hero)) {
+                        hero.y += 0.1;
+                        tally += 0.1;
+                    }
+                    hero.y -= tally + hero.vy;
+                    hero.vy += tally / 2;
+                }
+            }
+        });
+        treasures.forEach(function(treasure,i){
+            if(treasure.grounded === getPlatformUnder(treasure)) {
+
+            } else {
+                treasure.vy += fall;
+                treasure.y += treasure.vy;
+                treasure.grounded = false;
+            }
+            if(getPlatformUnder(treasure) < 0) {
+                while(getPlatformUnder(treasure) < 0) {
+                    treasure.y += 0.1;
+                }
+                treasure.vy *= -0.8;
+            } else if(getPlatformUnder(treasure) < treasure.height) {
+                if(treasure.vy < 0.2) {
+                    treasure.grounded = getPlatformUnder(treasure);
+                } else {
+                    treasure.y -= treasure.vy;
+                    treasure.vy *= -0.4;
+                }
+            }
+            if(hitTestRectangle(treasure,hero)) {
+                app.stage.removeChild(treasure);
+                treasures.splice(i,1);
+            }
+        });
+    }
+    function lose() {
+        
     }
     function getPlatformUnder(sprite) {
         var lowestDistance = innerHeight - sprite.y;
-        platforms.forEach(function(p){
-            if(sprite.x > p.x - 75 && sprite.x < p.x + 75) {
+        platformSprites.forEach(function(p){
+            if(sprite.x > p.x - 75 && sprite.x < p.x + 75 && !p.flip) {
                 if(p.y - sprite.y < lowestDistance && p.y >= sprite.y - 30) {
                     lowestDistance = p.y - sprite.y;
                 }
@@ -256,10 +374,23 @@
         });
         return lowestDistance;
     }
+    function returnPlatformUnder(sprite) {
+        var lowestDistance = innerHeight - sprite.y;
+        var platformSprite = false;
+        platformSprites.forEach(function(p,i){
+            if(sprite.x > p.x - 75 && sprite.x < p.x + 75) {
+                if(p.y - sprite.y < lowestDistance && p.y >= sprite.y - 30) {
+                    lowestDistance = p.y - sprite.y;
+                    platformSprite = p;
+                }
+            }
+        });
+        return platformSprite;
+    }
     function clipPlatform(sprite){
         var res = false;
-        platforms.forEach(function(p){
-            if(sprite.y - sprite.height / 2 > p.y - 32 && sprite.y + sprite.height / 2 < p.y + 50) {
+        platformSprites.forEach(function(p){
+            if(sprite.y - sprite.height / 2 > p.y - 32 && sprite.y + sprite.height / 2 < p.y + 50 && !p.flip) {
                 if(sprite.x + sprite.width / 2 > p.x - 70 && sprite.x - sprite.width / 2 < p.x + 70) {
                     res = true;
                 }
