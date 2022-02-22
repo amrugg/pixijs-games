@@ -43,7 +43,7 @@
     app.renderer.autoResize = true;
     app.renderer.resize(window.innerWidth, window.innerHeight);
     document.body.appendChild(app.view);
-    loader.add("sprites/treasureHunter.json").add("sprites/platform.png").load(setup);
+    loader.add("sprites/treasureHunter.json").add("sprites/platform.png").add("sprites/redeye.png").load(setup);
     var state;
     var keys = {};
     var hero;
@@ -51,38 +51,99 @@
     var fall = 0.05;
     var friction = 0.03;
     var levels = {};
+
+    ///     [{x:100,y:innerHeight - 7000},{x:300,y:innerHeight - 7000},{x:500,y:innerHeight - 7000},{x:700,y:innerHeight - 7000},{x:900,y:innerHeight - 7000},{x:1100,y:innerHeight - 7000},
+        ///{x:200,y:innerHeight - 7000},{x:400,y:innerHeight - 7000},{x:600,y:innerHeight - 7000},{x:800,y:innerHeight - 7000},{x:1000,y:innerHeight - 7000},{x:1200,y:innerHeight - 7000}]
+    ///     [{x:100,y:100},{x:300, y:200},{x:500,y:300},{x:700,y:400},{x:900,y:100},{x:1100, y:200},{x:1200,y:300}]
     levels.platforms = [
         [{x:100,y:innerHeight - 250},{x:300,y:innerHeight - 450},{x:500,y:innerHeight - 650},{x:700,y:innerHeight - 650},{x:900,y:innerHeight - 450},{x:1100,y:innerHeight - 250}],
         [{x:100,y:innerHeight - 200},{x:300,y:innerHeight - 400},{x:500,y:innerHeight - 600},{x:700,y:innerHeight - 600},{x:900,y:innerHeight - 400},{x:1100,y:innerHeight - 200},
          {x:100,y:innerHeight - 250},{x:300,y:innerHeight - 450},{x:500,y:innerHeight - 650},{x:700,y:innerHeight - 650},{x:900,y:innerHeight - 450},{x:1100,y:innerHeight - 250}],
         [{x:759, y:innerHeight - 259},{x:109,y:innerHeight - 254},{x:103,y:innerHeight - 450},{x:542,y:innerHeight - 651},{x:731,y:innerHeight - 652},{x:900,y:innerHeight - 451},
-        {x:1102,y:innerHeight - 256},{x:999, y:innerHeight - 510}]
+        {x:1102,y:innerHeight - 256},{x:999, y:innerHeight - 510}],
+        [function(){
+            /// Figure out how many platforms we can use
+            var num = Math.floor(innerWidth / 100);
+            var arr = [];
+            /// Find the min and max height
+            var minH = innerHeight - 200;
+            if(num % 2 == 0) {
+                var maxH = innerHeight - ((num - 2)/2)*200;
+                if(maxH < 100) {
+                    maxH = 100;
+                }
+            } else {
+                var maxH = innerHeight - ((num - 1)/2)*200;
+                if(maxH < 100) {
+                    maxH = 100;
+                }
+            }
+            if(num % 2 === 0) {
+                var midpoint = Math.round(num / 2 - 1.5);
+                
+                
+                var midpoint = Math.round(num / 2 - 1.5);
+                for(var i = 0; i <= midpoint; i++) {
+                    y = ((maxH * (midpoint - i)) + (minH * (i)))/
+                    midpoint
+                    arr.push({x: i * 100 + 100, y:y});
+                };
+                for(var i = 0; i <= midpoint; i++) {
+                    y = ((maxH * (i)) + (minH * (midpoint - i)))/
+                    midpoint
+                    arr.push({x: (i +midpoint)* 100 + 200, y:y});
+                }
+            } else {
+                var midpoint = Math.round(num / 2 - 1.5);
+                for(var i = 0; i <= midpoint; i++) {
+                    y = ((maxH * (midpoint - i)) + (minH * (i)))/
+                    midpoint
+                    arr.push({x: i * 100 + 100, y:y});
+                }
+                for(var i = 0; i <= midpoint; i++) {
+                    y = ((maxH * (i)) + (minH * (midpoint - i)))/
+                    midpoint
+                    arr.push({x: (i +midpoint)* 100 + 100, y:y});
+                }
+            }
+            return arr;
+        }]
     ];
     levels.blobs = [
         1,
         5,
-        7
+        7,
+        50
     ];
     levels.treasures = [
-        [{x:700,y:innerHeight - 700}],
-        [{x:100,y:innerHeight - 225},{x:300,y:innerHeight - 425},{x:500,y:innerHeight - 625},{x:700,y:innerHeight - 625},{x:900,y:innerHeight - 425},{x:1100,y:innerHeight - 225}],
+        [{x:700,y:innerHeight - 700}
+        ],
+        [{x:100,y:innerHeight - 225},{x:300,y:innerHeight - 425},{x:500,y:innerHeight - 625},{x:700,y:innerHeight - 625},{x:900,y:innerHeight - 425},{x:1100,y:innerHeight - 225}
+        ],
         [{x:100,y:innerHeight - 225},{x:311,y:innerHeight - 415},{x:500,y:innerHeight - 622},{x:710,y:innerHeight - 121},{x:900,y:innerHeight - 425},{x:1171,y:innerHeight - 228},
-        {x:197,y:innerHeight - 291},{x:310,y:innerHeight - 4985},{x:511,y:innerHeight - 678},{x:700,y:innerHeight - 124},{x:890,y:innerHeight - 475},{x:1191,y:innerHeight - 222}]
+        {x:197,y:innerHeight - 291},{x:310,y:innerHeight - 4985},{x:511,y:innerHeight - 678},{x:700,y:innerHeight - 124},{x:890,y:innerHeight - 475},{x:1191,y:innerHeight - 222}
+        ],
+        [{x:100,y:innerHeight - 7000,vvy:0.9},{x:300,y:innerHeight - 7000,vvy:0.9},{x:500,y:innerHeight - 7000,vvy:0.9},{x:700,y:innerHeight - 7000,vvy:0.9},{x:900,y:innerHeight - 7000,vvy:0.9},{x:1100,y:innerHeight - 7000,vvy:0.9},
+        {x:200,y:innerHeight - 7000,vvy:0.9},{x:400,y:innerHeight - 7000,vvy:0.9},{x:600,y:innerHeight - 7000,vvy:0.9},{x:800,y:innerHeight - 7000,vvy:0.9},{x:1000,y:innerHeight - 7000,vvy:0.9},{x:1200,y:innerHeight - 7000,vvy:0.9}
+        ]
     ];
     levels.randTreasures = [
         0,
         5,
         4,
+        20
     ]
     levels.platformTreasures = [
         0,
         5,
         4,
+        0
     ]
     levels.health = [
         10,
         128*2,
         180,
+        128*20
     ]
     var level = params.level || -1;
     var platformSprites = [];
@@ -119,6 +180,7 @@
         app.stage.addChild(hero);
         hero.vy = hero.vx = 0;
         hero.vvx = 2;
+        hero.vvy = 0.4
         hero.anchor.set(0.5);
 
         healthBar = new Container();
@@ -153,11 +215,26 @@
         if(levels.health[level]) {
             hero.vy = hero.vx = 0;
             hero.vvx = 1.6;
+            hero.vvy = 0.4
             hero.y = innerHeight - hero.height * 2;
             hero.x = innerWidth / 2;
             spawnBlobs(levels.blobs[level]);
             healthBar.outer.width = levels.health[level];
             levels.platforms[level].forEach(function(p){
+                if(typeof p === "function") {
+                    var arr = p();
+                    arr.forEach(function(p){
+                        var plata = new Sprite(resources["sprites/platform.png"].texture);
+                        app.stage.addChild(plata);
+                        plata.x = p.x;
+                        plata.y = p.y;
+                        plata.scale.set(3);
+                        plata.anchor.set(0.5);
+                        platformSprites.push(plata);
+                    });
+                    console.log(arr);
+                    return;
+                }
                 var plata = new Sprite(resources["sprites/platform.png"].texture);
                 app.stage.addChild(plata);
                 plata.x = p.x;
@@ -170,6 +247,7 @@
                 var treasure = new Sprite(id["treasure.png"]);
                 treasure.x = levels.treasures[level][i].x;
                 treasure.y = levels.treasures[level][i].y;
+                treasure.vvy = levels.treasures[level][i].vvy || 0.4;
                 treasure.vy = 0;
                 treasures.push(treasure);
                 app.stage.addChild(treasure);
@@ -178,6 +256,7 @@
                 var treasure = new Sprite(id["treasure.png"]);
                 treasure.x = randInt(100,innerWidth - 100);
                 treasure.y = randInt(0, innerHeight - 10);
+                treasure.vvy = 0.4;
                 treasure.vy = 0;
                 treasures.push(treasure);
                 app.stage.addChild(treasure);
@@ -188,6 +267,7 @@
                 treasure.x = randInt(randPlatform.x - 30, randPlatform.x + 30);
                 treasure.y = randPlatform.y - 30;
                 treasure.vy = 0;
+                treasure.vvy = 0.4;
                 treasures.push(treasure);
                 app.stage.addChild(treasure);
             }
@@ -248,6 +328,7 @@
             treasure.x = mouseX;
             treasure.y = mouseY;
             treasure.vy = 0;
+            treasure.vvy = 0.4;
             treasures.push(treasure);
             app.stage.addChild(treasure);
             keys.mouse = false;
@@ -321,6 +402,7 @@
                 treasure.x = randInt(100,innerWidth - 100);
                 treasure.y = randInt(0, innerHeight - 10);
                 treasure.vy = 0;
+                treasure.vvy = 0.4;
                 treasures.push(treasure);
                 app.stage.addChild(treasure);
             }
@@ -350,6 +432,7 @@
             for(let i = 0; i < Number(txt.text); i++) {
                 var randPlatform = platformSprites[randInt(0,platformSprites.length - 1)];
                 var treasure = new Sprite(id["treasure.png"]);
+                treasure.vvy = 0.4;
                 treasure.x = randInt(randPlatform.x - 30, randPlatform.x + 30);
                 treasure.y = randPlatform.y - 30;
                 treasure.vy = 0;
@@ -387,11 +470,21 @@
     function spawnBlobs(x) {
         x = x || 1;
         for(let i = 0; i < x; i++) {
-            var blob = new Sprite(id["blob.png"]);
+            if(randInt(1,3) === 1) {
+                var rand = randNum(0.5,1.7); 
+            } else {
+                var rand = randNum(0.5,1.5); 
+            }
+            if(rand > 1.6) {
+                var blob = new Sprite(resources["sprites/redeye.png"].texture);
+            } else {
+                var blob = new Sprite(id["blob.png"]);
+            }
             blobs.push(blob);
             app.stage.addChild(blob);    
             blob.vy = blob.vx = 0;
-            blob.vvx = randNum(0.5,1.7);
+            blob.vvx = rand;
+            blob.vvy = 0.4;
             blob.x = randInt(-100,innerWidth + 100);
             blob.y = randInt(-100,200)
         }
@@ -426,7 +519,7 @@
                 hero.y += 0.1;
                 ++i;
             }
-            hero.vy *= -0.8;
+            hero.vy *= -hero.vvy * 2;
         } else if(getPlatformUnder(hero) < hero.height - hero.height / 3) {
             if(hero.slam && hero.vy > 7) {
                 var slam = returnPlatformUnder(hero);
@@ -447,7 +540,7 @@
                 hero.grounded = getPlatformUnder(hero);
             } else {
                 hero.y -= hero.vy;
-                hero.vy *= -0.4;
+                hero.vy *= -hero.vvy;
             }
         }
         if(keys.ArrowLeft) {
@@ -485,13 +578,13 @@
                     blob.y += 0.1;
                     i++;
                 }
-                blob.vy *= -0.8;
+                blob.vy *= -blob.vvy * 2;
             } else if(getPlatformUnder(blob) < blob.height - blob.height / 3) {
                 if(blob.vy < 0.2) {
                     blob.grounded = getPlatformUnder(blob);
                 } else {
                     blob.y -= blob.vy;
-                    blob.vy *= -0.4;
+                    blob.vy *= -blob.vvy;
                 }
             }
             /// AI
@@ -650,13 +743,13 @@
                     treasure.y += 0.1;
                     ++i;
                 }
-                treasure.vy *= -0.8;
+                treasure.vy *= -treasure.vvy * 2;
             } else if(getPlatformUnder(treasure) < treasure.height) {
                 if(treasure.vy < 0.2) {
                     treasure.grounded = getPlatformUnder(treasure);
                 } else {
                     treasure.y -= treasure.vy;
-                    treasure.vy *= -0.4;
+                    treasure.vy *= -treasure.vvy;
                 }
             }
             if(hitTestRectangle(treasure,hero)) {
