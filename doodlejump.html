@@ -43,45 +43,448 @@
     app.renderer.autoResize = true;
     app.renderer.resize(window.innerWidth, window.innerHeight);
     document.body.appendChild(app.view);
-    loader.add("sprites/treasureHunter.json").add("sprites/platform.png").load(setup);
+    loader.add("sprites/treasureHunter.json").add("sprites/platform.png").add("sprites/redeye.png").load(setup);
     var state;
     var keys = {};
     var hero;
     var id;
     var fall = 0.05;
     var friction = 0.03;
-    var platforms = [{x:100,y:innerHeight - 250},{x:300,y:innerHeight - 450},{x:500,y:innerHeight - 650},{x:700,y:innerHeight - 650},{x:900,y:innerHeight - 450},{x:1100,y:innerHeight - 250}];
+    var levels = {};
+
+    ///     [{x:100,y:innerHeight - 7000},{x:300,y:innerHeight - 7000},{x:500,y:innerHeight - 7000},{x:700,y:innerHeight - 7000},{x:900,y:innerHeight - 7000},{x:1100,y:innerHeight - 7000},
+        ///{x:200,y:innerHeight - 7000},{x:400,y:innerHeight - 7000},{x:600,y:innerHeight - 7000},{x:800,y:innerHeight - 7000},{x:1000,y:innerHeight - 7000},{x:1200,y:innerHeight - 7000}]
+    ///     [{x:100,y:100},{x:300, y:200},{x:500,y:300},{x:700,y:400},{x:900,y:100},{x:1100, y:200},{x:1200,y:300}]
+    levels.platforms = [
+        [{x:100,y:innerHeight - 250},{x:300,y:innerHeight - 450},{x:500,y:innerHeight - 650},{x:700,y:innerHeight - 650},{x:900,y:innerHeight - 450},{x:1100,y:innerHeight - 250}],
+        [{x:100,y:innerHeight - 200},{x:300,y:innerHeight - 400},{x:500,y:innerHeight - 600},{x:700,y:innerHeight - 600},{x:900,y:innerHeight - 400},{x:1100,y:innerHeight - 200},
+         {x:100,y:innerHeight - 250},{x:300,y:innerHeight - 450},{x:500,y:innerHeight - 650},{x:700,y:innerHeight - 650},{x:900,y:innerHeight - 450},{x:1100,y:innerHeight - 250}],
+        [{x:759, y:innerHeight - 259},{x:109,y:innerHeight - 254},{x:103,y:innerHeight - 450},{x:542,y:innerHeight - 651},{x:731,y:innerHeight - 652},{x:900,y:innerHeight - 451},
+        {x:1102,y:innerHeight - 256},{x:999, y:innerHeight - 510}],
+        [function(){
+            /// Figure out how many platforms we can use
+            var num = Math.floor(innerWidth / 100);
+            var arr = [];
+            /// Find the min and max height
+            var minH = innerHeight - 200;
+            if(num % 2 == 0) {
+                var maxH = innerHeight - ((num - 2)/2)*200;
+                if(maxH < 100) {
+                    maxH = 100;
+                }
+            } else {
+                var maxH = innerHeight - ((num - 1)/2)*200;
+                if(maxH < 100) {
+                    maxH = 100;
+                }
+            }
+            if(num % 2 === 0) {
+                var midpoint = Math.round(num / 2 - 1.5);
+                
+                
+                var midpoint = Math.round(num / 2 - 1.5);
+                for(var i = 0; i <= midpoint; i++) {
+                    y = ((maxH * (midpoint - i)) + (minH * (i)))/
+                    midpoint
+                    arr.push({x: i * 100 + 100, y:y});
+                };
+                for(var i = 0; i <= midpoint; i++) {
+                    y = ((maxH * (i)) + (minH * (midpoint - i)))/
+                    midpoint
+                    arr.push({x: (i +midpoint)* 100 + 200, y:y});
+                }
+            } else {
+                var midpoint = Math.round(num / 2 - 1.5);
+                for(var i = 0; i <= midpoint; i++) {
+                    y = ((maxH * (midpoint - i)) + (minH * (i)))/
+                    midpoint
+                    arr.push({x: i * 100 + 100, y:y});
+                }
+                for(var i = 0; i <= midpoint; i++) {
+                    y = ((maxH * (i)) + (minH * (midpoint - i)))/
+                    midpoint
+                    arr.push({x: (i +midpoint)* 100 + 100, y:y});
+                }
+            }
+            return arr;
+        }]
+    ];
+    levels.blobs = [
+        1,
+        5,
+        7,
+        50
+    ];
+    levels.treasures = [
+        [{x:700,y:innerHeight - 700}
+        ],
+        [{x:100,y:innerHeight - 225},{x:300,y:innerHeight - 425},{x:500,y:innerHeight - 625},{x:700,y:innerHeight - 625},{x:900,y:innerHeight - 425},{x:1100,y:innerHeight - 225}
+        ],
+        [{x:100,y:innerHeight - 225},{x:311,y:innerHeight - 415},{x:500,y:innerHeight - 622},{x:710,y:innerHeight - 121},{x:900,y:innerHeight - 425},{x:1171,y:innerHeight - 228},
+        {x:197,y:innerHeight - 291},{x:310,y:innerHeight - 4985},{x:511,y:innerHeight - 678},{x:700,y:innerHeight - 124},{x:890,y:innerHeight - 475},{x:1191,y:innerHeight - 222}
+        ],
+        [{x:100,y:innerHeight - 7000,vvy:0.9},{x:300,y:innerHeight - 7000,vvy:0.9},{x:500,y:innerHeight - 7000,vvy:0.9},{x:700,y:innerHeight - 7000,vvy:0.9},{x:900,y:innerHeight - 7000,vvy:0.9},{x:1100,y:innerHeight - 7000,vvy:0.9},
+        {x:200,y:innerHeight - 7000,vvy:0.9},{x:400,y:innerHeight - 7000,vvy:0.9},{x:600,y:innerHeight - 7000,vvy:0.9},{x:800,y:innerHeight - 7000,vvy:0.9},{x:1000,y:innerHeight - 7000,vvy:0.9},{x:1200,y:innerHeight - 7000,vvy:0.9}
+        ]
+    ];
+    levels.randTreasures = [
+        0,
+        5,
+        4,
+        20
+    ]
+    levels.platformTreasures = [
+        0,
+        5,
+        4,
+        0
+    ]
+    levels.health = [
+        10,
+        128*2,
+        180,
+        128*20
+    ]
+    var level = params.level || -1;
     var platformSprites = [];
     var blobs = [];
+    var treasures = [];
+    var healthBar;
+    var mouseX,mouseY;
+    var txt = new PIXI.Text();
     function setup() {
+        state = intro;
+        txt.style = {fill: "white",stroke:0xFFFFFF};
+        app.stage.addChild(txt);
+        txt.text = "Welcome back! I assume you successfully won Blob Adventures III, where you led your soldiers and expelled the blob forces from your shores.\n" +
+        "Unfortunately, it seems that the King and all his guards took part in the battle too. And though you won the battle, you left the castle undefended...\n" +
+        "And some blobs came in and stole all the treasures, then proceeding to jump on their ships and reach their castle with all the gold.\n" +
+        "The King sends you off again, to capture all the treasure and get safely back. Use the arrow keys to move left, right, jump, and slam.\n" +
+        "Get the treasure and then escape by reaching the upper, left, or right edges. The blobs will try to kill you as you do, by the way.\n" +
+        "And make sure not to fall through the open trapdoor as the first thing you do when you enter the castle... oops. Good try anyway!\n" +
+        "Hit Enter to wake from concussion.";
+        app.renderer.backgroundColor = 0;
+        app.ticker.add(delta => gameLoop(delta));
+    }
+    function intro() {
+        if(keys.Enter) {
+            state = begin;
+            app.stage.removeChild(txt);
+        }
+    }
+    function begin() {
         state = play;
+        app.renderer.backgroundColor = 0x6666DD;
         id = resources["sprites/treasureHunter.json"].textures;
         hero = new Sprite(id["explorer.png"]);
         app.stage.addChild(hero);
         hero.vy = hero.vx = 0;
-        hero.vvx = 1.6;
+        hero.vvx = 2;
+        hero.vvy = 0.4
         hero.anchor.set(0.5);
-        spawnBlobs(20);
-        platforms.forEach(function(p){
-            var plata = new Sprite(resources["sprites/platform.png"].texture);
-            app.stage.addChild(plata);
-            plata.x = p.x;
-            plata.y = p.y;
-            plata.scale.set(3);
-            plata.anchor.set(0.5);
-        });
+
+        healthBar = new Container();
+        healthBar.position.set(512-170, 4);
+        app.stage.addChild(healthBar);
+        var innerBar = new Graphics();
+        innerBar.beginFill(0x000000);
+        innerBar.drawRect(0, 0, 128, 8);
+        innerBar.endFill();
+        healthBar.addChild(innerBar);
+        var outerBar = new Graphics();
+        outerBar.beginFill(0xFF3300);
+        outerBar.drawRect(0,0,128*40,8);
+        outerBar.endFill();
+        healthBar.addChild(outerBar);
+        healthBar.outer = outerBar;
         hero.y = innerHeight - hero.height * 2;
         hero.x = innerWidth / 2;
-        app.ticker.add(delta => gameLoop(delta));
+        newLevel();
+    }
+    function newLevel() {
+        ++level;
+        blobs.forEach(function(blob){
+            app.stage.removeChild(blob);
+        });
+        blobs = [];
+        platformSprites.forEach(function(platform){
+            app.stage.removeChild(platform);
+        });
+        platformSprites = [];
+        healthBar.outer.width = 128;
+        if(levels.health[level]) {
+            hero.vy = hero.vx = 0;
+            hero.vvx = 1.6;
+            hero.vvy = 0.4
+            hero.y = innerHeight - hero.height * 2;
+            hero.x = innerWidth / 2;
+            spawnBlobs(levels.blobs[level]);
+            healthBar.outer.width = levels.health[level];
+            levels.platforms[level].forEach(function(p){
+                if(typeof p === "function") {
+                    var arr = p();
+                    arr.forEach(function(p){
+                        var plata = new Sprite(resources["sprites/platform.png"].texture);
+                        app.stage.addChild(plata);
+                        plata.x = p.x;
+                        plata.y = p.y;
+                        plata.scale.set(3);
+                        plata.anchor.set(0.5);
+                        platformSprites.push(plata);
+                    });
+                    console.log(arr);
+                    return;
+                }
+                var plata = new Sprite(resources["sprites/platform.png"].texture);
+                app.stage.addChild(plata);
+                plata.x = p.x;
+                plata.y = p.y;
+                plata.scale.set(3);
+                plata.anchor.set(0.5);
+                platformSprites.push(plata);
+            });
+            for(let i = 0; i < levels.treasures[level].length; i++) {
+                var treasure = new Sprite(id["treasure.png"]);
+                treasure.x = levels.treasures[level][i].x;
+                treasure.y = levels.treasures[level][i].y;
+                treasure.vvy = levels.treasures[level][i].vvy || 0.4;
+                treasure.vy = 0;
+                treasures.push(treasure);
+                app.stage.addChild(treasure);
+            }
+            for(let i = 0; i < levels.randTreasures[level]; i++) {
+                var treasure = new Sprite(id["treasure.png"]);
+                treasure.x = randInt(100,innerWidth - 100);
+                treasure.y = randInt(0, innerHeight - 10);
+                treasure.vvy = 0.4;
+                treasure.vy = 0;
+                treasures.push(treasure);
+                app.stage.addChild(treasure);
+            }
+            for(let i = 0; i < levels.platformTreasures[level]; i++) {
+                var randPlatform = levels.platforms[level][randInt(0,levels.platforms[level].length - 1)];
+                var treasure = new Sprite(id["treasure.png"]);
+                treasure.x = randInt(randPlatform.x - 30, randPlatform.x + 30);
+                treasure.y = randPlatform.y - 30;
+                treasure.vy = 0;
+                treasure.vvy = 0.4;
+                treasures.push(treasure);
+                app.stage.addChild(treasure);
+            }
+        } else {
+            app.stage.addChild(txt);
+            txt.text = "Welcome to the editor! Place any platforms you like! Hit Enter to continue. Hit Z to undo. Hit X to remove the closest platform.";
+            keys.Enter = false;
+            state = platform;
+        }
+    }
+    function platform() {
+        if(keys.mouse) {
+            var plata = new Sprite(resources["sprites/platform.png"].texture);
+            app.stage.addChild(plata);
+            plata.x = mouseX;
+            plata.y = mouseY;
+            plata.scale.set(3);
+            plata.anchor.set(0.5);
+            platformSprites.push(plata);
+            keys.mouse = false;
+        }
+        if(keys.z) {
+            app.stage.removeChild(platformSprites[platformSprites.length-1]);
+            platformSprites.pop();
+            keys.z = false;
+        }
+        if(keys.x) {
+            var lowestDistance = Infinity;
+            var lowestSprite;
+            var lowestI;
+            platformSprites.forEach(function(p,i){
+                if(getDistance(p.x,p.y,mouseX,mouseY) < lowestDistance) {
+                    lowestSprite = p;
+                    lowestDistance = getDistance(p.x,p.y,mouseX,mouseY);
+                    lowestI = i;
+                }
+            });
+            if(lowestDistance < Infinity) {
+                app.stage.removeChild(lowestSprite);
+                platformSprites.splice(lowestI,1);
+            }
+            keys.x = false;
+        }
+        if(keys.Enter) {
+            txt.text = "Now place any treasures you like! Hit Enter to continue. Hit Z to undo. Hit X to remove the closest treasure."
+            keys.Enter = false;
+            state = treasure;
+            var arr = [];
+            for(let i = 0; i < platformSprites.length; i++) {
+                arr.push({x:platformSprites[i].x,y:platformSprites[i].y});
+            }
+            console.log(arr);
+        }
+    }
+    function treasure() {
+        if(keys.mouse) {
+            var treasure = new Sprite(id["treasure.png"]);
+            treasure.x = mouseX;
+            treasure.y = mouseY;
+            treasure.vy = 0;
+            treasure.vvy = 0.4;
+            treasures.push(treasure);
+            app.stage.addChild(treasure);
+            keys.mouse = false;
+        }
+        if(keys.z) {
+            app.stage.removeChild(treasures[treasures.length-1]);
+            treasures.pop();
+            keys.z = false;
+        }
+        if(keys.x) {
+            var lowestDistance = Infinity;
+            var lowestSprite;
+            var lowestI;
+            treasures.forEach(function(p,i){
+                if(getDistance(p.x,p.y,mouseX,mouseY) < lowestDistance) {
+                    lowestSprite = p;
+                    lowestDistance = getDistance(p.x,p.y,mouseX,mouseY);
+                    lowestI = i;
+                }
+            });
+            if(lowestDistance < Infinity) {
+                app.stage.removeChild(lowestSprite);
+                treasures.splice(lowestI,1);
+            }
+            keys.x = false;
+        }
+        if(keys.Enter) {
+            txt.text = "Now choose the amount of health you want to have! Press Left and Right to change it. Enter to continue."
+            state = health;
+            keys.Enter = false;
+            healthBar.outer.width = 128;
+            var arr = [];
+            for(let i = 0; i < treasures.length; i++) {
+                arr.push({x:treasures[i].x,y:treasures[i].y});
+            }
+            console.log(arr);
+        } 
+    }
+    function health() {
+        if(keys.ArrowLeft) {
+            healthBar.outer.width -= 1 * (keys.Ctrl ? 5 : 1) * (keys.Shift ? 5 : 1);
+        }
+        if(keys.ArrowRight) {
+            healthBar.outer.width += 1 * (keys.Ctrl ? 5 : 1) * (keys.Shift ? 5 : 1);
+        }
+        if(keys.Enter) {
+            txt.text = "Now choose the amount of Random Treasures you want to have!"
+            keys.Enter = false;
+            state = randomTreasureChoose;
+            console.log(healthBar.outer.width);
+        }
+    }
+    function randomTreasureChoose() {
+        if(keys.ArrowLeft) {
+            if(!(Number(txt.text) > 0)) {
+                txt.text = "0";
+            }
+            txt.text = (Number(txt.text) - (1 * (keys.Ctrl ? 5 : 1) * (keys.Shift ? 5 : 1))).toString();
+            keys.ArrowLeft = false;
+        }
+        if(keys.ArrowRight) {
+            if(!(Number(txt.text) > 0)) {
+                txt.text = "0";
+            }
+            txt.text = (Number(txt.text) + (1 * (keys.Ctrl ? 5 : 1) * (keys.Shift ? 5 : 1))).toString();
+            keys.ArrowRight = false;
+        }
+        if(keys.Enter) {
+            for(let i = 0; i < Number(txt.text); i++) {
+                var treasure = new Sprite(id["treasure.png"]);
+                treasure.x = randInt(100,innerWidth - 100);
+                treasure.y = randInt(0, innerHeight - 10);
+                treasure.vy = 0;
+                treasure.vvy = 0.4;
+                treasures.push(treasure);
+                app.stage.addChild(treasure);
+            }
+            console.log(Number(txt.text));
+            txt.text = "Now choose the number of platform Treasures you want to have!"
+            state = platformTreasureChoose;
+            keys.Enter = false;
+        }
+    }
+    function platformTreasureChoose() {
+        if(keys.ArrowLeft) {
+            if(!(Number(txt.text) > 0)) {
+                txt.text = "0";
+            }
+            txt.text = (Number(txt.text) - (1 * (keys.Ctrl ? 5 : 1) * (keys.Shift ? 5 : 1))).toString();
+            keys.ArrowLeft = false;
+        }
+        if(keys.ArrowRight) {
+            if(!(Number(txt.text) > 0)) {
+                txt.text = "0";
+            }
+            txt.text = (Number(txt.text) + (1 * (keys.Ctrl ? 5 : 1) * (keys.Shift ? 5 : 1))).toString();
+            keys.ArrowRight = false;
+        }
+        if(keys.Enter) {
+            console.log(Number(txt.text));
+            for(let i = 0; i < Number(txt.text); i++) {
+                var randPlatform = platformSprites[randInt(0,platformSprites.length - 1)];
+                var treasure = new Sprite(id["treasure.png"]);
+                treasure.vvy = 0.4;
+                treasure.x = randInt(randPlatform.x - 30, randPlatform.x + 30);
+                treasure.y = randPlatform.y - 30;
+                treasure.vy = 0;
+                treasures.push(treasure);
+                app.stage.addChild(treasure);
+            }
+            state = blobNumberChoose;
+            txt.text = "Now choose the amount of Blobs you want to have! Be warned: after this the level will launch!"
+            keys.Enter = false;
+        }
+    }
+    function blobNumberChoose() {
+        if(keys.ArrowLeft) {
+            if(!(Number(txt.text) > 0)) {
+                txt.text = "0";
+            }
+            txt.text = (Number(txt.text) - (1 * (keys.Ctrl ? 5 : 1) * (keys.Shift ? 5 : 1))).toString();
+            keys.ArrowLeft = false;
+        }
+        if(keys.ArrowRight) {
+            if(!(Number(txt.text) > 0)) {
+                txt.text = "0";
+            }
+            txt.text = (Number(txt.text) + (1 * (keys.Ctrl ? 5 : 1) * (keys.Shift ? 5 : 1))).toString();
+            keys.ArrowRight = false;
+        }
+        if(keys.Enter) {
+            spawnBlobs(Number(txt.text));
+            console.log(txt.text);
+            state = play;
+            app.stage.removeChild(txt);
+            keys.Enter = false;
+        }
     }
     function spawnBlobs(x) {
         x = x || 1;
         for(let i = 0; i < x; i++) {
-            var blob = new Sprite(id["blob.png"]);
+            if(randInt(1,3) === 1) {
+                var rand = randNum(0.5,1.7); 
+            } else {
+                var rand = randNum(0.5,1.5); 
+            }
+            if(rand > 1.6) {
+                var blob = new Sprite(resources["sprites/redeye.png"].texture);
+            } else {
+                var blob = new Sprite(id["blob.png"]);
+            }
             blobs.push(blob);
             app.stage.addChild(blob);    
             blob.vy = blob.vx = 0;
-            blob.vvx = randNum(1,2);
+            blob.vvx = rand;
+            blob.vvy = 0.4;
             blob.x = randInt(-100,innerWidth + 100);
             blob.y = randInt(-100,200)
         }
@@ -90,25 +493,54 @@
       state(delta);
     }
     function play(){
+        if(keys.h && keys.p && keys.m && keys.r) {
+            healthBar.outer.width += 200;
+            keys.h = false;
+            keys.p = false;
+            keys.m  = false;
+            keys.r = false;
+        }
         if(hero.grounded === getPlatformUnder(hero)) {
 
         } else {
             hero.vy += fall;
+            if(keys.ArrowDown) {
+                hero.vy += fall * 4;
+                hero.slam = true;
+            } else {
+                hero.slam = false;
+            }
             hero.y += hero.vy;
             hero.grounded = false;
         }
         if(getPlatformUnder(hero) < 0) {
-            console.log("Crash");
-            while(getPlatformUnder(hero) < 0) {
+            var i = 0;
+            while(getPlatformUnder(hero) < 0 && i < 125) {
                 hero.y += 0.1;
+                ++i;
             }
-            hero.vy *= -0.8;
+            hero.vy *= -hero.vvy * 2;
         } else if(getPlatformUnder(hero) < hero.height - hero.height / 3) {
+            if(hero.slam && hero.vy > 7) {
+                var slam = returnPlatformUnder(hero);
+                if(slam) {
+                    if(slam.x > hero.x + 30) {
+                        slam.flip = "left";
+                        slam.flipper = 62;
+                    } else if(slam.x < hero.x - 30) {
+                        slam.flip = "right";
+                        slam.flipper = 62;
+                    } else {
+                        slam.y += 90;
+                        
+                    }
+                }
+            } 
             if(hero.vy < 0.2) {
                 hero.grounded = getPlatformUnder(hero);
             } else {
                 hero.y -= hero.vy;
-                hero.vy *= -0.4;
+                hero.vy *= -hero.vvy;
             }
         }
         if(keys.ArrowLeft) {
@@ -141,17 +573,18 @@
                 blob.grounded = false;
             }
             if(getPlatformUnder(blob) < 0) {
-                console.log("Crash");
-                while(getPlatformUnder(blob) < 0) {
+                var i = 0;
+                while(getPlatformUnder(blob) < 0 && i < 125) {
                     blob.y += 0.1;
+                    i++;
                 }
-                blob.vy *= -0.8;
+                blob.vy *= -blob.vvy * 2;
             } else if(getPlatformUnder(blob) < blob.height - blob.height / 3) {
                 if(blob.vy < 0.2) {
                     blob.grounded = getPlatformUnder(blob);
                 } else {
                     blob.y -= blob.vy;
-                    blob.vy *= -0.4;
+                    blob.vy *= -blob.vvy;
                 }
             }
             /// AI
@@ -178,7 +611,6 @@
             } else {
                 /// Make for the nearest low platform.
                 if(blob.jump) {
-                    console.log(blob.target,blob.x);
                     if(blob.target.x < blob.x && blob.x - blob.target.x > 20) {
                         blob.vx = -blob.vvx;
                         if(clipPlatform(blob) && !blob.grounded) {
@@ -196,14 +628,13 @@
                     }
                 } else {
                     var nearestPlatform = {x:Infinity,y:Infinity};
-                    platforms.forEach(function(platform){
+                    platformSprites.forEach(function(platform){
                         if(blob.y - platform.y < 250 && blob.y - platform.y > 150 ) {
                             if(getDistance(nearestPlatform.x,nearestPlatform.y,blob.x,blob.y) > getDistance(platform.x,platform.y,blob.x,blob.y)) {
                                 nearestPlatform = platform;
                             }
                         }
                     });
-                    console.log(nearestPlatform,blob.x);
                     if(Math.abs(blob.x - nearestPlatform.x) < 200 && Math.abs(blob.x - nearestPlatform.x) > 175) {
                         if(getPlatformUnder(blob) < blob.height) {
                             blob.vy = -6;
@@ -243,12 +674,100 @@
             }
             blob.x += blob.vx;
             blob.vx = blob.vx > friction ? blob.vx -= friction : blob.vx > 0 ? blob.vx = 0 : blob.vx < -friction ? blob.vx += friction : blob.vx = 0;
+            if(hitTestRectangle(hero,blob,5,5)) {
+                healthBar.outer.width -= 1;
+                if(healthBar.outer.width < 1) {
+                    state = lose;
+                }
+            }
         });
+        platformSprites.forEach(function(p){
+            if(p.flip === "left") {
+                --p.flipper;
+                p.rotation -= 0.1;
+                if(p.flipper === 0) {
+                    p.rotation = 0;
+                    p.flip = false;
+                    if(clipPlatform(hero)) {
+                        hero.y += hero.vy;
+                        var tally = 0;
+                        var i = 0;
+                        while(clipPlatform(hero) && i < 125) {
+                            hero.y += 0.1;
+                            tally += 0.1;
+                            ++i;
+                        }
+                        hero.y -= tally + hero.vy;
+                        hero.vy += tally / 2;
+                    }
+                }
+            }
+            if(p.flip === "right") {
+                --p.flipper;
+                p.rotation += 0.1;
+                if(p.flipper === 0) {
+                    p.rotation = 0;
+                    p.flip = false;
+                    var i = 0;
+                    while(clipPlatform(hero) && i < 125) {
+                        hero.y += 0.1;
+                        tally += 0.1;
+                        ++i;
+                    }
+                }
+                if(clipPlatform(hero)) {
+                    hero.y += hero.vy;
+                    var tally = 0;
+                    var i = 0;
+                    while(clipPlatform(hero) && i < 125) {
+                        hero.y += 0.1;
+                        tally += 0.1;
+                        ++i;
+                    }
+                    hero.y -= tally + hero.vy;
+                    hero.vy += tally / 2;
+                }
+            }
+        });
+        treasures.forEach(function(treasure,i){
+            if(treasure.grounded === getPlatformUnder(treasure)) {
+
+            } else {
+                treasure.vy += fall;
+                treasure.y += treasure.vy;
+                treasure.grounded = false;
+            }
+            if(getPlatformUnder(treasure) < 0) {
+                var i = 0;
+                while(getPlatformUnder(treasure) < 0 && i < 125) {
+                    treasure.y += 0.1;
+                    ++i;
+                }
+                treasure.vy *= -treasure.vvy * 2;
+            } else if(getPlatformUnder(treasure) < treasure.height) {
+                if(treasure.vy < 0.2) {
+                    treasure.grounded = getPlatformUnder(treasure);
+                } else {
+                    treasure.y -= treasure.vy;
+                    treasure.vy *= -treasure.vvy;
+                }
+            }
+            if(hitTestRectangle(treasure,hero)) {
+                app.stage.removeChild(treasure);
+                treasures.splice(i,1);
+            }
+        });
+        if(treasures.length < 1 && (hero.y < 20 || hero.x < 20 || hero.x > innerWidth - 20)) {
+            newLevel(); 
+        }
+    }
+    function lose() {
+
     }
     function getPlatformUnder(sprite) {
         var lowestDistance = innerHeight - sprite.y;
-        platforms.forEach(function(p){
-            if(sprite.x > p.x - 75 && sprite.x < p.x + 75) {
+        platformSprites.forEach(function(p){
+            if(sprite.x > p.x - 75 && sprite.x < p.x + 75 && !p.flip) {
                 if(p.y - sprite.y < lowestDistance && p.y >= sprite.y - 30) {
                     lowestDistance = p.y - sprite.y;
                 }
@@ -256,10 +775,23 @@
         });
         return lowestDistance;
     }
+    function returnPlatformUnder(sprite) {
+        var lowestDistance = innerHeight - sprite.y;
+        var platformSprite = false;
+        platformSprites.forEach(function(p,i){
+            if(sprite.x > p.x - 75 && sprite.x < p.x + 75) {
+                if(p.y - sprite.y < lowestDistance && p.y >= sprite.y - 30) {
+                    lowestDistance = p.y - sprite.y;
+                    platformSprite = p;
+                }
+            }
+        });
+        return platformSprite;
+    }
     function clipPlatform(sprite){
         var res = false;
-        platforms.forEach(function(p){
-            if(sprite.y - sprite.height / 2 > p.y - 32 && sprite.y + sprite.height / 2 < p.y + 50) {
+        platformSprites.forEach(function(p){
+            if(sprite.y - sprite.height / 2 > p.y - 32 && sprite.y + sprite.height / 2 < p.y + 50 && !p.flip) {
                 if(sprite.x + sprite.width / 2 > p.x - 70 && sprite.x - sprite.width / 2 < p.x + 70) {
                     res = true;
                 }
@@ -299,9 +831,15 @@
     });
     addEventListener("keydown", function (e){
         keys[e.key] = true;
+        keys.Ctrl = e.ctrlKey;
+        keys.Shift = e.shiftKey;
+        keys.Alt = e.altKey;
     });
     addEventListener("keyup", function (e){
         keys[e.key] = false;
+        keys.Ctrl = e.ctrlKey;
+        keys.Shift = e.shiftKey;
+        keys.Alt = e.altKey;
     });
   </script>
 </body>
