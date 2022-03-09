@@ -1,0 +1,20 @@
+Goal of the Game:
+Unlock all the Animals and defeat the Summer Siege. (Also buy the expansion for later books.)
+General Rules:
+You are presented with a screen. The Friend you start with is Wooly.
+Wooly's games are: ["Waxi Ride 1,2,3","Honey Harvest 1,2,3","Stair Bouncing"];
+You start with Waxi Ride 1. Glide down the river and don't fall off.
+Completing it fast enough earns you 1 honey point. Otherwise you get nothing.
+To advance to the next level you must earn 10 Honey points. The Igeron king will not attack.
+To Upgrade to Waxi Ride 2, you need 12 HP(Honey Points). Buying Honey Harvest 1 costs you 15 HP, and Stair Bouncing costs 17 HP.
+Levels: [10,13,14,16,20,30];
+Advancing to the next level uses all of your Honey Points, and it happens immediately after you reach the threshold.
+Therefore you will not be able to buy any of Wooly's upgraded games because Waxi Ride 2 costs 12 HP.
+On the second level, the Igeron king may make attacks, but the chance is low, and the result will always be a slight loss in HP.
+On the 3rd level, you unlock Kit.
+Kit's Games Are: ["Tuna Spearing 1,2,3","Tree Climbing","Igeron King Evading 1,2,3"];
+Kit comes with no games. Igeron King Evading 1 costs 9 HP, Tuna Spearing 1 costs 11 HP, and Tree Climbing costs 13 HP.
+The Igeron king may attack, taking many HP if you do not buy Igeron King Evading and use it.
+Igeron King Evading 1 gives you +2 HP if you win, -5 HP if you lose. Win or lose, the Igeron points go down 3.
+Spot comes next at Level 4.
+Spot's Games Are: ["Fetch",]
