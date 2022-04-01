@@ -43,7 +43,7 @@
     app.renderer.autoResize = true;
     app.renderer.resize(window.innerWidth, window.innerHeight);
     document.body.appendChild(app.view);
-    loader.add("sprites/treasureHunter.json").add("sprites/platform.png").add("sprites/redeye.png").load(setup);
+    loader.add("sprites/treasureHunter.json").add("sprites/platform.png").add("sprites/redeye.png").add("sprites/springPlatform.png").add("sprites/stonePlatform.png").load(setup);
     var state;
     var keys = {};
     var hero;
@@ -107,13 +107,17 @@
                 }
             }
             return arr;
-        }]
+        }],
+        [{x:100,y:innerHeight - 250,stone:1},{x:300,y:innerHeight - 450,stone:1},{x:500,y:innerHeight - 650,stone:1},{x:700,y:innerHeight - 650,stone:1},{x:900,y:innerHeight - 450,stone:1},{x:1100,y:innerHeight - 250,stone:1}],
+        [{x:innerWidth / 2 - 70, y: innerHeight - 125,},{x:innerWidth / 2 + 70, y: innerHeight - 125},{x:innerWidth / 2 - 120, y: innerHeight - 150, stone: 1},{x:innerWidth / 2 + 120, y: innerHeight - 150, stone: 1},{x:innerWidth / 2 - 120, y: innerHeight - 200, stone: 1},{x:innerWidth / 2 + 120, y: innerHeight - 200, stone: 1},{x:innerWidth / 2 - 120, y: innerHeight - 250, stone: 1},{x:innerWidth / 2 + 120, y: innerHeight - 250, stone: 1},{x:innerWidth / 2 - 120, y: innerHeight - 300, stone: 1},{x:innerWidth / 2 + 120, y: innerHeight - 300, stone: 1},{x:innerWidth / 2 - 120, y: innerHeight - 350, stone: 1},{x:innerWidth / 2 + 120, y: innerHeight - 350, stone: 1},{x:innerWidth / 2 - 120, y: innerHeight - 400, stone: 1},{x:innerWidth / 2 + 120, y: innerHeight - 400, stone: 1},{x: innerWidth / 2, y: innerHeight - 400},{x: innerWidth / 2 - 300, y: innerHeight - 250}]
     ];
     levels.blobs = [
         1,
         5,
         7,
-        50
+        50,
+        3,
+        5,
     ];
     levels.treasures = [
         [{x:700,y:innerHeight - 700}
@@ -125,25 +129,33 @@
         ],
         [{x:100,y:innerHeight - 7000,vvy:0.9},{x:300,y:innerHeight - 7000,vvy:0.9},{x:500,y:innerHeight - 7000,vvy:0.9},{x:700,y:innerHeight - 7000,vvy:0.9},{x:900,y:innerHeight - 7000,vvy:0.9},{x:1100,y:innerHeight - 7000,vvy:0.9},
         {x:200,y:innerHeight - 7000,vvy:0.9},{x:400,y:innerHeight - 7000,vvy:0.9},{x:600,y:innerHeight - 7000,vvy:0.9},{x:800,y:innerHeight - 7000,vvy:0.9},{x:1000,y:innerHeight - 7000,vvy:0.9},{x:1200,y:innerHeight - 7000,vvy:0.9}
-        ]
+        ],
+        [],
+        [{x:innerWidth / 2 - 15, y: innerHeight - 150,},{x:innerWidth / 2 + 2, y: innerHeight - 150,},{x:innerWidth / 2 + 5, y: innerHeight - 150,},{x:innerWidth / 2 + 40, y: innerHeight - 250,},{x:innerWidth / 2, y: innerHeight - 350,},{x:innerWidth / 2 - 10, y: innerHeight - 150,},{x:innerWidth / 2 + 20, y: innerHeight - 150,},{x:innerWidth / 2 - 2 + randInt(-10,20), y: innerHeight - 150,},{x:innerWidth / 2 - 15 + randInt(-20,20), y: innerHeight - 150,},{x:innerWidth / 2 + 2 + randInt(-20,20), y: innerHeight - 150,},{x:innerWidth / 2 + 5 + randInt(-20,20), y: innerHeight - 150 + randInt(0,20),},{x:innerWidth / 2 + randInt(-20,20), y: innerHeight - 250,},{x:innerWidth / 2 + randInt(-20,20), y: innerHeight - 350,},{x:innerWidth / 2 + randInt(-20,20), y: innerHeight - 150,},{x:innerWidth / 2 + randInt(-20,20), y: innerHeight - 150,},{x:innerWidth / 2 - 7, y: innerHeight - 150,},]
     ];
     levels.randTreasures = [
         0,
         5,
         4,
-        20
+        20,
+        0,
+        0,
     ]
     levels.platformTreasures = [
         0,
         5,
         4,
-        0
+        0,
+        10,
+        0,
     ]
     levels.health = [
         10,
         128*2,
         180,
-        128*20
+        128*20,
+        30,
+        150,
     ]
     var level = params.level || -1;
     var platformSprites = [];
@@ -224,7 +236,12 @@
                 if(typeof p === "function") {
                     var arr = p();
                     arr.forEach(function(p){
-                        var plata = new Sprite(resources["sprites/platform.png"].texture);
+                        if(p.stone) {
+                            var plata = new Sprite(resources["sprites/stonePlatform.png"].texture);
+                        } else {
+                            var plata = new Sprite(resources["sprites/platform.png"].texture);
+                        }
+                        plata.stone = p.stone;
                         app.stage.addChild(plata);
                         plata.x = p.x;
                         plata.y = p.y;
@@ -235,7 +252,13 @@
                     console.log(arr);
                     return;
                 }
-                var plata = new Sprite(resources["sprites/platform.png"].texture);
+
+                if(p.stone) {
+                    var plata = new Sprite(resources["sprites/stonePlatform.png"].texture);
+                } else {
+                    var plata = new Sprite(resources["sprites/platform.png"].texture);
+                }
+                plata.stone = p.stone;
                 app.stage.addChild(plata);
                 plata.x = p.x;
                 plata.y = p.y;
@@ -314,7 +337,7 @@
         if(keys.Enter) {
             txt.text = "Now place any treasures you like! Hit Enter to continue. Hit Z to undo. Hit X to remove the closest treasure."
             keys.Enter = false;
-            state = treasure;
+            state = treasurePlace;
             var arr = [];
             for(let i = 0; i < platformSprites.length; i++) {
                 arr.push({x:platformSprites[i].x,y:platformSprites[i].y});
@@ -322,7 +345,7 @@
             console.log(arr);
         }
     }
-    function treasure() {
+    function treasurePlace() {
         if(keys.mouse) {
             var treasure = new Sprite(id["treasure.png"]);
             treasure.x = mouseX;
@@ -523,7 +546,7 @@
         } else if(getPlatformUnder(hero) < hero.height - hero.height / 3) {
             if(hero.slam && hero.vy > 7) {
                 var slam = returnPlatformUnder(hero);
-                if(slam) {
+                if((typeof slam === "object" ? !slam.stone : false)) {
                     if(slam.x > hero.x + 30) {
                         slam.flip = "left";
                         slam.flipper = 62;
@@ -729,21 +752,22 @@
                 }
             }
         });
-        treasures.forEach(function(treasure,i){
+        for (var i = 0; i < treasures.length; i++) {
+            var treasure = treasures[i];
             if(treasure.grounded === getPlatformUnder(treasure)) {
-
+                var j = 0;
+                while(getPlatformUnder(treasure) < 0 && j < 125) {
+                    treasure.y += 0.1;
+                    ++j;
+                }
+                treasure.vy *= -treasure.vvy * 2;
             } else {
                 treasure.vy += fall;
                 treasure.y += treasure.vy;
                 treasure.grounded = false;
             }
             if(getPlatformUnder(treasure) < 0) {
-                var i = 0;
-                while(getPlatformUnder(treasure) < 0 && i < 125) {
-                    treasure.y += 0.1;
-                    ++i;
-                }
-                treasure.vy *= -treasure.vvy * 2;
+                treasure.grounded = getPlatformUnder(treasure);
             } else if(getPlatformUnder(treasure) < treasure.height) {
                 if(treasure.vy < 0.2) {
                     treasure.grounded = getPlatformUnder(treasure);
@@ -753,10 +777,11 @@
                 }
             }
             if(hitTestRectangle(treasure,hero)) {
+                // --i;
                 app.stage.removeChild(treasure);
                 treasures.splice(i,1);
             }
-        });
+        }
         if(treasures.length < 1 && (hero.y < 20 || hero.x < 20 || hero.x > innerWidth - 20)) {
             newLevel(); 
         }
