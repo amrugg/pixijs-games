@@ -43,7 +43,7 @@
     app.renderer.autoResize = true;
     app.renderer.resize(window.innerWidth, window.innerHeight);
     document.body.appendChild(app.view);
-    loader.add("sprites/treasureHunter.json").add("sprites/platform.png").add("sprites/redeye.png").add("sprites/springPlatform.png").add("sprites/stonePlatform.png").load(setup);
+    loader.add("sprites/treasureHunter.json").add("sprites/platform.png").add("sprites/redeye.png").add("sprites/springPlatform.png").add("sprites/stonePlatform.png").add("sprites/healthBox.png").add("sprites/powerBox.png").load(setup);
     var state;
     var keys = {};
     var hero;
@@ -119,6 +119,14 @@
         3,
         5,
     ];
+    levels.power = [
+        {health: 0, power:0},
+        {health: 10, power:0},
+        {health: 0, power:10},
+        {health: 75, power:10},
+        {health: 0, power:0},
+        {health: 0, power:0},
+    ]
     levels.treasures = [
         [{x:700,y:innerHeight - 700}
         ],
@@ -161,9 +169,18 @@
     var platformSprites = [];
     var blobs = [];
     var treasures = [];
+    var powerups = [];
+    var powerupTypes = ["rocket","-1"];
+    var curPower;
+    var energy;
+    var healthMultiplier = params.healthMultiplier || 1;
+    var gravityOffset = params.gravityOffset || 0;
     var healthBar;
+    var curPowerDrop;
     var mouseX,mouseY;
     var txt = new PIXI.Text();
+    var powertxt = new PIXI.Text();
+    app.stage.addChild(powertxt);
     function setup() {
         state = intro;
         txt.style = {fill: "white",stroke:0xFFFFFF};
@@ -211,9 +228,16 @@
         healthBar.outer = outerBar;
         hero.y = innerHeight - hero.height * 2;
         hero.x = innerWidth / 2;
+        energy = new Graphics();
+        energy.beginFill(0x00FF33);
+        energy.drawRect(0,0,128*40,8);
+        energy.endFill();
+        energy.width = 0;
+        app.stage.addChild(energy);
         newLevel();
     }
     function newLevel() {
+        clearTimeout(curPowerDrop);
         ++level;
         blobs.forEach(function(blob){
             app.stage.removeChild(blob);
@@ -223,6 +247,13 @@
             app.stage.removeChild(platform);
         });
         platformSprites = [];
+        powerups.forEach(function(powerup){
+            app.stage.removeChild(powerup);
+        });
+        powerups = [];
+        energy.width = 0;
+        curPower = false;
+        powertxt.text = "";
         healthBar.outer.width = 128;
         if(levels.health[level]) {
             hero.vy = hero.vx = 0;
@@ -231,7 +262,7 @@
             hero.y = innerHeight - hero.height * 2;
             hero.x = innerWidth / 2;
             spawnBlobs(levels.blobs[level]);
-            healthBar.outer.width = levels.health[level];
+            healthBar.outer.width = levels.health[level] * healthMultiplier;
             levels.platforms[level].forEach(function(p){
                 if(typeof p === "function") {
                     var arr = p();
@@ -249,7 +280,7 @@
                         plata.anchor.set(0.5);
                         platformSprites.push(plata);
                     });
-                    console.log(arr);
+                    console.log(JSON.stringify(arr));
                     return;
                 }
 
@@ -294,6 +325,30 @@
                 treasures.push(treasure);
                 app.stage.addChild(treasure);
             }
+            function powerDrop() {
+                if(randInt(1,100) <= levels.power[level].health) {
+                    var treasure = new Sprite(resources["sprites/healthBox.png"].texture);
+                    treasure.x = randInt(100,innerWidth - 100);
+                    treasure.y = randInt(0, -100);
+                    treasure.vvy = 0.4;
+                    treasure.vy = 0;
+                    powerups.push(treasure);
+                    app.stage.addChild(treasure);
+                    treasure.type = "health";
+                }
+                if(randInt(1,100) <= levels.power[level].power) {
+                    var treasure = new Sprite(resources["sprites/powerBox.png"].texture);
+                    treasure.x = randInt(100,innerWidth - 100);
+                    treasure.y = randInt(0, -100);
+                    treasure.vvy = 0.4;
+                    treasure.vy = 0;
+                    powerups.push(treasure);
+                    app.stage.addChild(treasure);
+                    treasure.type = "power";
+                }
+                curPowerDrop = setTimeout(powerDrop,10000);
+            }
+            curPowerDrop = setTimeout(powerDrop,10000);
         } else {
             app.stage.addChild(txt);
             txt.text = "Welcome to the editor! Place any platforms you like! Hit Enter to continue. Hit Z to undo. Hit X to remove the closest platform.";
@@ -303,7 +358,12 @@
     }
     function platform() {
         if(keys.mouse) {
-            var plata = new Sprite(resources["sprites/platform.png"].texture);
+            if(keys.shift) {
+                var plata = new Sprite(resources["sprites/stonePlatform.png"].texture);
+                plata.stone = 1;
+            } else {
+                var plata = new Sprite(resources["sprites/platform.png"].texture);
+            }
             app.stage.addChild(plata);
             plata.x = mouseX;
             plata.y = mouseY;
@@ -342,7 +402,7 @@
             for(let i = 0; i < platformSprites.length; i++) {
                 arr.push({x:platformSprites[i].x,y:platformSprites[i].y});
             }
-            console.log(arr);
+            console.log(JSON.stringify(arr));
         }
     }
     function treasurePlace() {
@@ -387,21 +447,21 @@
             for(let i = 0; i < treasures.length; i++) {
                 arr.push({x:treasures[i].x,y:treasures[i].y});
             }
-            console.log(arr);
+            console.log(JSON.stringify(arr));
         } 
     }
     function health() {
         if(keys.ArrowLeft) {
-            healthBar.outer.width -= 1 * (keys.Ctrl ? 5 : 1) * (keys.Shift ? 5 : 1);
+            healthBar.outer.width -= 1 * (keys.ctrl ? 5 : 1) * (keys.shift ? 5 : 1);
         }
         if(keys.ArrowRight) {
-            healthBar.outer.width += 1 * (keys.Ctrl ? 5 : 1) * (keys.Shift ? 5 : 1);
+            healthBar.outer.width += 1 * (keys.ctrl ? 5 : 1) * (keys.shift ? 5 : 1);
         }
         if(keys.Enter) {
             txt.text = "Now choose the amount of Random Treasures you want to have!"
             keys.Enter = false;
             state = randomTreasureChoose;
-            console.log(healthBar.outer.width);
+            console.log(JSON.stringify(healthBar.outer.width));
         }
     }
     function randomTreasureChoose() {
@@ -430,8 +490,8 @@
                 app.stage.addChild(treasure);
             }
             console.log(Number(txt.text));
-            txt.text = "Now choose the number of platform Treasures you want to have!"
-            state = platformTreasureChoose;
+            txt.text = "Now choose the chance of having powerups drop!"
+            state = powerNumberChoose;
             keys.Enter = false;
         }
     }
@@ -467,6 +527,52 @@
             keys.Enter = false;
         }
     }
+    function powerNumberChoose() {
+        if(keys.ArrowLeft) {
+            if(!(Number(txt.text) > 0)) {
+                txt.text = "0";
+            }
+            txt.text = (Number(txt.text) - (1 * (keys.Ctrl ? 5 : 1) * (keys.Shift ? 5 : 1))).toString();
+            keys.ArrowLeft = false;
+        }
+        if(keys.ArrowRight) {
+            if(!(Number(txt.text) > 0)) {
+                txt.text = "0";
+            }
+            txt.text = (Number(txt.text) + (1 * (keys.Ctrl ? 5 : 1) * (keys.Shift ? 5 : 1))).toString();
+            keys.ArrowRight = false;
+        }
+        if(keys.Enter) {
+            levels.power[level] = {power:Number(txt.text)}
+            console.log(txt.text);
+            state = healthNumberChoose;
+            keys.Enter = false;
+            txt.text = "Now choose the chance of having health crates drop!"
+        }
+    }
+    function healthNumberChoose() {
+        if(keys.ArrowLeft) {
+            if(!(Number(txt.text) > 0)) {
+                txt.text = "0";
+            }
+            txt.text = (Number(txt.text) - (1 * (keys.Ctrl ? 5 : 1) * (keys.Shift ? 5 : 1))).toString();
+            keys.ArrowLeft = false;
+        }
+        if(keys.ArrowRight) {
+            if(!(Number(txt.text) > 0)) {
+                txt.text = "0";
+            }
+            txt.text = (Number(txt.text) + (1 * (keys.Ctrl ? 5 : 1) * (keys.Shift ? 5 : 1))).toString();
+            keys.ArrowRight = false;
+        }
+        if(keys.Enter) {
+            levels.power[level].health = Number(txt.text);
+            console.log(Number(txt.text));
+            txt.text = "Now choose the number of platform Treasures you want to have!"
+            state = platformTreasureChoose;
+            keys.Enter = false;
+        }
+    }
     function blobNumberChoose() {
         if(keys.ArrowLeft) {
             if(!(Number(txt.text) > 0)) {
@@ -485,6 +591,30 @@
         if(keys.Enter) {
             spawnBlobs(Number(txt.text));
             console.log(txt.text);
+            function powerDrop() {
+                if(randInt(1,100) <= levels.power[level].health) {
+                    var treasure = new Sprite(resources["sprites/healthBox.png"].texture);
+                    treasure.x = randInt(100,innerWidth - 100);
+                    treasure.y = randInt(0, -100);
+                    treasure.vvy = 0.4;
+                    treasure.vy = 0;
+                    powerups.push(treasure);
+                    app.stage.addChild(treasure);
+                    treasure.type = "health";
+                }
+                if(randInt(1,100) <= levels.power[level].power) {
+                    var treasure = new Sprite(resources["sprites/powerBox.png"].texture);
+                    treasure.x = randInt(100,innerWidth - 100);
+                    treasure.y = randInt(0, -100);
+                    treasure.vvy = 0.4;
+                    treasure.vy = 0;
+                    powerups.push(treasure);
+                    app.stage.addChild(treasure);
+                    treasure.type = "power";
+                }
+                curPowerDrop = setTimeout(powerDrop,10000);
+            }
+            curPowerDrop = setTimeout(powerDrop,10000);
             state = play;
             app.stage.removeChild(txt);
             keys.Enter = false;
@@ -523,12 +653,24 @@
             keys.m  = false;
             keys.r = false;
         }
+        if(keys.shift && curPower === "rocket") {
+            hero.vy -= (fall - gravityOffset) * 1.3;
+            hero.y -= 1;
+            energy.width -= 0.5;
+        }
+        if(keys.shift && curPower === "-1") {
+            energy.width -= 0.25;
+        }
+        if(energy.width < 0.25) {
+            curPower = false;
+            powertxt.text = "";
+        }
         if(hero.grounded === getPlatformUnder(hero)) {
 
         } else {
-            hero.vy += fall;
+            hero.vy += (fall - gravityOffset);
             if(keys.ArrowDown) {
-                hero.vy += fall * 4;
+                hero.vy += (fall - gravityOffset) * 4;
                 hero.slam = true;
             } else {
                 hero.slam = false;
@@ -698,7 +840,11 @@
             blob.x += blob.vx;
             blob.vx = blob.vx > friction ? blob.vx -= friction : blob.vx > 0 ? blob.vx = 0 : blob.vx < -friction ? blob.vx += friction : blob.vx = 0;
             if(hitTestRectangle(hero,blob,5,5)) {
-                healthBar.outer.width -= 1;
+                if(keys.shift && curPower === "-1") {
+                    healthBar.outer.width += 1;
+                } else {
+                    healthBar.outer.width -= 1;
+                }
                 if(healthBar.outer.width < 1) {
                     state = lose;
                 }
@@ -754,6 +900,10 @@
         });
         for (var i = 0; i < treasures.length; i++) {
             var treasure = treasures[i];
+            if(treasure.y < -30000) {
+                app.stage.removeChild(treasure);
+                treasures.splice(i,1);
+            }
             if(treasure.grounded === getPlatformUnder(treasure)) {
                 var j = 0;
                 while(getPlatformUnder(treasure) < 0 && j < 125) {
@@ -780,6 +930,50 @@
                 // --i;
                 app.stage.removeChild(treasure);
                 treasures.splice(i,1);
+            }
+        }
+        for (var i = 0; i < powerups.length; i++) {
+            var treasure = powerups[i];
+            if(treasure.y < -30000) {
+                app.stage.removeChild(treasure);
+                powerups.splice(i,1);
+            }
+            if(treasure.grounded === getPlatformUnder(treasure)) {
+                var j = 0;
+                while(getPlatformUnder(treasure) < 0 && j < 125) {
+                    treasure.y += 0.1;
+                    ++j;
+                }
+                treasure.vy *= -treasure.vvy * 2;
+            } else {
+                treasure.vy += fall;
+                treasure.y += treasure.vy;
+                treasure.grounded = false;
+            }
+            if(getPlatformUnder(treasure) < 0) {
+                treasure.grounded = getPlatformUnder(treasure);
+            } else if(getPlatformUnder(treasure) < treasure.height) {
+                if(treasure.vy < 0.2) {
+                    treasure.grounded = getPlatformUnder(treasure);
+                } else {
+                    treasure.y -= treasure.vy;
+                    treasure.vy *= -treasure.vvy;
+                }
+            }
+            if(hitTestRectangle(treasure,hero)) {
+                // --i;
+                app.stage.removeChild(treasure);
+                powerups.splice(i,1);
+                if(treasure.type === "health") {
+                    healthBar.outer.width += 200;
+                } else if(treasure.type === "power") {
+                    curPower = powerupTypes[randInt(0,powerupTypes.length - 1)];
+                    if(curPower === "rocket" || curPower === "-1") {
+                        energy.width = 128;
+                        powertxt.text = curPower;
+                        powertxt.y = 30;
+                    }
+                }
             }
         }
         if(treasures.length < 1 && (hero.y < 20 || hero.x < 20 || hero.x > innerWidth - 20)) {
@@ -856,15 +1050,15 @@
     });
     addEventListener("keydown", function (e){
         keys[e.key] = true;
-        keys.Ctrl = e.ctrlKey;
-        keys.Shift = e.shiftKey;
-        keys.Alt = e.altKey;
+        keys.ctrl = e.ctrlKey;
+        keys.shift = e.shiftKey;
+        keys.alt = e.altKey;
     });
     addEventListener("keyup", function (e){
         keys[e.key] = false;
-        keys.Ctrl = e.ctrlKey;
-        keys.Shift = e.shiftKey;
-        keys.Alt = e.altKey;
+        keys.ctrl = e.ctrlKey;
+        keys.shift = e.shiftKey;
+        keys.alt = e.altKey;
     });
   </script>
 </body>
