@@ -51,6 +51,7 @@
     var fall = 0.05;
     var friction = 0.03;
     var levels = {};
+    var warp = false;
 
     ///     [{x:100,y:innerHeight - 7000},{x:300,y:innerHeight - 7000},{x:500,y:innerHeight - 7000},{x:700,y:innerHeight - 7000},{x:900,y:innerHeight - 7000},{x:1100,y:innerHeight - 7000},
         ///{x:200,y:innerHeight - 7000},{x:400,y:innerHeight - 7000},{x:600,y:innerHeight - 7000},{x:800,y:innerHeight - 7000},{x:1000,y:innerHeight - 7000},{x:1200,y:innerHeight - 7000}]
@@ -646,6 +647,12 @@
       state(delta);
     }
     function play(){
+        if(params.mouse) {
+            keys.ArrowLeft = mouseX + 30 < hero.x;
+            keys.ArrowRight = mouseX - 30 > hero.x;     
+            keys.ArrowUp = keys.mouse;
+            keys.ArrowDown = keys.rightMouse;
+        }
         if(keys.h && keys.p && keys.m && keys.r) {
             healthBar.outer.width += 200;
             keys.h = false;
@@ -976,6 +983,13 @@
                 }
             }
         }
+
+        if(keys.ctrl) {
+            keys.ctrl = false;
+            for(let i = 0; i < 10 * (keys.alt ? 10 : 1); i++) {
+                gameLoop();
+            }
+        }
         if(treasures.length < 1 && (hero.y < 20 || hero.x < 20 || hero.x > innerWidth - 20)) {
             newLevel(); 
         }
@@ -1026,19 +1040,22 @@
         return false;
     }
     addEventListener("mousedown",function(e){
+        e.preventDefault();
         if(e.button == 0) {
             keys.mouse = true;
-        } else if(e.button == 2) {
+        } else if(e.button == 1) {
             keys.rightMouse = true;
         }
         mouseX = e.pageX;
         mouseY = e.pageY;
     });
     addEventListener("mouseup",function(e){
+        e.preventDefault();
         if(e.button == 0) { 
             keys.mouse = false;
-        } else if(e.button == 2) {
-            keys.rightMouse = true;
+        } else if(e.button == 1) {
+            e.preventDefault();
+            keys.rightMouse = false;
         }
     });
     addEventListener("blur", function (){
