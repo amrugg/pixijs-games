@@ -81,7 +81,7 @@
         player.y = enemy.y = innerHeight / 2;
         player.health = 1000;
         enemy.health = 1000;
-        player.gold = 1000;
+        player.gold = 0;
         enemy.gold = 0;
         player.income = 1;
         enemy.income = 1;
@@ -345,7 +345,7 @@
         towers.forEach(function(tower,i){
             if(tower.type === "lightning") {
                 balls.forEach(function(ball){
-                    if(getDistance(ball.x,ball.y,tower.x,tower.y) < 32) {
+                    if(getDistance(ball.x,ball.y,tower.x,tower.y) < 32 && ball.vx > 0) {
                         ball.speed *= 1.25;
                         tower.health -= 0.25;
                         ball.health -= 0.25;
