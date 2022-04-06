@@ -71,6 +71,12 @@
         app.stage.addChild(player);
         app.stage.addChild(goalie);
         spawnFriend(innerHeight);
+        spawnFriend(0);
+        spawnFriend(innerHeight / 2);
+
+        spawnEnemy(undefined,"defender","ball");
+        spawnEnemy(1,"defender","mid");
+        spawnEnemy(innerHeight,"defender","player");
         spawnEnemy();
         spawnEnemy(1);
         spawnEnemy(innerHeight);
@@ -128,10 +134,18 @@
         enemies.forEach(function(enemy) {
             if(Date.now() - 10000 > enemy.lastSec) {
                 enemy.lastSec = Date.now();
-                if(randInt(1,2) === 1) {
-                    enemy.guard = true;
+                if(enemy.type === "defender") {
+                    if(randInt(1,3) !== 1) {
+                        enemy.guard = true;
+                    } else {
+                        enemy.guard = false;
+                    }
                 } else {
-                    enemy.guard = false;
+                    if(randInt(1,2) === 1) {
+                        enemy.guard = true;
+                    } else {
+                        enemy.guard = false;
+                    }
                 }
             }
             enemy.rx = Math.floor(enemy.x / 10);
@@ -139,8 +153,24 @@
             ball.rx = Math.floor(ball.x / 10);
             ball.ry = Math.floor(ball.y / 10);
             // points.text = enemy.rx.toString() + " " + enemy.ry.toString() + " " + ball.rx.toString() + " " + ball.ry.toString();
-            enemy.vx = enemy.rx > ball.rx?enemy.speed * -1:enemy.rx < ball.rx?enemy.speed:0;
-            enemy.vy = enemy.ry > ball.ry?enemy.speed * -1:enemy.ry < ball.ry?enemy.speed:0;
+            var targetY;
+            if(enemy.type === "defender" && ballEnemy) {
+                enemy.vx = 1;
+                if(enemy.secondary === "ball") {
+                    targetY = ball.y;
+                    // console.log(targetY)
+                } else if(enemy.secondary === "mid") {
+                    targetY = innerHeight / 2;
+                    console.log(targetY)
+                } else if(enemy.secondary === "player") {
+                    targetY = player.y;
+                    console.log(targetY);
+                }
+                enemy.vy = (enemy.y + 10 < targetY ? enemy.speed : (enemy.y - 10 > targetY ? -enemy.speed : 0))
+            } else {
+                enemy.vx = enemy.rx > ball.rx?enemy.speed * -1:enemy.rx < ball.rx?enemy.speed:0;
+                enemy.vy = enemy.ry > ball.ry?enemy.speed * -1:enemy.ry < ball.ry?enemy.speed:0;
+            }
             if(hitTestRectangle(enemy,ball,-10)) {
                 if(enemy.vx < 0 && ball.x < innerWidth / 4) {
                     enemy.fire = true;
@@ -180,7 +210,7 @@
             // points.text = friend.rx.toString() + " " + friend.ry.toString() + " " + ball.rx.toString() + " " + ball.ry.toString();
             friend.vx = friend.rx > ball.rx?friend.speed * -1:friend.rx < ball.rx?friend.speed:0;
             friend.vy = friend.ry > ball.ry?friend.speed * -1:friend.ry < ball.ry?friend.speed:0;
-            if(hitTestRectangle(friend,ball,10,10)) {
+            if(hitTestRectangle(friend,ball,20,20)) {
                 if(friend.vx < 0 && ball.x > innerWidth * 3/4) {
                     friend.fire = true;
                     friend.d = true;
@@ -299,7 +329,6 @@
             /// Fire the ball to the player
             let dir = pointTowards(goalie.x,goalie.y,player.x,player.y);
             let data = direction(5,dir + 180);
-            console.log(dir,data);
             ball.vx = data.r *2.5;
             ball.vy = data.u * 2.5;
             ball.x += ball.vx;
@@ -401,9 +430,11 @@
         ball.x += ball.vx;
         ball.y += ball.vy;
     }
-    function spawnEnemy(y){
+    function spawnEnemy(y,type,secondary){
         let enemy = new Sprite(id["blob.png"]);
         app.stage.addChild(enemy);
+        enemy.secondary = secondary;
+        enemy.type = type;
         enemy.x = innerWidth - 100;
         enemy.y = y || innerHeight / 2;
         enemy.fire = false;
