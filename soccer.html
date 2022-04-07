@@ -86,17 +86,12 @@
         console.log(params.level);
         if(params.level == 0 || params.level === undefined) {
             spawnEnemy();
-            spawnFriend(innerHeight,"receiver","high");
-            spawnFriend(0,"receiver","mid");
-            spawnFriend(innerHeight / 2,"receiver","low");
         } else if(params.level == 1) {
             spawnEnemy(undefined,"defender","ball");
             spawnEnemy(innerHeight / 2,"defender","player");
             spawnEnemy(1,"defender","mid");
 
             spawnFriend(innerHeight,"receiver","high");
-            spawnFriend(0,"receiver","mid");
-            spawnFriend(innerHeight / 2,"receiver","low");
         } else if(params.level == 2) {
             spawnEnemy(undefined,"defender","ball");
             spawnEnemy(innerHeight / 2,"coverer","player");
@@ -570,6 +565,7 @@
         enemy.guard = false;
         enemy.lastSec = Date.now();
         enemy.startingX = innerWidth - 100;
+        enemy.guard = true;
         enemy.startingY = y || innerHeight / 2;
         enemy.speed = randNum(2.5,4.5) / abigailMultiplier;
         enemies.push(enemy);
