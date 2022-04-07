@@ -59,7 +59,7 @@
         dinosaur.scale.set(2);
         dinosaur.anchor.set(0.5);
         dinosaur.vx = 5;
-        dinosaur.maxVY = -15;
+        dinosaur.maxVY = -10;
         dinosaur.maxFallSpeed = 0.75;
         dinosaur.vy = 0;
         dinosaur.flip = 0;
@@ -87,8 +87,13 @@
             dinosaur.vy = dinosaur.maxVY;
             dinosaur.inAir = true;
         }
-        if(keys.f && dinosaur.flip < 0.0001 && dinosaur.inAir && Math.abs(dinosaur.vy) < 1) {
+        if(keys.f && dinosaur.flip < 0.0001 && dinosaur.inAir && Math.abs(dinosaur.vy) < 2) {
           dinosaur.flip = 1*2*3.13;
+          dinosaur.vy -= 15;
+          keys.f = false;
+        } else if(keys.f && dinosaur.inAir) {
+          dinosaur.vy = 0;
+          keys.f = false;
         }
         if(dinosaur.flip > 0) {
           dinosaur.rotation += 0.25;

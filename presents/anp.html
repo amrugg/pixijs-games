@@ -121,7 +121,7 @@
         foliage.forEach(function(foli){
             foli.y = foli.startY + globalY;
         });
-        if(globalY > 5700) {
+        if(globalY > 6350 - innerHeight) {
             var text = new PIXI.Text(Date.now() - deltaCollected - startDate);
             state = wait;
             setTimeout(function(){

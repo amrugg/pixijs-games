@@ -688,7 +688,7 @@
         if(getPlatformUnder(hero) < 0) {
             var i = 0;
             while(getPlatformUnder(hero) < 0 && i < 125) {
-                hero.y += 0.1;
+                hero.y -= hero.vy;
                 ++i;
             }
             hero.vy *= -hero.vvy * 2;
@@ -747,7 +747,7 @@
             if(getPlatformUnder(blob) < 0) {
                 var i = 0;
                 while(getPlatformUnder(blob) < 0 && i < 125) {
-                    blob.y += 0.1;
+                    blob.y -= blob.vy;
                     i++;
                 }
                 blob.vy *= -blob.vvy * 2;
