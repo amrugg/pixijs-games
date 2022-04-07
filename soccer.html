@@ -82,16 +82,21 @@
         enemyGoalie.y = innerHeight / 2;
         app.stage.addChild(player);
         app.stage.addChild(goalie);
-        spawnFriend(innerHeight,"receiver","high");
-        spawnFriend(0,"receiver","mid");
-        spawnFriend(innerHeight / 2,"receiver","low");
 
-        if(params.level == 0) {
+        console.log(params.level);
+        if(params.level == 0 || params.level === undefined) {
             spawnEnemy();
+            spawnFriend(innerHeight,"receiver","high");
+            spawnFriend(0,"receiver","mid");
+            spawnFriend(innerHeight / 2,"receiver","low");
         } else if(params.level == 1) {
             spawnEnemy(undefined,"defender","ball");
             spawnEnemy(innerHeight / 2,"defender","player");
             spawnEnemy(1,"defender","mid");
+
+            spawnFriend(innerHeight,"receiver","high");
+            spawnFriend(0,"receiver","mid");
+            spawnFriend(innerHeight / 2,"receiver","low");
         } else if(params.level == 2) {
             spawnEnemy(undefined,"defender","ball");
             spawnEnemy(innerHeight / 2,"coverer","player");
@@ -100,7 +105,27 @@
             spawnEnemy();
             spawnEnemy(1);
             spawnEnemy(innerHeight);
-        } else if(params.level == 10) {
+
+            spawnFriend(innerHeight,"receiver","high");
+            spawnFriend(0,"receiver","mid");
+            spawnFriend(innerHeight / 2,"receiver","low");
+        } else if(params.level == 3) {
+            spawnEnemy();
+            spawnEnemy(innerHeight / 2);
+            spawnEnemy(1);
+            spawnEnemy(innerHeight);
+            spawnEnemy();
+            spawnEnemy(1);
+            spawnEnemy(innerHeight);
+        } else if(params.level == 4) {
+            spawnEnemy(undefined,"coverer","player");
+            spawnEnemy(innerHeight / 2,"coverer","player");
+            spawnEnemy(1,"coverer","player");
+            spawnEnemy(innerHeight,"coverer","player");
+            spawnEnemy(undefined,"coverer","player");
+            spawnEnemy(1,"coverer","player");
+            spawnEnemy(innerHeight,"coverer","player");
+        } else if(params.level == 5) {
             spawnEnemy(undefined,"defender","ball");
             spawnEnemy(innerHeight / 2,"coverer","player");
             spawnEnemy(1,"defender","mid");
@@ -121,6 +146,9 @@
             spawnFriend(innerHeight);
             spawnFriend(0);
             spawnFriend(innerHeight / 2,);
+            spawnFriend(innerHeight,"receiver","high");
+            spawnFriend(0,"receiver","mid");
+            spawnFriend(innerHeight / 2,"receiver","low");
         }
         state = play;
         ball.vx = 0; 
@@ -278,11 +306,7 @@
             }
             if(hitTestRectangle(friend,ball,10,10)) {
                 if(friend.vx < 0 && ball.x > innerWidth * 2/5) {
-                    if(getDistance(nearestEnemy(friend).x,nearestEnemy(friend.y),friend.x,friend.y) > 300) {
-                        friend.fire = true;
-                    } else {
-                        friend.h = true;
-                    }
+                    friend.fire = true;
                     friend.d = true;
                     friend.vy = 0;
                 } else {
