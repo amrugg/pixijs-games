@@ -69,6 +69,196 @@
       warriorBlobs:0,
       speed: 1,
       files:1,
+    },
+    {
+      blobs:10,
+      fastBlobs:2,
+      warriorBlobs:0,
+      speed: 2,
+      files:1,
+    },
+    {
+      blobs:50,
+      fastBlobs:2,
+      warriorBlobs:0,
+      speed: 1,
+      files:1,
+    },
+    {
+      blobs:10,
+      fastBlobs:2,
+      warriorBlobs:0,
+      speed: 5,
+      files:1,
+    },
+    {
+      blobs:10,
+      fastBlobs:20,
+      warriorBlobs:0,
+      speed: 1,
+      files:1,
+    },{
+      blobs:10,
+      fastBlobs:2,
+      warriorBlobs:0,
+      speed: 2,
+      files:1,
+    },
+    {
+      blobs:50,
+      fastBlobs:2,
+      warriorBlobs:0,
+      speed: 1,
+      files:1,
+    },
+    {
+      blobs:10,
+      fastBlobs:2,
+      warriorBlobs:0,
+      speed: 5,
+      files:1,
+    },
+    {
+      blobs:10,
+      fastBlobs:20,
+      warriorBlobs:0,
+      speed: 1,
+      files:1,
+    },{
+      blobs:10,
+      fastBlobs:2,
+      warriorBlobs:0,
+      speed: 2,
+      files:1,
+    },
+    {
+      blobs:50,
+      fastBlobs:2,
+      warriorBlobs:0,
+      speed: 1,
+      files:1,
+    },
+    {
+      blobs:10,
+      fastBlobs:2,
+      warriorBlobs:0,
+      speed: 5,
+      files:1,
+    },
+    {
+      blobs:10,
+      fastBlobs:20,
+      warriorBlobs:0,
+      speed: 1,
+      files:1,
+    },{
+      blobs:10,
+      fastBlobs:2,
+      warriorBlobs:0,
+      speed: 2,
+      files:1,
+    },
+    {
+      blobs:50,
+      fastBlobs:2,
+      warriorBlobs:0,
+      speed: 1,
+      files:1,
+    },
+    {
+      blobs:10,
+      fastBlobs:2,
+      warriorBlobs:0,
+      speed: 5,
+      files:1,
+    },
+    {
+      blobs:10,
+      fastBlobs:20,
+      warriorBlobs:0,
+      speed: 1,
+      files:1,
+    },{
+      blobs:10,
+      fastBlobs:2,
+      warriorBlobs:0,
+      speed: 2,
+      files:1,
+    },
+    {
+      blobs:50,
+      fastBlobs:2,
+      warriorBlobs:0,
+      speed: 1,
+      files:1,
+    },
+    {
+      blobs:10,
+      fastBlobs:2,
+      warriorBlobs:0,
+      speed: 5,
+      files:1,
+    },
+    {
+      blobs:10,
+      fastBlobs:20,
+      warriorBlobs:0,
+      speed: 1,
+      files:1,
+    },{
+      blobs:10,
+      fastBlobs:2,
+      warriorBlobs:0,
+      speed: 2,
+      files:1,
+    },
+    {
+      blobs:50,
+      fastBlobs:2,
+      warriorBlobs:0,
+      speed: 1,
+      files:1,
+    },
+    {
+      blobs:10,
+      fastBlobs:2,
+      warriorBlobs:0,
+      speed: 5,
+      files:1,
+    },
+    {
+      blobs:10,
+      fastBlobs:20,
+      warriorBlobs:0,
+      speed: 6,
+      files:1,
+    },{
+      blobs:10,
+      fastBlobs:2,
+      warriorBlobs:0,
+      speed: 4,
+      files:1,
+    },
+    {
+      blobs:50,
+      fastBlobs:26,
+      warriorBlobs:0,
+      speed: 1,
+      files:1,
+    },
+    {
+      blobs:40,
+      fastBlobs:2,
+      warriorBlobs:0,
+      speed: 5,
+      files:1,
+    },
+    {
+      blobs:104,
+      fastBlobs:20,
+      warriorBlobs:0,
+      speed: 1,
+      files:1,
     },];
     var mouseX, mouseY;
     var quiver = 100;
@@ -80,8 +270,59 @@
       accuracy: 90/*percent*/,
       fireSpeed: 1/*sec*/,
     }
+    var bows = [
+      {
+        name: "Branch-bow",
+        power: 5,
+        range: 300/*px*/,
+        accuracy: 90/*percent*/,
+        fireSpeed: 1/*sec*/,
+      },
+      {
+        name: "Quickwood-bow",
+        power: 7,
+        range: 600/*px*/,
+        accuracy: 87/*percent*/,
+        fireSpeed: 0.4/*sec*/,
+      },
+      {
+        name: "Crossbow",
+        power: 20,
+        range: 900/*px*/,
+        accuracy: 97/*percent*/,
+        fireSpeed: 3/*sec*/,
+      },
+      {
+        name: "Repeating Crossbow",
+        power: 30,
+        range: 900/*px*/,
+        accuracy: 99/*percent*/,
+        fireSpeed: 1/*sec*/,
+        num: 9,
+        cooldown: 5
+      },
+      {
+        name: "Cheat bow",
+        power: 30,
+        range: 900/*px*/,
+        accuracy: 99/*percent*/,
+        fireSpeed: 0.1/*sec*/,
+        num: 1000000,
+        cooldown: 500
+      },
+      {
+        name: "Longbow",
+        power: 10,
+        range: 900/*px*/,
+        accuracy: 99/*percent*/,
+        fireSpeed: 0.2/*sec*/,
+      }
+    ]
+    var curBow = 0;
+    bow = bows[curBow];
     var statsText;
     var offsetValue = 180;
+    var cooldown = false;
     function resetStatsText(){
       statsText.text = "Bow:"+bow.name+" Arrows Left:" + quiver + " Health: " + health +"\nWave:" + wave;
     }
@@ -149,9 +390,44 @@
               rangeGraphics.endFill();
           }
         }
-        if(press("mouse")) {
-          spawnArrow(explorer.x,explorer.y,mouseX, mouseY);
-          quiver--;
+        if(press("mouse") && !cooldown) {
+          if(bow.num) {
+            cooldown = true;
+            for(let i = 0; i < bow.num - 1; i++) {
+              setTimeout(function(){
+                spawnArrow(explorer.x,explorer.y,mouseX, mouseY);
+              },bow.fireSpeed * i * 1000);
+            }
+            setTimeout(function(){
+              spawnArrow(explorer.x,explorer.y,mouseX, mouseY);
+              setTimeout(function(){
+                cooldown = false;
+              },bow.cooldown * 1000);
+            },bow.fireSpeed * (bow.num - 1) * 1000);
+          } else {
+            spawnArrow(explorer.x,explorer.y,mouseX, mouseY);
+            quiver--;
+            cooldown = true;
+            setTimeout(function(){
+              cooldown = false;
+            },bow.fireSpeed * 1000);
+          }
+        }
+        if(keys.ArrowRight) {
+          curBow++;
+          if(bows.length >= curBow) {
+            curBow = 0;
+          }
+          bow = bows[curBow];
+          keys.ArrowRight = false;
+        }
+        if(keys.ArrowLeft) {
+          curBow--;
+          if(curBow < 0) {
+            curBow = bows.length - 1;
+          }
+          bow = bows[curBow];
+          keys.ArrowLeft = false;
         }
         arrows.forEach(function(arrow,i){
           // console.log(arrow.speed)
