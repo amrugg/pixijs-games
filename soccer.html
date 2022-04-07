@@ -87,6 +87,7 @@
         spawnFriend(innerHeight / 2,"receiver","low");
 
         spawnEnemy(undefined,"defender","ball");
+        spawnEnemy(innerHeight / 2,"coverer","player");
         spawnEnemy(1,"defender","mid");
         spawnEnemy(innerHeight,"defender","player");
         spawnEnemy();
@@ -171,6 +172,8 @@
             enemy.ry = Math.floor(enemy.y / 10);
             ball.rx = Math.floor(ball.x / 10);
             ball.ry = Math.floor(ball.y / 10);
+            player.rx = Math.floor(player.x / 10);
+            player.ry = Math.floor(player.y / 10);
             // points.text = enemy.rx.toString() + " " + enemy.ry.toString() + " " + ball.rx.toString() + " " + ball.ry.toString();
             var targetY;
             if(enemy.type === "defender" && ballEnemy) {
@@ -183,6 +186,9 @@
                     targetY = player.y;
                 }
                 enemy.vy = (enemy.y + 10 < targetY ? enemy.speed : (enemy.y - 10 > targetY ? -enemy.speed : 0))
+            } else if(enemy.type === "coverer" && ballEnemy && ballEnemy !== enemy) {
+                enemy.vx = enemy.rx > player.rx?enemy.speed * -1:enemy.rx < player.rx?enemy.speed:0;
+                enemy.vy = enemy.ry > player.ry?enemy.speed * -1:enemy.ry < player.ry?enemy.speed:0;
             } else {
                 enemy.vx = enemy.rx > ball.rx?enemy.speed * -1:enemy.rx < ball.rx?enemy.speed:0;
                 enemy.vy = enemy.ry > ball.ry?enemy.speed * -1:enemy.ry < ball.ry?enemy.speed:0;
