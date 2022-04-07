@@ -51,6 +51,7 @@
     var timeoutTime = Date.now();
     var goalie;
     var enemyGoalie;
+    var abigailMultiplier = params.abigailMultiplier || 1;
     var ballFriend = false;
     var friends = [];
     function setup() {
@@ -290,7 +291,7 @@
         if(ball.x > innerWidth) {
             q = true;
             /// Score a point for the player
-            ++playerPoints;
+            playerPoints += 1 * abigailMultiplier;
             ball.x = innerWidth / 2;
             ball.y = innerHeight / 2;
             ball.vx = 0;
@@ -487,7 +488,7 @@
         enemy.lastSec = Date.now();
         enemy.startingX = innerWidth - 100;
         enemy.startingY = y || innerHeight / 2;
-        enemy.speed = randNum(2.5,4.5);
+        enemy.speed = randNum(2.5,4.5) / abigailMultiplier;
         enemies.push(enemy);
     }
     addEventListener("blur", function (){
