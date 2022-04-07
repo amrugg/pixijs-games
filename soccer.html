@@ -216,8 +216,8 @@
                 }
                 enemy.vy = (enemy.y + 10 < targetY ? enemy.speed : (enemy.y - 10 > targetY ? -enemy.speed : 0))
             } else if(enemy.type === "coverer" && ballEnemy && ballEnemy !== enemy) {
-                enemy.vx = enemy.rx > player.rx?enemy.speed * -1:enemy.rx < player.rx?enemy.speed:0;
-                enemy.vy = enemy.ry > player.ry?enemy.speed * -1:enemy.ry < player.ry?enemy.speed:0;
+                enemy.vx = enemy.rx > player.rx?enemy.speed * -1 / 2:enemy.rx < player.rx?enemy.speed/2:0;
+                enemy.vy = enemy.ry > player.ry?enemy.speed * -1 / 2:enemy.ry < player.ry?enemy.speed/2:0;
             } else {
                 enemy.vx = enemy.rx > ball.rx?enemy.speed * -1:enemy.rx < ball.rx?enemy.speed:0;
                 enemy.vy = enemy.ry > ball.ry?enemy.speed * -1:enemy.ry < ball.ry?enemy.speed:0;
@@ -278,7 +278,11 @@
             }
             if(hitTestRectangle(friend,ball,10,10)) {
                 if(friend.vx < 0 && ball.x > innerWidth * 2/5) {
-                    friend.fire = true;
+                    if(getDistance(nearestEnemy(friend).x,nearestEnemy(friend.y),friend.x,friend.y) > 300) {
+                        friend.fire = true;
+                    } else {
+                        friend.h = true;
+                    }
                     friend.d = true;
                     friend.vy = 0;
                 } else {
@@ -286,7 +290,7 @@
                     friend.d = true;
                 }
                 friend.vx = friend.speed;
-                if(!friend.fire) {
+                if(!friend.fire && !friend.h) {
                     if(friend.y - 50 > enemyGoalie.y || friend.y + 50 < enemyGoalie.y) {
                         friend.vy = 0;
                     } else {
@@ -375,6 +379,14 @@
     }
     function nearestEnemy(sprite){
         var dist = Infinity;
+        var enemy;
+        for(let i = 0; i < enemies.length; i++) {
+            if(dist > getDistance(enemies[i].x,enemies[i].y,sprite.x,sprite.y)) {
+                enemy = enemies[i];
+                dist = getDistance(enemies[i].x,enemies[i].y,sprite.x,sprite.y);
+            }
+        }
+        return enemy;
     }
     function timeout() {
         if(Date.now() - 5000 > timeoutTime) {
@@ -470,12 +482,15 @@
                     // ball.y = player.y + player.vy;
                     ball.vx = ballFriend.vx * 3;
                     ball.vy = ballFriend.vy * 3;
-                    ball.x += ball.vx;
-                    ball.y += ball.vy;
-                    ball.x += ball.vx;
-                    ball.y += ball.vy;
-                    ball.x += ball.vx;
-                    ball.y += ball.vy;
+                    ball.x += ball.vx * 3;
+                    ball.y += ball.vy * 3;
+                } else if(ballFriend.h) {
+                    ball.vx = ballFriend.vx * 1.25;
+                    ball.vy = ballFriend.vy * 1.25;
+                    ball.x += ball.vx * 3;
+                    ball.y += ball.vy * 3;
+                    ball.scaling = 2;
+                    ballFriend.h = false;
                 }
             }
         } else if(hitTestRectangle(ball,player) && ballEnemy) {
