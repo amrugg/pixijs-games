@@ -1,4 +1,4 @@
-<!doctype html>
+`<!doctype html>
 <html>
 <head>
   <meta charset="utf-8">
@@ -516,8 +516,8 @@
             if(hitTestRectangle(ball,player) && ballEnemy) {
                     // ball.x = player.x + player.vx;
                     // ball.y = player.y + player.vy;
-                ball.vx = player.vx * 1;
-                ball.vy = player.vy * 1;
+                ball.vx = player.vx * -1.5;
+                ball.vy = player.vy * -1.5;
                 ball.x += ball.vx * 5;
                 ball.y += ball.vy * 5;
                 ballEnemy.guard = false;
