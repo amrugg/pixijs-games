@@ -512,19 +512,35 @@
                     ballFriend.h = false;
                 }
             }
-        } else if(hitTestRectangle(ball,player) && ballEnemy) {
-                // ball.x = player.x + player.vx;
-                // ball.y = player.y + player.vy;
-            ball.vx = player.vx * 1;
-            ball.vy = player.vy * 1;
-            ball.x += ball.vx * 5;
-            ball.y += ball.vy * 5;    
+        } else {
+            if(hitTestRectangle(ball,player) && ballEnemy) {
+                    // ball.x = player.x + player.vx;
+                    // ball.y = player.y + player.vy;
+                ball.vx = player.vx * 1;
+                ball.vy = player.vy * 1;
+                ball.x += ball.vx * 5;
+                ball.y += ball.vy * 5;
+                ballEnemy.guard = false;
+            }
+            var numFound = 1;
+            for(let i = 0; i < enemies.length; i++) {
+                if(hitTestRectangle(player,enemies[i])) {
+                    --numFound;
+                    enemies[i].guard = false;
+                }
+                if(numFound < 0) {
+                    break;
+                }
+            }
         }
         if(keys[" "]) {
             keys[" "] = false;
         }
         if(keys.s) {
             keys.s = false;
+        }
+        if(keys.h) {
+            keys.h = false;
         }
         if(ball.vx > 0) {
             ball.vx -= friction;
