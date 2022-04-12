@@ -48,10 +48,40 @@
     loader.add("sprites/treasureHunter.json").load(setup);
     var state;
     var keys = {};
+    /// Okay, so what are the units/rules?
+    /// TODO: Figure out the resolution of the board, names of the ships,
+    var unitTypes = ["salvo","4ship","3ship","2ship","1ship","carrier","AAgun","Rplane","Bomber","Atom bomber","land"];
+    var unitCosts = [1,4,3,2,1,4,3,1,3,5,0];
+    var unitType = 0;
     var mouseX,mouseY;
+    var player = {
+        salvos: 0,
+        board: genEmptyBoard(),
+        points: 300,
+    };
+    console.log(player.board);
     function setup() {
         state = play;
         app.ticker.add(delta => gameLoop(delta));
+        drawBoard(100,50);
+    }
+    function drawBoard() {
+        var board = new PIXI.Graphics();
+        for(var i = 0; i < 20; i++) {
+            for(var j = 0; j < 24; j++) {
+                board.drawRect
+            }
+        }
+    }
+    function genEmptyBoard() {
+        var board = [];
+        for(var i = 0; i < 20; i++) {
+            board[i] = [];
+            for(var j = 0; j < 24; j++) {
+                board[i][j] = 0;
+            }
+        }
+        return board;
     }
     function gameLoop(delta) {
       state(delta)

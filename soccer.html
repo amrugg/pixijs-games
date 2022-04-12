@@ -513,14 +513,16 @@
                 }
             }
         } else {
-            if(hitTestRectangle(ball,player) && ballEnemy) {
+            if(hitTestRectangle(ball,player)) {
                     // ball.x = player.x + player.vx;
                     // ball.y = player.y + player.vy;
                 ball.vx = player.vx * -1.5;
                 ball.vy = player.vy * -1.5;
                 ball.x += ball.vx * 5;
                 ball.y += ball.vy * 5;
-                ballEnemy.guard = false;
+                if(ballEnemy) {
+                    ballEnemy.guard = false;
+                }
             }
             var numFound = 1;
             for(let i = 0; i < enemies.length; i++) {
