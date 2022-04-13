@@ -1800,7 +1800,7 @@
                 knight.health = knightHp;
                 knight.dmg = knightDmg;
                 if(isTown) {
-                    let randThreshold = 0.15;
+                    let randThreshold = chosenTown.name === "Royal Guard" ? 0.5 : 0.15;
                     if (Math.random() < randThreshold) {
                         let helm = new Sprite(resources["sprites/helmet.png"].texture);
                         helm.scale.set(1.2);
