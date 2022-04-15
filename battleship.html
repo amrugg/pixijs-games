@@ -50,7 +50,7 @@
     var keys = {};
     /// Okay, so what are the units/rules?
     /// TODO: Figure out the resolution of the board, names of the ships,
-    var unitTypes = ["salvo","4ship","3ship","2ship","1ship","carrier","AAgun","Rplane","Bomber","Atom bomber","land"];
+    var unitTypes = ["SS","BB","C","D","S","CR","AA","R","B","AB","L"];
     var unitCosts = [1,4,3,2,1,4,3,1,3,5,0];
     var unitType = 0;
     var mouseX,mouseY;
@@ -59,19 +59,265 @@
         board: genEmptyBoard(),
         points: 300,
     };
-    console.log(player.board);
+    var rotation = "X. Lies flat.";
+    var squareWidth;
+    var defs = ["Salvo: Destroys 3 tiles anywhere on the board.","Battleship: A ship with 4 tiles. Easier to hit but more resistant and worth more points.","Cruiser: A ship with 3 tiles. Harder to hit than Battleship.","Destroyer: A ship with 2 tiles. Harder to hit than Cruiser.","Sloop: Smallest ship in the game. Only 1 tile.",
+                "Carrier: Ship with 4 tiles in a square that planes can be placed on.", "Anti-Aircraft gun: Place on land. Shoots down all planes but the Atomic Bomber.","Reconnaissance plane: Place on land or carrier. Gives detail about the surrounding 3 x 3 grid when fired.","Bomber: Place on land or carrier. Destroys the surrounding 3 x 3 grid when fired.",
+                "Atomic Bomber: Place on land or carrier. Destroys the surrounding 5 x 5 grid when fired. Avoids Anti Aircraft.","Land: Place in 3x3 grids. Planes and Anti-Aircraft can then be placed on it."];
+    var HUD = new PIXI.Text();
+    var startingX,startingY;
+    var board;
     function setup() {
-        state = play;
+        state = place;
         app.ticker.add(delta => gameLoop(delta));
-        drawBoard(100,50);
+        drawBoards(50,75);
+        updateHud();
+        app.stage.addChild(HUD);
     }
-    function drawBoard() {
-        var board = new PIXI.Graphics();
-        for(var i = 0; i < 20; i++) {
-            for(var j = 0; j < 24; j++) {
-                board.drawRect
+    function updateHud() {
+        if(state === place) {
+            HUD.text = defs[unitType] + " " + unitCosts[unitType] + " point" + (unitCosts[unitType] === 1 ? "." : "s.") + " Salvos: " + player.salvos + ". Points: " + player.points + "\nRotation: "+rotation;
+        }
+    }
+    function place() {
+        if(press("ArrowLeft")) {
+            keys.ArrowLeft = false;
+            unitType -= 1;
+            if(unitType < 0) {
+                unitType = defs.length - 1;
+            }
+            updateHud();
+        } else if(press("ArrowRight")) {
+            unitType += 1;
+            if(unitType > defs.length - 1) {
+                unitType = 0;
+            }
+            updateHud();
+        } else if(press("r")) {
+            if(rotation === "X. Lies flat.") {
+                rotation = "Y. Standing on end.";
+            } else {
+                rotation = "X. Lies flat."
+            }
+            updateHud();
+        }
+        if(press("mouse")) {
+            var square = getSquareCoord(mouseX,mouseY);
+            if(unitType === 0) {
+                player.salvos += 1;
+                player.points -= unitCosts[unitType];
+            } else if(unitType === 1) {
+                if(square) {
+                    spawnShip(square,"BB")
+                    drawShips();
+                }
+            } else if(unitType === 2) {
+                if(square) {
+                    spawnShip(square,"C")
+                    drawShips();
+                }
+            } else if(unitType === 3) {
+                if(square) {
+                    spawnShip(square,"D")
+                    drawShips();
+                }
+            } else if(unitType === 4) {
+                if(square) {
+                    spawnShip(square,"S")
+                    drawShips();
+                }
+            } else if(unitType === 5) {
+                if(square) {
+                    spawnShip(square,"CR")
+                    drawShips();
+                }
+            } else if(unitType === 7) {
+                if(square) {
+                    var curChar = player.board[square.y][square.x];
+                    if(curChar[0] === "C" && curChar[1] === "R" && (curChar[curChar.length-1] !== "R")) {
+                        player.board[square.y][square.x] += "R";
+                    }
+                }
+                drawShips();
+            }
+            console.log(player.board);
+            updateHud();
+        }
+    }
+    function spawnShip(square,type) {
+        if(type === "BB") {
+            if(rotation[0] === "Y") {
+                if(square.y + 3 < player.board.length) {
+                    if(player.board[square.y][square.x] === 0 && player.board[square.y+1][square.x] === 0 && player.board[square.y+2][square.x] === 0 &&player.board[square.y+3][square.x] === 0) {
+                        player.board[square.y][square.x] = "BB00Y";
+                        player.board[square.y+1][square.x] = "BB01";
+                        player.board[square.y+2][square.x] = "BB02";
+                        player.board[square.y+3][square.x] = "BB03";
+                        player.points -= unitCosts[unitType];
+                    }
+                }
+            } else {
+                if(square.x + 3 < player.board[0].length) {
+                    if(player.board[square.y][square.x] === 0 && player.board[square.y][square.x+1] === 0 && player.board[square.y][square.x+2] === 0 &&player.board[square.y][square.x+3] === 0) {
+                        player.board[square.y][square.x] = "BB00X";
+                        player.board[square.y][square.x+1] = "BB01";
+                        player.board[square.y][square.x+2] = "BB02";
+                        player.board[square.y][square.x+3] = "BB03";
+                        player.points -= unitCosts[unitType];
+                    }
+                }
+            }
+        } else if(type === "C") {
+            if(rotation[0] === "Y") {
+                if(square.y + 2 < player.board.length) {
+                    if(player.board[square.y][square.x] === 0 && player.board[square.y+1][square.x] === 0 && player.board[square.y+2][square.x] === 0) {
+                        player.board[square.y][square.x] = "C00Y";
+                        player.board[square.y+1][square.x] = "C01";
+                        player.board[square.y+2][square.x] = "C02";
+                        player.points -= unitCosts[unitType];
+                    }
+                }
+            } else {
+                if(square.x + 2 < player.board[0].length) {
+                    if(player.board[square.y][square.x] === 0 && player.board[square.y][square.x+1] === 0 && player.board[square.y][square.x+2] === 0) {
+                        player.board[square.y][square.x] = "C00X";
+                        player.board[square.y][square.x+1] = "C01";
+                        player.board[square.y][square.x+2] = "C02";
+                        player.points -= unitCosts[unitType];
+                    }
+                }
+            }
+        } else if(type === "D") {
+            if(rotation[0] === "Y") {
+                if(square.y + 1 < player.board.length) {
+                    if(player.board[square.y][square.x] === 0 && player.board[square.y+1][square.x] === 0) {
+                        player.board[square.y][square.x] = "D00Y";
+                        player.board[square.y+1][square.x] = "D01";
+                        player.points -= unitCosts[unitType];
+                    }
+                }
+            } else {
+                if(square.x + 1 < player.board[0].length) {
+                    if(player.board[square.y][square.x] === 0 && player.board[square.y][square.x+1] === 0) {
+                        player.board[square.y][square.x] = "D00X";
+                        player.board[square.y][square.x+1] = "D01";
+                        player.points -= unitCosts[unitType];
+                    }
+                }
+            }
+        } else if(type === "S") {
+            if(player.board[square.y][square.x] === 0) {
+                player.board[square.y][square.x] = "S0XY";
+                player.points -= unitCosts[unitType];
+            } 
+        } else if (type === "CR") {
+            if(square.x + 1 < player.board[0].length && square.y + 1 < player.board.length) {
+                if(player.board[square.y][square.x] === 0 && player.board[square.y][square.x+1] === 0 && player.board[square.y+1][square.x] === 0 && player.board[square.y+1][square.x+1] === 0) {
+                    player.board[square.y][square.x] = "CR00XY";
+                    player.board[square.y][square.x+1] = "CR01";
+                    player.board[square.y+1][square.x] = "CR02";
+                    player.board[square.y+1][square.x+1] = "CR03";
+                    player.points -= unitCosts[unitType];
+                }
             }
         }
+    }
+    function drawShips() {
+        for(var i = 0; i < player.board.length; i++) {
+            var curArr = player.board[i];
+            for(var j = 0; j < curArr.length; j++) {
+                var curChar = curArr[j];
+                if(curChar[curChar.length-1] === "X" || curChar[curChar.length-1] === "Y" || curChar[curChar.length-2] === "Y") {
+                    var length;
+                    if(curChar[0] === "B") {
+                        length = 4;
+                    } else if(curChar[0] === "C") {
+                        length = 3;
+                    } else if(curChar[0] === "D") {
+                        length = 2;
+                    } else if(curChar[0] === "S") {
+                        length = 1;
+                    }
+                    board.lineStyle(5,0,2);
+                    board.beginFill(0xCCCCCC);
+                    if(curChar[0] === "C" && curChar[1] === "R") {
+                        board.drawRect((j+1) * squareWidth + startingX, (i+1) * squareWidth + startingY,squareWidth * 2,squareWidth * 2);
+                    } else {
+                        if(curChar[curChar.length-1] === "X" ) {
+                            board.drawRect((j+1) * squareWidth + startingX, (i+1) * squareWidth + startingY,squareWidth * length,squareWidth);
+                        } else {
+                            board.drawRect((j+1) * squareWidth + startingX, (i+1) * squareWidth + startingY,squareWidth,squareWidth * length);
+                        }
+                    }
+                    board.endFill();
+                }
+                if(curChar[curChar.length-1] === "R") {
+                    var text = new PIXI.Text("R");
+                    app.stage.addChild(text);
+                    text.x = (j+1) * squareWidth + startingX;
+                    text.y = (i+1) * squareWidth + startingY;
+                }
+            }
+        }
+    }
+    function getSquareCoord(x,y) {
+
+        var testMouseX = x - startingX;
+        var testMouseY = y - startingY;
+        /// Chosen square will be Math.floor
+        var chosenX = Math.floor(testMouseX / squareWidth);
+        var chosenY = Math.floor(testMouseY / squareWidth);
+        if((startingX + (chosenX * squareWidth * 2) - squareWidth >= startingX && (startingY + (chosenY * squareWidth) - squareWidth) >= startingY)) {
+            if((startingX + (chosenX * squareWidth) - squareWidth * 2) < startingX + 24 * squareWidth && startingY + (chosenY * squareWidth) - squareWidth < startingY + 24*squareWidth) {
+                return {x:chosenX - 1,y:chosenY - 1}
+            }
+        }
+    }
+    function drawBoards(x,y) {
+        startingX = x;
+        startingY = y;
+        board = new PIXI.Graphics();
+        /// Square width should be:
+        /// As big as you can get it with sufficent offset
+        squareWidth = Math.min((innerWidth - x*5) / 48, innerHeight / 20);
+        for(let j = 20; j > 0; j--) {
+            var text = new PIXI.Text(j);
+            app.stage.addChild(text);
+            text.x = x;
+            text.y = y+j*squareWidth;
+            for(let i = 24; i > 0; i--) {
+                board.lineStyle(2,0,1);
+                board.beginFill(0xFFFFFF);
+                board.drawRect(x + i*squareWidth,y+j*squareWidth,squareWidth,squareWidth);
+                board.endFill();
+                if(j === 20) {
+                    var text = new PIXI.Text(String.fromCharCode(i+64));
+                    app.stage.addChild(text);
+                    text.x = (x + 2) + i*squareWidth;
+                    text.y = y;
+                }
+            }
+        }
+        x = innerWidth - (squareWidth * 24 + x * 2);
+        for(let j = 20; j > 0; j--) {
+            var text = new PIXI.Text(j);
+            app.stage.addChild(text);
+            text.x = x;
+            text.y = y+j*squareWidth;
+            for(let i = 24; i > 0; i--) {
+                board.lineStyle(2,0,1);
+                board.beginFill(0xFFFFFF);
+                board.drawRect(x + i*squareWidth,y+j*squareWidth,squareWidth,squareWidth);
+                board.endFill();
+                if(j === 20) {
+                    var text = new PIXI.Text(String.fromCharCode(i+64));
+                    app.stage.addChild(text);
+                    text.x = (x + 2) + i*squareWidth;
+                    text.y = y;
+                }
+            }
+        }
+        app.stage.addChild(board);
     }
     function genEmptyBoard() {
         var board = [];

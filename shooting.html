@@ -110,7 +110,7 @@
       ship.x = innerWidth / 2;
       ship.y = innerHeight / 2;
       globalX -= 750 - ship.x;
-      globalY += 350 - ship.y;
+      globalY -= 350 - ship.y;
       ship.direction = 89.9999999;
       ship.speed = 0;
       ship.turn = 0;
@@ -172,8 +172,8 @@
           telescopeHole.visible = false;
           globalX = mountX;
           globalY = mountY;
-          ship.x = 750;
-          ship.y = 350;
+          ship.x = innerWidth / 2;
+          ship.y = innerHeight / 2;
           state = sail;
         }
       }
