@@ -256,6 +256,8 @@
                     app.stage.addChild(text);
                     text.x = (j+1) * squareWidth + startingX;
                     text.y = (i+1) * squareWidth + startingY;
+                    text.scale.x = 30/squareWidth;
+                    text.scale.y = 30/squareWidth;
                 }
             }
         }
@@ -285,6 +287,8 @@
             app.stage.addChild(text);
             text.x = x;
             text.y = y+j*squareWidth;
+            text.scale.x = 30/squareWidth;
+            text.scale.y = 30/squareWidth;
             for(let i = 24; i > 0; i--) {
                 board.lineStyle(2,0,1);
                 board.beginFill(0xFFFFFF);
@@ -295,6 +299,9 @@
                     app.stage.addChild(text);
                     text.x = (x + 2) + i*squareWidth;
                     text.y = y;
+
+                    text.scale.x = 30/squareWidth;
+                    text.scale.y = 30/squareWidth;
                 }
             }
         }
@@ -304,6 +311,8 @@
             app.stage.addChild(text);
             text.x = x;
             text.y = y+j*squareWidth;
+            text.scale.x = 30/squareWidth;
+            text.scale.y = 30/squareWidth;
             for(let i = 24; i > 0; i--) {
                 board.lineStyle(2,0,1);
                 board.beginFill(0xFFFFFF);
@@ -314,6 +323,8 @@
                     app.stage.addChild(text);
                     text.x = (x + 2) + i*squareWidth;
                     text.y = y;
+                    text.scale.x = 30/squareWidth;
+                    text.scale.y = 30/squareWidth;
                 }
             }
         }
