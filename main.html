@@ -493,7 +493,7 @@
         if(healthBar.outer.width < 1) {
           if(grandmaMode) {
             --level;
-            healthBar.outer.width = 120;
+            healthBar.outer.width = 120 * 3;
             state = nextLevelSetup;
           } else {
             state = lose
