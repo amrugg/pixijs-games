@@ -40,7 +40,7 @@
         app.renderer.autoResize = true;
         app.renderer.resize(window.innerWidth, window.innerHeight);
         document.body.appendChild(app.view);
-        loader.add("sprites/redeye.png").add("sprites/horns.png")
+        loader.add("sprites/redeye.png").add("sprites/horns.png");
         loader.add("sprites/sword.png").add("sprites/helmet.png").add("sprites/breastplate.png").add("sprites/misc.png").add("sprites/spear.png").add("sprites/mace.png").add("sprites/axe.png");
         loader.add("sprites/treasureHunter.json").add("sprites/house1.png").add("sprites/house2.png").add("sprites/house3.png").add("sprites/arrow.png").add("sprites/brownarrow.png").load(setup);
         var params = getParams();
@@ -1588,7 +1588,7 @@
                     firedArrows.splice(i, 1);
                 }
             });
-            eventText.text = cooldown < 1 ? mouseModes[mouseMode].name : "Cooldown";
+            eventText.text = mouseModes[mouseMode].name;
             // eventText.text = numberOfBlobs();
             if (keys.ArrowLeft) {
                 if (leftReady) {
@@ -1830,7 +1830,7 @@
                     }
                     knight.falter = 0;
                     if(Math.random() < randThreshold) {
-                        knight.dmg += 2;
+                        knight.dmg += 5;
                         let sword = new Sprite(resources["sprites/sword.png"].texture);
                         sword.scale.set(2.5);
                         knight.addChild(sword);
@@ -1841,6 +1841,7 @@
                         mace.position.set(5,-5);
                         knight.addChild(mace);
                         // --maces; 
+                        knight.dmg += 3;
                         knight.mace = true;
                     } else if(Math.random() < randThreshold) {
                         let axe = new Sprite(resources["sprites/axe.png"].texture);
@@ -1848,7 +1849,7 @@
                         axe.position.set(2,-4);
                         knight.addChild(axe);
                         // --axes;
-                        knight.dmg += 5;
+                        knight.dmg += 2;
                         knight.falter = 0.5;
                         knight.axe = true;
                     } else if(Math.random() < randThreshold) {
@@ -1909,7 +1910,7 @@
                         axe.position.set(2,-4);
                         knight.addChild(axe);
                         --axes;
-                        knight.dmg += 5;
+                        knight.dmg += 2;
                         knight.falter = 0.5;
                         knight.axe = true;
                     } else if(spears > 0) {
@@ -2030,7 +2031,7 @@
             mouseX = mouse.pageX;
             mouseY = mouse.pageY;
             keys.mouse = true;
-            if (state === play && cooldown < 1) {
+            if (state === play && cooldown < 4.5) {
                 mouseModes[mouseMode].effect();
                 if (mouseModes[mouseMode].name === "Fire Catapult") {
                     cooldown = 5;
