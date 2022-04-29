@@ -54,7 +54,7 @@
             return params;
         }
         var chosenTown = {};
-        var blue = new PIXI.TextStyle({ stroke: "blue", fill: "blue" });
+        var white = new PIXI.TextStyle({ stroke: "white", fill: "white" });
         var state;
         var newText;
         var keys = {};
@@ -133,7 +133,7 @@
             return v;
         }
         var taxButton, recruitButton, leaveButton, buyButton;
-        var mouseModes = [{ name: "Volley", effect: function () { fireArrows() } }, { name: "Targeted Fire", effect: function () { guideArrows() } }, {
+        var mouseModes = [{ name: "Volley", effect: function () { fireArrows() } }, { name: "Targeted Fire", effect: function () { guideArrows() } },  { name: "Fire at Will", effect: function () { fireAtWill() } }, {
             name: "Fire Catapult", effect: function () {
                 if (boulders > 0) {
                     --boulders;
@@ -1097,9 +1097,20 @@
             }
         }
         function guideArrows() {
-            for (let i = 0; i < archerNum * randNum(0.5,1); i++) {
-                if (arrows > 0) {
+            for (let i = 0; i < archerNum; i++) {
+                if (arrows > 0 && Math.random() < 0.75) {
                     spawnArrow(pointTowards((i * (innerWidth / archerNum) + 24), innerHeight, mouseX, mouseY), (i * (innerWidth / archerNum) + 24));
+                    --arrows;
+                }
+            }
+        }
+        function fireAtWill() {
+            console.log("BLOB","blob");
+            for (let i = 0; i < archerNum; i++) {
+                if (arrows > 0 && Math.random() < 0.5) {
+                    var blob = nearestBlob({x:(i * (innerWidth / archerNum) + 24), y:innerHeight}).sprite;
+                    // console.log("BLOB",blob);
+                    spawnArrow(pointTowards((i * (innerWidth / archerNum) + 24), innerHeight, blob.x, blob.y), (i * (innerWidth / archerNum) + 24));
                     --arrows;
                 }
             }
@@ -1321,7 +1332,11 @@
                     return;
                 }
                 if (params.debug) {
-                    knight.text.text = knight.health.toString();
+                    if(params.health === true) {
+                        knight.text.text = knight.health.toString();
+                    } else {
+                        knight.text.text = knight.dmg.toString();
+                    }
                     knight.text.anchor.set(0.5);
                     knight.text.x = knight.x;
                     knight.text.y = knight.y;
@@ -1675,7 +1690,11 @@
             });
             blobs.forEach(function (knight, i) {
                 if (params.debug) {
-                    knight.text.text = knight.health.toString();
+                    if(params.health === true) {
+                        knight.text.text = knight.health.toString();
+                    } else {
+                        knight.text.text = knight.dmg.toString();
+                    }
                     knight.text.anchor.set(0.5);
                     knight.text.x = knight.x;
                     knight.text.y = knight.y;
@@ -1892,7 +1911,7 @@
                     knight.falter = 0;
                     if(swords > 0) {
                         --swords;
-                        knight.dmg += 2;
+                        knight.dmg += 5;
                         let sword = new Sprite(resources["sprites/sword.png"].texture);
                         sword.scale.set(2.5);
                         knight.addChild(sword);
@@ -1903,6 +1922,7 @@
                         mace.position.set(5,-5);
                         knight.addChild(mace);
                         --maces; 
+                        knight.dmg += 3;
                         knight.mace = true;
                     } else if(axes > 0) {
                         let axe = new Sprite(resources["sprites/axe.png"].texture);
@@ -1926,12 +1946,12 @@
                 knight.state = "live";
                 newSoldier.anchor.set(0.5);
                 if (params.debug) {
-                    let text = new PIXI.Text(knight.health.toString(), blue);//{stroke:"0000FF",fill:"blue"});
+                    let text = new PIXI.Text(knight.health.toString(), white);//{stroke:"0000FF",fill:"blue"});
                     //battleScene.addChild(newSoldier.text);
+                    text.scale.set(0.75);
                     knight.addChild(text);
                 }
             }
-
         }
         function spawnBlobs(count, y) {
             if (count === "fill") {
@@ -1958,7 +1978,7 @@
                     newSoldier.state = "live";
                     newSoldier.anchor.set(0.5);
                     if (params.debug) {
-                        newSoldier.text = new PIXI.Text(newSoldier.health.toString(), blue);//{stroke:"0000FF",fill:"blue"});
+                        newSoldier.text = new PIXI.Text(newSoldier.health.toString(), white);//{stroke:"0000FF",fill:"blue"});
                         battleScene.addChild(newSoldier.text);
                         newSoldier.text.x = newSoldier.x;
                         newSoldier.text.y = newSoldier.y;
@@ -1988,7 +2008,7 @@
                     newSoldier.dmg = blobDmg + (newSoldier.horns?3:newSoldier.redeye?6:0);
                     newSoldier.anchor.set(0.5);
                     if (params.debug) {
-                        newSoldier.text = new PIXI.Text(newSoldier.health.toString(), blue);//{stroke:"0000FF",fill:"blue"});
+                        newSoldier.text = new PIXI.Text(newSoldier.health.toString(), white);//{stroke:"0000FF",fill:"blue"});
                         battleScene.addChild(newSoldier.text);
                         newSoldier.text.x = newSoldier.x;
                         newSoldier.text.y = newSoldier.y;
@@ -2064,6 +2084,15 @@
         });
         addEventListener("keydown", function (e) {
             keys[e.key] = true;
+            if(e.key === "h") {
+                params.dmg = false;
+                params.health = !params.health;
+                params.debug = true;
+            } else if(e.key === "d") {
+                params.health = false;
+                params.dmg = !params.dmg;
+                params.debug = true;
+            }
         });
         addEventListener("keyup", function (e) {
             keys[e.key] = false;
