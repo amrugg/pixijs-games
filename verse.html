@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+    <head title="Verse Counter">
+
+    </head>
+    <select name="Division" id="set">
+        <option>Primary</option>
+        <option>Junior</option>
+        <option>Senior</option>
+    </select>
+    <span id="asker">Choose a set to get started! Hit the buttons below or use the Y and N keys.</span>
+    <span style="right: 10px; position: absolute;" id="count">0</span><br><br>
+    <button id="y">Yes!</button>&nbsp&nbsp<button id="n">No!</button>
+    <body>
+        <script>
+            var verses;
+            var verseArr;
+            var i = 0;
+            var set = document.getElementById("set");
+            set.addEventListener("click",function(e) {
+                begin();
+            });
+            function begin() {
+                if(set.value === "Primary") {
+                    verses = "1 Corinthians 2:13-16,1 John 4:17-19,1 John 5:1-15,1 Kings 8:46-53,1 Peter 1:18-19,1 Peter 1:3-16,1 Peter 2:23-25,1 Peter 2:6-10,1 Peter 3:8-12,1 Samuel 2:10,1 Thessalonians 1:8-10,1 Thessalonians 2:9-12,1 Thessalonians 4:16-18,1 Thessalonians 5:1-24,1 Timothy 6:11-16,2 Corinthians 12:9-10,2 Corinthians 13:4-9,2 Corinthians 1:3-4,2 Corinthians 4:7-15,2 Timothy 2:1-19,2 Timothy 4:1-8,Acts 26:19-23,Acts 2:14-28,Colossians 1:13-14,Daniel 12:4-9,Daniel 4:28-37,Deuteronomy 32:28-43,Deuteronomy 33:1-6,Ephesians 1:18-19,Ephesians 2:17-22,Ephesians 3:14-21,Exodus 12:13-14,Exodus 15:1-13,Ezekiel 3:4-6,Galatians 1:6-10,Galatians 6:6-10,Genesis 17:6-7,Genesis 21:33,Genesis 34:3,Hebrews 12:12-15,Hebrews 1:10-12,Hebrews 2:14-15,Hebrews 8:8-11,Hebrews 9:11-15,Isaiah 11:15-16,Isaiah 43:19-25,Isaiah 51:10-12,Isaiah 52:3-9,Isaiah 55:1-13,Isaiah 57:14-19,Isaiah 61:1-7,Isaiah 62:10-12,Isaiah 63:15-19,Isaiah 65:13-14,James 1:26-27,Jeremiah 16:16-21,Jeremiah 17:18,Jeremiah 31:10-14,Jeremiah 31:33-34,Jeremiah 33:8-9,Jeremiah 50:33-38,Job 19:23-29,Job 42:10-12,John 14:9,John 1:1-18,John 21:15-19,John 5:30-32,John 6:28-40,John 8:12-19,Luke 18:7-8,Luke 1:68-79,Luke 22:31-34,Luke 3:2-6,Luke 4:18-19,Malachi 3:1,Malachi 4:1-6,Mark 16:14,Mark 1:2-5,Mark 9:2-4,Matthew 28:18-20,Matthew 3:1-3,Matthew 5:1-16,Matthew 9:1-8,Micah 3:11,Nehemiah 9:30-31,Philippians 2:4-11,Proverbs 23:1-12,Psalm 107:1-9,Psalm 138:1-7,Psalm 147:1-5,Psalm 32:1-11,Psalm 68:4,Psalm 85:1-13,Psalm 90:13-17,Revelation 22:13-19,Revelation 4:6-11,Romans 11:33-36,Romans 3:21-27,Romans 5:12-13,Romans 8:19-25,Romans 9:3-5,Ruth 1:1,Ruth 1:16-17,Ruth 2:12-13,Ruth 3:11-13,Ruth 4:10-11,Ruth 4:13-15,Ruth 4:18-22,Titus 2:1-6,Zechariah 1:13-15,Zephaniah 3:14-17,"
+                } else if(set.value === "Junior") {
+                    verses = "1 Corinthians 2:13-16,1 Corinthians 8:4-6,1 John 1:1-10,1 John 4:13-19,1 John 5:1-15,1 Peter 1:18-21,1 Peter 1:22-25,1 Peter 3:8-22,1 Peter 5:1-4,1 Thessalonians 1:8-10,1 Timothy 1:8-17,2 Chronicles 30:22,2 Corinthians 1:3-4,2 Corinthians 5:1-11,2 Peter 2:1-9,2 Peter 3:11-18,2 Timothy 1:3-10,Acts 10:34-44,Acts 13:44-48,Acts 3:17-26,Colossians 1:13-18,Daniel 12:4-9,Ephesians 1:18-20,Ephesians 2:1-10,Ephesians 4:17-29,Exodus 12:11-14,Exodus 19:4-6,Galatians 1:6-10,Galatians 2:18-21,Genesis 17:6-8,Genesis 22:8-14,Hebrews 11:29-40,Hebrews 12:1-2,Hebrews 1:1-14,Hebrews 2:14-15,I Jeremiah 31:10-14,Isaiah 35:3-10,Isaiah 40:1-5,Isaiah 40:21-28,Isaiah 44:6-8,Isaiah 49:18-25,Isaiah 50:1-11,Isaiah 51:10-12,Isaiah 60:1-9,Isaiah 61:1-7,Isaiah 62:10-12,Isaiah 63:15-19,Isaiah 66:7-13,James 2:1-4,James 3:1-10,James 4:1-17,Jeremiah 16:18,Jeremiah 31:10-14,Jeremiah 31:33-34,Jeremiah 33:8-9,Jeremiah 4:22,Job 19:23-29,Job 27:2-6,Job 42:10-12,John 12:34-50,John 15:1-15,John 20:24-31,John 3:4-8,John 7:37-49,Joshua 21:43-45,Jude 1:14-23,Luke 18:7-8,Luke 1:68-79,Luke 22:31-34,Luke 3:2-6,Luke 4:3-13,Luke 8:4-15,Mark 1:2-5,Matthew 6:25-33,Matthew 7:21-29,Nehemiah 9:28-31,Philemon 1:4-7,Philippians 1:3-8,Proverbs 15:2-3,Proverbs 20:5-6,Psalm 106:1-12,Psalm 130:1-8,Psalm 147:1-5,Psalm 32:1-11,Psalm 46:1-11,Psalm 76:1-12,Psalm 78:21-39,Psalm 90:13-17,Revelation 18:1-8,Revelation 22:12-21,Revelation 2:1-3,Romans 10:9-21,Romans 12:16-21,Romans 14:7-12,Romans 1:16-25,Romans 5:12-13,Romans 9:6-16,Ruth 1:1-2,Ruth 1:16-17,Ruth 2:12-13,Ruth 3:9-11,Ruth 4:13-16,Ruth 4:18-22,Ruth 4:9-12,Titus 2:1-6,Titus 3:1-11,Zechariah 1:13-15,Zechariah 9:9-12,Zephaniah 3:8-20";
+                } else {
+                    verses = "Genesis 17:6-8,Ruth 1:15-18,Romans 5:12-14,Ruth 1:1-2,Hebrews 2:14-15,Ruth 3:9-13,Exodus 12:11-14,Ruth 2:10-13,Ruth 4:13-17,1 Peter 1:18-21,Ruth 4:9-12,Ephesians 1:18-23,Ruth 4:18-22,Colossians 1:13-20,1 Corinthians 3:10-23,1 Corinthians 6:1-11,1 John 2:1-17,1 John 3:18-24,1 John 4:13-19,1 Kings 3:6-14,1 Peter 1:22-25,1 Samuel 17:41-49,1 Timothy 3:1-15,2 Corinthians 13:4-9,2 Corinthians 5:11-21,2 Peter 3:1-10,2 Thessalonians 1:5-10,2 Thessalonians 2:1-13,Acts 13:42-52,Acts 14:8-18,Acts 26:19-23,Acts 8:26-38,Colossians 3:5-12,Daniel 11:35,Daniel 12:4-9,Daniel 9:4-16,Deuteronomy 28:1-14,Ephesians 3:14-21,Esther 4:12-16,Exodus 19:1-11,Ezekiel 2:1-10,Ezekiel 3:4-6,Galatians 6:1-15,Habakkuk 2:2-20,Hebrews 3:7-19,Isaiah 11:15-16,Isaiah 35:3-10,Isaiah 40:1-5,Isaiah 41:10-26,Isaiah 49:4-16,Isaiah 60:1-9,Isaiah 62:10-12,Isaiah 66:5-13,James 1:2-27,James 2:18-24,Jeremiah 10:1-10,Jeremiah 31:10-14,Jeremiah 33:8-9,Job 19:1-29,John 14:1-7,John 16:16-33,John 17:1-10,John 19:28-38,John 5:1-14,Joshua 21:43-45,Judges 6:36-40,Leviticus 22:1-9,Luke 12:35-40,Luke 1:5-23,Luke 1:68-79,Luke 22:31-34,Luke 4:16-19,Malachi 3:1,Mark 1:2-5,Mark 8:17-18,Matthew 10:27-39,Matthew 11:25-30,Matthew 3:1-3,Nehemiah 8:10,Nehemiah 9:28-31,Philippians 1:12-26,Philippians 3:1-21,Psalm 102:13-28,Psalm 106:34-48,Psalm 107:1-9,Psalm 111:1-9,Psalm 135:13-21,Psalm 139:1-8,Psalm 31:1-14,Psalm 32:1-11,Psalm 49:1-9,Psalm 62:5-12,Psalm 95:6-11,Revelation 16:4-9,Revelation 18:21-24,Revelation 21:1-15,Revelation 22:12-21,Revelation 2:8-16,Revelation 5:1-10,Romans 11:33-36,Romans 14:7-12,Romans 2:1-6,Romans 2:17-29,Romans 6:1-12,Romans 8:18-39,Titus 1:4-9,Zechariah 2:6-11,Zechariah 9:9-12,Zephaniah 3:14-17,";
+                }
+                verseArr = verses.split(",");
+                i = 0;
+                count = 0;
+                askVerse();
+            }
+            var y = document.getElementById("y");
+            var n = document.getElementById("n");
+            y.addEventListener("click",addVerse);
+            n.addEventListener("click",skipVerse);
+            var counter = document.getElementById("count");
+            var count = 0;
+            var asker = document.getElementById("asker");
+            function askVerse() {
+                asker.innerHTML = "Have you memorized " + verseArr[i] + "?"
+            }
+            window.addEventListener("keypress", function(e){
+                if(i >= verseArr.length) {
+                    return;
+                }
+                if(e.code === "KeyY") {
+                    addVerse();
+                } else if(e.code === "KeyN") {
+                    skipVerse();
+                }
+            });
+            function addVerse() {
+                if(typeof verses === "undefined") {
+                    return;
+                }
+                var cur = verseArr[i];
+                if((/-/).test(cur)) {
+                    var arr = cur.match(/\d+-\d+/)[0].split("-");
+                    count += Number(arr[1])+1-Number(arr[0]);
+                } else {
+                    ++count;
+                }
+                counter.innerHTML = count;
+                ++i;
+                if(i >= verseArr.length) {
+                    asker.innerHTML = "You are done!"
+                    return;
+                }
+                askVerse();
+            }
+            function skipVerse() {
+                if(typeof verses === "undefined") {
+                    return;
+                }
+                ++i;
+                if(i >= verseArr.length) {
+                    asker.innerHTML = "You are done!"
+                    return;
+                }
+                askVerse();
+            }
+        </script>
+    </body>
+</html> 
