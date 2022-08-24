@@ -36,6 +36,7 @@
         resolution: 1
       }
     );
+    var frame = 0;
     app.renderer.backgroundColor = 0x6666DD;
     /// Fill the screen 
     app.renderer.view.style.position = "absolute";
@@ -49,6 +50,7 @@
     var hero;
     var id;
     var fall = 0.05;
+    var diff = params.diff || 2
     var friction = 0.03;
     var levels = {};
     var warp = false;
@@ -57,9 +59,9 @@
         ///{x:200,y:innerHeight - 7000},{x:400,y:innerHeight - 7000},{x:600,y:innerHeight - 7000},{x:800,y:innerHeight - 7000},{x:1000,y:innerHeight - 7000},{x:1200,y:innerHeight - 7000}]
     ///     [{x:100,y:100},{x:300, y:200},{x:500,y:300},{x:700,y:400},{x:900,y:100},{x:1100, y:200},{x:1200,y:300}]
     levels.platforms = [
-        [{x:100,y:innerHeight - 250},{x:300,y:innerHeight - 450},{x:500,y:innerHeight - 650},{x:700,y:innerHeight - 650},{x:900,y:innerHeight - 450},{x:1100,y:innerHeight - 250}],
+        [{x:100,y:innerHeight - 200},{x:300,y:innerHeight - 400},{x:500,y:innerHeight - 600},{x:700,y:innerHeight - 600},{x:900,y:innerHeight - 400},{x:1100,y:innerHeight - 200}],
         [{x:100,y:innerHeight - 200},{x:300,y:innerHeight - 400},{x:500,y:innerHeight - 600},{x:700,y:innerHeight - 600},{x:900,y:innerHeight - 400},{x:1100,y:innerHeight - 200},
-         {x:100,y:innerHeight - 250},{x:300,y:innerHeight - 450},{x:500,y:innerHeight - 650},{x:700,y:innerHeight - 650},{x:900,y:innerHeight - 450},{x:1100,y:innerHeight - 250}],
+         {x:100,y:innerHeight - 150},{x:300,y:innerHeight - 350},{x:500,y:innerHeight - 550},{x:700,y:innerHeight - 550},{x:900,y:innerHeight - 350},{x:1100,y:innerHeight - 150}],
         [{x:759, y:innerHeight - 259},{x:109,y:innerHeight - 254},{x:103,y:innerHeight - 450},{x:542,y:innerHeight - 651},{x:731,y:innerHeight - 652},{x:900,y:innerHeight - 451},
         {x:1102,y:innerHeight - 256},{x:999, y:innerHeight - 510}],
         [function(){
@@ -109,7 +111,7 @@
             }
             return arr;
         }],
-        [{x:100,y:innerHeight - 250,stone:1},{x:300,y:innerHeight - 450,stone:1},{x:500,y:innerHeight - 650,stone:1},{x:700,y:innerHeight - 650,stone:1},{x:900,y:innerHeight - 450,stone:1},{x:1100,y:innerHeight - 250,stone:1}],
+        [{x:100,y:innerHeight - 200,stone:1},{x:300,y:innerHeight - 400,stone:1},{x:500,y:innerHeight - 600,stone:1},{x:700,y:innerHeight - 600,stone:1},{x:900,y:innerHeight - 400,stone:1},{x:1100,y:innerHeight - 200,stone:1}],
         [{x:innerWidth / 2 - 70, y: innerHeight - 125,},{x:innerWidth / 2 + 70, y: innerHeight - 125},{x:innerWidth / 2 - 120, y: innerHeight - 150, stone: 1},{x:innerWidth / 2 + 120, y: innerHeight - 150, stone: 1},{x:innerWidth / 2 - 120, y: innerHeight - 200, stone: 1},{x:innerWidth / 2 + 120, y: innerHeight - 200, stone: 1},{x:innerWidth / 2 - 120, y: innerHeight - 250, stone: 1},{x:innerWidth / 2 + 120, y: innerHeight - 250, stone: 1},{x:innerWidth / 2 - 120, y: innerHeight - 300, stone: 1},{x:innerWidth / 2 + 120, y: innerHeight - 300, stone: 1},{x:innerWidth / 2 - 120, y: innerHeight - 350, stone: 1},{x:innerWidth / 2 + 120, y: innerHeight - 350, stone: 1},{x:innerWidth / 2 - 120, y: innerHeight - 400, stone: 1},{x:innerWidth / 2 + 120, y: innerHeight - 400, stone: 1},{x: innerWidth / 2, y: innerHeight - 400},{x: innerWidth / 2 - 300, y: innerHeight - 250}]
     ];
     levels.blobs = [
@@ -122,16 +124,16 @@
     ];
     levels.power = [
         {health: 0, power:0},
-        {health: 10, power:0},
+        {health: 10 * diff, power:0},
         {health: 0, power:10},
-        {health: 75, power:10},
+        {health: 75 * diff, power:10 * diff},
         {health: 0, power:0},
         {health: 0, power:0},
     ]
     levels.treasures = [
         [{x:700,y:innerHeight - 700}
         ],
-        [{x:100,y:innerHeight - 225},{x:300,y:innerHeight - 425},{x:500,y:innerHeight - 625},{x:700,y:innerHeight - 625},{x:900,y:innerHeight - 425},{x:1100,y:innerHeight - 225}
+        [{x:100,y:innerHeight - 175},{x:300,y:innerHeight - 375},{x:500,y:innerHeight - 575},{x:700,y:innerHeight - 575},{x:900,y:innerHeight - 375},{x:1100,y:innerHeight - 175}
         ],
         [{x:100,y:innerHeight - 225},{x:311,y:innerHeight - 415},{x:500,y:innerHeight - 622},{x:710,y:innerHeight - 121},{x:900,y:innerHeight - 425},{x:1171,y:innerHeight - 228},
         {x:197,y:innerHeight - 291},{x:310,y:innerHeight - 4985},{x:511,y:innerHeight - 678},{x:700,y:innerHeight - 124},{x:890,y:innerHeight - 475},{x:1191,y:innerHeight - 222}
@@ -159,12 +161,12 @@
         0,
     ]
     levels.health = [
-        10,
-        128*2,
-        180,
-        128*20,
-        30,
-        150,
+        10 + diff * 64,
+        128*2 + diff * 64,
+        180 + diff * 64,
+        128*20 + diff * 64,
+        30 + diff * 64,
+        150 + diff * 64,
     ]
     var level = params.level || -1;
     var platformSprites = [];
@@ -238,7 +240,6 @@
         newLevel();
     }
     function newLevel() {
-        clearTimeout(curPowerDrop);
         ++level;
         blobs.forEach(function(blob){
             app.stage.removeChild(blob);
@@ -326,30 +327,7 @@
                 treasures.push(treasure);
                 app.stage.addChild(treasure);
             }
-            function powerDrop() {
-                if(randInt(1,100) <= levels.power[level].health) {
-                    var treasure = new Sprite(resources["sprites/healthBox.png"].texture);
-                    treasure.x = randInt(100,innerWidth - 100);
-                    treasure.y = randInt(0, -100);
-                    treasure.vvy = 0.4;
-                    treasure.vy = 0;
-                    powerups.push(treasure);
-                    app.stage.addChild(treasure);
-                    treasure.type = "health";
-                }
-                if(randInt(1,100) <= levels.power[level].power) {
-                    var treasure = new Sprite(resources["sprites/powerBox.png"].texture);
-                    treasure.x = randInt(100,innerWidth - 100);
-                    treasure.y = randInt(0, -100);
-                    treasure.vvy = 0.4;
-                    treasure.vy = 0;
-                    powerups.push(treasure);
-                    app.stage.addChild(treasure);
-                    treasure.type = "power";
-                }
-                curPowerDrop = setTimeout(powerDrop,10000);
-            }
-            curPowerDrop = setTimeout(powerDrop,10000);
+            curPowerDrop = frame + 600;
         } else {
             app.stage.addChild(txt);
             txt.text = "Welcome to the editor! Place any platforms you like! Hit Enter to continue. Hit Z to undo. Hit X to remove the closest platform.";
@@ -592,30 +570,7 @@
         if(keys.Enter) {
             spawnBlobs(Number(txt.text));
             console.log(txt.text);
-            function powerDrop() {
-                if(randInt(1,100) <= levels.power[level].health) {
-                    var treasure = new Sprite(resources["sprites/healthBox.png"].texture);
-                    treasure.x = randInt(100,innerWidth - 100);
-                    treasure.y = randInt(0, -100);
-                    treasure.vvy = 0.4;
-                    treasure.vy = 0;
-                    powerups.push(treasure);
-                    app.stage.addChild(treasure);
-                    treasure.type = "health";
-                }
-                if(randInt(1,100) <= levels.power[level].power) {
-                    var treasure = new Sprite(resources["sprites/powerBox.png"].texture);
-                    treasure.x = randInt(100,innerWidth - 100);
-                    treasure.y = randInt(0, -100);
-                    treasure.vvy = 0.4;
-                    treasure.vy = 0;
-                    powerups.push(treasure);
-                    app.stage.addChild(treasure);
-                    treasure.type = "power";
-                }
-                curPowerDrop = setTimeout(powerDrop,10000);
-            }
-            curPowerDrop = setTimeout(powerDrop,10000);
+            curPowerDrop = frame + 600;
             state = play;
             app.stage.removeChild(txt);
             keys.Enter = false;
@@ -644,9 +599,13 @@
         }
     }
     function gameLoop(delta) {
+        ++frame;
       state(delta);
     }
     function play(){
+        if(frame % curPowerDrop === 0) {
+            powerDrop();
+        }
         if(params.mouse) {
             keys.ArrowLeft = mouseX + 30 < hero.x;
             keys.ArrowRight = mouseX - 30 > hero.x;     
@@ -1038,6 +997,30 @@
             return true;
         }
         return false;
+    }
+
+    function powerDrop() {
+        if(randInt(1,100) <= levels.power[level].health) {
+            var treasure = new Sprite(resources["sprites/healthBox.png"].texture);
+            treasure.x = randInt(100,innerWidth - 100);
+            treasure.y = randInt(0, -100);
+            treasure.vvy = 0.4;
+            treasure.vy = 0;
+            powerups.push(treasure);
+            app.stage.addChild(treasure);
+            treasure.type = "health";
+        }
+        if(randInt(1,100) <= levels.power[level].power) {
+            var treasure = new Sprite(resources["sprites/powerBox.png"].texture);
+            treasure.x = randInt(100,innerWidth - 100);
+            treasure.y = randInt(0, -100);
+            treasure.vvy = 0.4;
+            treasure.vy = 0;
+            powerups.push(treasure);
+            app.stage.addChild(treasure);
+            treasure.type = "power";
+        }
+        curPowerDrop = frame + 600;
     }
     addEventListener("mousedown",function(e){
         e.preventDefault();

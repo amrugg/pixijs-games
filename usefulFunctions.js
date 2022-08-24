@@ -224,13 +224,7 @@ function randNum(min, max) {
         max = min;
         min = 1;
     }
-    var num = (Math.random() * (max - min + 1)) + min;
-    while(num < min) {
-        ++num;
-    }
-    while(num > max) {
-        --num;
-    }
+    var num = (Math.random() * (max - min)) + min;
     return num;
 }
 function direction(distance,angle) {
