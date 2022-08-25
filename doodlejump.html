@@ -173,7 +173,7 @@
     var blobs = [];
     var treasures = [];
     var powerups = [];
-    var powerupTypes = ["rocket","-1"];
+    var powerupTypes = ["Magnet"];
     var curPower;
     var energy;
     var healthMultiplier = params.healthMultiplier || 1;
@@ -304,6 +304,7 @@
                 treasure.x = levels.treasures[level][i].x;
                 treasure.y = levels.treasures[level][i].y;
                 treasure.vvy = levels.treasures[level][i].vvy || 0.4;
+                treasure.vvy = levels.treasures[level][i].vvx || 0.4;
                 treasure.vy = 0;
                 treasures.push(treasure);
                 app.stage.addChild(treasure);
@@ -313,6 +314,8 @@
                 treasure.x = randInt(100,innerWidth - 100);
                 treasure.y = randInt(0, innerHeight - 10);
                 treasure.vvy = 0.4;
+                treasure.vvx = 0.4;
+                treasure.vx = 0;
                 treasure.vy = 0;
                 treasures.push(treasure);
                 app.stage.addChild(treasure);
@@ -324,6 +327,8 @@
                 treasure.y = randPlatform.y - 30;
                 treasure.vy = 0;
                 treasure.vvy = 0.4;
+                treasure.vvx = 0.4;
+                treasure.vx = 0;
                 treasures.push(treasure);
                 app.stage.addChild(treasure);
             }
@@ -391,6 +396,8 @@
             treasure.y = mouseY;
             treasure.vy = 0;
             treasure.vvy = 0.4;
+            treasure.vvx = 0.4;
+            treasure.vx = 0;
             treasures.push(treasure);
             app.stage.addChild(treasure);
             keys.mouse = false;
@@ -465,6 +472,8 @@
                 treasure.y = randInt(0, innerHeight - 10);
                 treasure.vy = 0;
                 treasure.vvy = 0.4;
+                treasure.vvx = 0.4;
+                treasure.vx = 0;
                 treasures.push(treasure);
                 app.stage.addChild(treasure);
             }
@@ -495,6 +504,8 @@
                 var randPlatform = platformSprites[randInt(0,platformSprites.length - 1)];
                 var treasure = new Sprite(id["treasure.png"]);
                 treasure.vvy = 0.4;
+                treasure.vvx = 0.4;
+                treasure.vx = 0;
                 treasure.x = randInt(randPlatform.x - 30, randPlatform.x + 30);
                 treasure.y = randPlatform.y - 30;
                 treasure.vy = 0;
@@ -624,7 +635,7 @@
             hero.y -= 1;
             energy.width -= 0.5;
         }
-        if(keys.shift && curPower === "-1") {
+        if(keys.shift && (curPower === "-1" || curPower === "Magnet")) {
             energy.width -= 0.25;
         }
         if(energy.width < 0.25) {
@@ -864,80 +875,248 @@
                 }
             }
         });
-        for (var i = 0; i < treasures.length; i++) {
-            var treasure = treasures[i];
-            if(treasure.y < -30000) {
-                app.stage.removeChild(treasure);
-                treasures.splice(i,1);
-            }
-            if(treasure.grounded === getPlatformUnder(treasure)) {
-                var j = 0;
-                while(getPlatformUnder(treasure) < 0 && j < 125) {
-                    treasure.y += 0.1;
-                    ++j;
+        if(keys.shift && curPower === "Magnet") {
+            for (var i = 0; i < treasures.length; i++) {
+                var treasure = treasures[i];
+                debugger;
+                if(treasure.y < -30000) {
+                    app.stage.removeChild(treasure);
+                    treasures.splice(i,1);
                 }
-                treasure.vy *= -treasure.vvy * 2;
-            } else {
-                treasure.vy += fall;
-                treasure.y += treasure.vy;
-                treasure.grounded = false;
-            }
-            if(getPlatformUnder(treasure) < 0) {
-                treasure.grounded = getPlatformUnder(treasure);
-            } else if(getPlatformUnder(treasure) < treasure.height) {
-                if(treasure.vy < 0.2) {
-                    treasure.grounded = getPlatformUnder(treasure);
+                if(treasure.grounded === getPlatformUnder(treasure)) {
+                    var j = 0;
+                    while(getPlatformUnder(treasure) < 0 && j < 125) {
+                        treasure.y += 0.1;
+                        ++j;
+                    }
+                    treasure.vy *= -treasure.vvy * 2;
                 } else {
-                    treasure.y -= treasure.vy;
-                    treasure.vy *= -treasure.vvy;
+                    treasure.vy += fall;
+                    treasure.y += treasure.vy;
+                    treasure.grounded = false;
                 }
-            }
-            if(hitTestRectangle(treasure,hero)) {
-                // --i;
-                app.stage.removeChild(treasure);
-                treasures.splice(i,1);
-            }
-        }
-        for (var i = 0; i < powerups.length; i++) {
-            var treasure = powerups[i];
-            if(treasure.y < -30000) {
-                app.stage.removeChild(treasure);
-                powerups.splice(i,1);
-            }
-            if(treasure.grounded === getPlatformUnder(treasure)) {
-                var j = 0;
-                while(getPlatformUnder(treasure) < 0 && j < 125) {
-                    treasure.y += 0.1;
-                    ++j;
-                }
-                treasure.vy *= -treasure.vvy * 2;
-            } else {
-                treasure.vy += fall;
-                treasure.y += treasure.vy;
-                treasure.grounded = false;
-            }
-            if(getPlatformUnder(treasure) < 0) {
-                treasure.grounded = getPlatformUnder(treasure);
-            } else if(getPlatformUnder(treasure) < treasure.height) {
-                if(treasure.vy < 0.2) {
+                if(getPlatformUnder(treasure) < 0) {
                     treasure.grounded = getPlatformUnder(treasure);
+                } else if(getPlatformUnder(treasure) < treasure.height) {
+                    if(treasure.vy < 0.2) {
+                        treasure.grounded = getPlatformUnder(treasure);
+                    } else {
+                        treasure.y -= treasure.vy;
+                        treasure.vy *= -treasure.vvy;
+                    }
+                }
+                if(treasure.y - hero.y < 275 && ! treasure.jump){
+                    if(hero.x < treasure.x) {
+                        treasure.vx = -treasure.vvx;
+                        if(clipPlatform(treasure) && !treasure.grounded) {
+                            treasure.vx = 0;
+                        }
+                    }
+                    if(hero.x > treasure.x) {
+                        treasure.vx = treasure.vvx;
+                        if(clipPlatform(treasure) && !treasure.grounded) {
+                            treasure.vx = 0;
+                        }
+                    }
+                    if(hero.y < treasure.y) {
+                        if(getPlatformUnder(treasure) < treasure.height) {
+                            treasure.vy = -5;
+                            treasure.grounded = false;
+                        }
+                    }
                 } else {
-                    treasure.y -= treasure.vy;
-                    treasure.vy *= -treasure.vvy;
+                    /// Make for the nearest low platform.
+                    if(treasure.jump) {
+                        if(treasure.target.x < treasure.x && treasure.x - treasure.target.x > 20) {
+                            treasure.vx = -treasure.vvx;
+                            if(clipPlatform(treasure) && !treasure.grounded) {
+                                treasure.vx = 0;
+                            }
+                        }
+                        if(treasure.target.x > treasure.x && -treasure.x + treasure.target.x > 20) {
+                            treasure.vx = treasure.vvx;
+                            if(clipPlatform(treasure) && !treasure.grounded) {
+                                treasure.vx = 0;
+                            }
+                        }
+                        if(treasure.grounded) {
+                            treasure.jump = false;
+                        }
+                    } else {
+                        var nearestPlatform = {x:Infinity,y:Infinity};
+                        platformSprites.forEach(function(platform){
+                            if(treasure.y - platform.y < 250 && treasure.y - platform.y > 150 ) {
+                                if(getDistance(nearestPlatform.x,nearestPlatform.y,treasure.x,treasure.y) > getDistance(platform.x,platform.y,treasure.x,treasure.y)) {
+                                    nearestPlatform = platform;
+                                }
+                            }
+                        });
+                        if(Math.abs(treasure.x - nearestPlatform.x) < 200 && Math.abs(treasure.x - nearestPlatform.x) > 175) {
+                            if(getPlatformUnder(treasure) < treasure.height) {
+                                treasure.vy = -6;
+                                treasure.grounded = false;
+                                treasure.jump = true;
+                                treasure.target = nearestPlatform;
+                            }
+                        }
+                        if(treasure.grounded) {
+                            if(nearestPlatform.x + 200 < treasure.x && treasure.x - nearestPlatform.x + 200 > 20) {
+                                treasure.vx = -treasure.vvx;
+                                if(clipPlatform(treasure) && !treasure.grounded) {
+                                    treasure.vx = 0;
+                                }
+                            }
+                            if(nearestPlatform.x + 200 > treasure.x  && -treasure.x + nearestPlatform.x + 200 > 20) {
+                                treasure.vx = treasure.vvx;
+                                if(clipPlatform(treasure) && !treasure.grounded) {
+                                    treasure.vx = 0;
+                                }
+                            }
+                        } else {
+                            if(nearestPlatform.x < treasure.x && treasure.x - nearestPlatform.x > 20) {
+                                treasure.vx = -treasure.vvx;
+                                if(clipPlatform(treasure) && !treasure.grounded) {
+                                    treasure.vx = 0;
+                                }
+                            }
+                            if(nearestPlatform.x > treasure.x && -treasure.x + nearestPlatform.x < 20) {
+                                treasure.vx = treasure.vvx;
+                                if(clipPlatform(treasure) && !treasure.grounded) {
+                                    treasure.vx = 0;
+                                }
+                            }
+                        }
+                    }
+                }
+                treasure.x += treasure.vx;
+                treasure.vx = treasure.vx > friction ? treasure.vx -= friction : treasure.vx > 0 ? treasure.vx = 0 : treasure.vx < -friction ? treasure.vx += friction : treasure.vx = 0;
+                if(hitTestRectangle(treasure,hero)) {
+                    // --i;
+                    app.stage.removeChild(treasure);
+                    treasures.splice(i,1);
                 }
             }
-            if(hitTestRectangle(treasure,hero)) {
-                // --i;
-                app.stage.removeChild(treasure);
-                powerups.splice(i,1);
-                if(treasure.type === "health") {
-                    healthBar.outer.width += 200;
-                } else if(treasure.type === "power") {
-                    curPower = powerupTypes[randInt(0,powerupTypes.length - 1)];
-                    if(curPower === "rocket" || curPower === "-1") {
-                        energy.width = 128;
-                        powertxt.text = curPower;
-                        powertxt.y = 30;
+            for (var i = 0; i < powerups.length; i++) {
+                var treasure = powerups[i];
+                if(treasure.y < -30000) {
+                    app.stage.removeChild(treasure);
+                    powerups.splice(i,1);
+                }
+                if(treasure.grounded === getPlatformUnder(treasure)) {
+                    var j = 0;
+                    while(getPlatformUnder(treasure) < 0 && j < 125) {
+                        treasure.y += 0.1;
+                        ++j;
+                    }
+                    treasure.vy *= -treasure.vvy * 2;
+                } else {
+                    treasure.vy += fall;
+                    treasure.y += treasure.vy;
+                    treasure.grounded = false;
+                }
+                if(getPlatformUnder(treasure) < 0) {
+                    treasure.grounded = getPlatformUnder(treasure);
+                } else if(getPlatformUnder(treasure) < treasure.height) {
+                    if(treasure.vy < 0.2) {
+                        treasure.grounded = getPlatformUnder(treasure);
+                    } else {
+                        treasure.y -= treasure.vy;
+                        treasure.vy *= -treasure.vvy;
+                    }
+                }
+                if(hitTestRectangle(treasure,hero)) {
+                    // --i;
+                    app.stage.removeChild(treasure);
+                    powerups.splice(i,1);
+                    if(treasure.type === "health") {
+                        healthBar.outer.width += 200;
+                    } else if(treasure.type === "power") {
+                        curPower = powerupTypes[randInt(0,powerupTypes.length - 1)];
+                        console.log(curPower);
+                        if(curPower === "rocket" || curPower === "-1" || curPower === "Magnet") {
+                            energy.width = 128;
+                            powertxt.text = curPower;
+                            powertxt.y = 30;
+                        }
+                    }
+                }
+            }
+        } else {
+            for (var i = 0; i < treasures.length; i++) {
+                var treasure = treasures[i];
+                if(treasure.y < -30000) {
+                    app.stage.removeChild(treasure);
+                    treasures.splice(i,1);
+                }
+                if(treasure.grounded === getPlatformUnder(treasure)) {
+                    var j = 0;
+                    while(getPlatformUnder(treasure) < 0 && j < 125) {
+                        treasure.y += 0.1;
+                        ++j;
+                    }
+                    treasure.vy *= -treasure.vvy * 2;
+                } else {
+                    treasure.vy += fall;
+                    treasure.y += treasure.vy;
+                    treasure.grounded = false;
+                }
+                if(getPlatformUnder(treasure) < 0) {
+                    treasure.grounded = getPlatformUnder(treasure);
+                } else if(getPlatformUnder(treasure) < treasure.height) {
+                    if(treasure.vy < 0.2) {
+                        treasure.grounded = getPlatformUnder(treasure);
+                    } else {
+                        treasure.y -= treasure.vy;
+                        treasure.vy *= -treasure.vvy;
+                    }
+                }
+                if(hitTestRectangle(treasure,hero)) {
+                    // --i;
+                    app.stage.removeChild(treasure);
+                    treasures.splice(i,1);
+                }
+            }
+            for (var i = 0; i < powerups.length; i++) {
+                var treasure = powerups[i];
+                if(treasure.y < -30000) {
+                    app.stage.removeChild(treasure);
+                    powerups.splice(i,1);
+                }
+                if(treasure.grounded === getPlatformUnder(treasure)) {
+                    var j = 0;
+                    while(getPlatformUnder(treasure) < 0 && j < 125) {
+                        treasure.y += 0.1;
+                        ++j;
+                    }
+                    treasure.vy *= -treasure.vvy * 2;
+                } else {
+                    treasure.vy += fall;
+                    treasure.y += treasure.vy;
+                    treasure.grounded = false;
+                }
+                if(getPlatformUnder(treasure) < 0) {
+                    treasure.grounded = getPlatformUnder(treasure);
+                } else if(getPlatformUnder(treasure) < treasure.height) {
+                    if(treasure.vy < 0.2) {
+                        treasure.grounded = getPlatformUnder(treasure);
+                    } else {
+                        treasure.y -= treasure.vy;
+                        treasure.vy *= -treasure.vvy;
+                    }
+                }
+                if(hitTestRectangle(treasure,hero)) {
+                    // --i;
+                    app.stage.removeChild(treasure);
+                    powerups.splice(i,1);
+                    if(treasure.type === "health") {
+                        healthBar.outer.width += 200;
+                    } else if(treasure.type === "power") {
+                        curPower = powerupTypes[randInt(0,powerupTypes.length - 1)];
+                        if(curPower === "rocket" || curPower === "-1" || curPower === "Magnet") {
+                            energy.width = 128;
+                            powertxt.text = curPower;
+                            powertxt.y = 30;
+                        }
                     }
                 }
             }
