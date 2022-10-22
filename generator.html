@@ -31,6 +31,8 @@
     var cringeAttributes = ["Cringy","Juicy","Cookie","Chicken","Bright","Red","Sweet","Chugar","Shookie","Hogey"];
     var curSign = false;
     var signs = ["Onward","Fire","Mushrooms","Fauna","Lightning","Starlight"];
+    var cringeSigns = ["Cringe", "Drink"];
+    var cringeCountersigns = [["Bright","Red","Juicy","Sweet"], ["Juicy","Tomatoes","Oranges","Apples"]];
     var countersigns = [["Upward", "Forward", "Ever Onward", "Never Turn Back"], ["Water", "Stone", "Iron", "Gems"],["Flower","Fungi","Tree","Bush"], ["Deer", "Hart", "Squirrel", "Eagle"], ["Thundercloud", "Tornado", "Hurricane", "Earthquake"], ["Earth","Nebula", "Sun", "Galaxy"]];
     var resultDiv = document.getElementById("resultDiv");
     var generate = document.getElementById("Generate");
@@ -101,7 +103,6 @@
                 ++i;
             }
         } else {
-            debugger;
             teams = [[],[],[]];
             var duplicate = playerList.slice();
             var i = 1;
@@ -138,9 +139,16 @@
         return attributes.splice(randInt(0,attributes.length - 1), 1)[0];
     }
     function randomSign() {
-        if(curSign) {
+        if(typeof curSign === "number") {
+            if(cringe) {
+                return cringeCountersigns[curSign].splice(randInt(0, cringeCountersigns[curSign].length - 1),1);
+            }
             return countersigns[curSign].splice(randInt(0, countersigns[curSign].length - 1),1);
         } else {
+            if(cringe) {
+                curSign = randInt(0,cringeSigns.length -1);
+                return cringeSigns[curSign];    
+            }
             curSign = randInt(0,signs.length -1);
             return signs[curSign];
         }
