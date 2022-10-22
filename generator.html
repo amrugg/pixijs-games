@@ -1,0 +1,157 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Generator</title>
+</head>
+    <style>* {padding: 0; margin: 0}</style>
+    <div id="resultDiv"></div>
+    <button id="Generate">Generate</button>
+    <div id="sideDiv">
+        <button id="add">Add player</button> <input id="name" placeholder="Player name"></br>
+        <button id="remove">Remove player</button>
+        <select id="list">
+        </select>
+    </div>
+<body>
+  <script type="text/javascript">
+    "use strict";
+
+    var params = getParams();
+    function getParams() {
+      var params = {};
+      location.search.substr(1).split("&").forEach(function(el) {
+        var data = el.replace(/\+/g, " ").split("=");
+        params[decodeURIComponent(data[0])] = data[1] ? decodeURIComponent(data[1]) : true;
+      });
+      return params;
+    }
+    var cringe = !(params.noCringe === "true");
+    var attributes = ["Swift","Speedy","Strong", "Secret","Sneaky", "Mighty", "Awesome", "Amazing", "Benevolent", "Radiant", "Young", "Grim"];
+    var cringeAttributes = ["Cringy","Juicy","Cookie","Chicken","Bright","Red","Sweet","Chugar","Shookie","Hogey"];
+    var curSign = false;
+    var signs = ["Onward","Fire","Mushrooms","Fauna","Lightning","Starlight"];
+    var countersigns = [["Upward", "Forward", "Ever Onward", "Never Turn Back"], ["Water", "Stone", "Iron", "Gems"],["Flower","Fungi","Tree","Bush"], ["Deer", "Hart", "Squirrel", "Eagle"], ["Thundercloud", "Tornado", "Hurricane", "Earthquake"], ["Earth","Nebula", "Sun", "Galaxy"]];
+    var resultDiv = document.getElementById("resultDiv");
+    var generate = document.getElementById("Generate");
+    generate.addEventListener("click",generateList);
+    var add = document.getElementById("add");
+    var addName = document.getElementById("name");
+    var remove = document.getElementById("remove");
+    var selectList = document.getElementById("list");
+    var playerList = [];
+    var teamColors = ["Red","Blue","Yellow","Green","Orange","Purple","White","Black"];
+    add.addEventListener("click", function() {
+        if(addName.value !== "") {
+            playerList.push(addName.value);
+            var option = document.createElement("option");
+            option.innerHTML = addName.value;
+            selectList.appendChild(option);
+            addName.value = "";
+        }
+    });
+    remove.addEventListener("click", function() {
+        removePlayerList(selectList.value);
+    });
+    function removePlayerList(value) {
+        for(let i = 0; i < playerList.length; i++) {
+            if(playerList[i] === value) {
+                playerList.splice(i,1);
+            }
+        }
+        for(let i = 0; i < selectList.children.length; i++) {
+            var cur = selectList.children[i].innerHTML;
+            if(cur === value) {
+                selectList.removeChild(selectList.children[i]);
+            }
+        }
+    }
+    addEventListener("keydown",function(e){
+        if(e.key === "Enter") {
+            if(addName.value !== "") {
+                playerList.push(addName.value);
+                var option = document.createElement("option");
+                option.innerHTML = addName.value;
+                selectList.appendChild(option);
+                addName.value = "";
+            }
+        }
+    });
+    function generateList() {
+        var teams = [];
+        add.hidden = true;
+        addName.hidden = true;
+        remove.hidden = true;
+        selectList.hidden = true;
+        generate.hidden = true;
+        if(playerList.length >= 40) {
+            teams = [[],[],[],[]];
+            var duplicate = playerList.slice();
+            var i = 1;
+            while(duplicate.length) {
+                if(i % 4 === 0) {
+                    teams[3].push(duplicate.splice(randInt(0,duplicate.length-1), 1)[0]);
+                } else if(i % 3 === 0) {
+                    teams[2].push(duplicate.splice(randInt(0,duplicate.length-1), 1)[0]);
+                } else if(i % 2 === 0) {
+                    teams[1].push(duplicate.splice(randInt(0,duplicate.length-1), 1)[0]);
+                } else {
+                    teams[0].push(duplicate.splice(randInt(0,duplicate.length-1), 1))[0];
+                }
+                ++i;
+            }
+        } else {
+            debugger;
+            teams = [[],[],[]];
+            var duplicate = playerList.slice();
+            var i = 1;
+            while(duplicate.length) {
+                if(i % 3 === 0) {
+                    teams[2].push(duplicate.splice(randInt(0,duplicate.length-1), 1)[0]);
+                } else if(i % 2 === 0) {
+                    teams[1].push(duplicate.splice(randInt(0,duplicate.length-1), 1)[0]);
+                } else {
+                    teams[0].push(duplicate.splice(randInt(0,duplicate.length-1), 1)[0]);
+                }
+                ++i;
+            }
+        }
+        var signEl = document.createElement("h2");
+        signEl.innerHTML = "Sign: " + randomSign();
+        resultDiv.appendChild(signEl);
+        for(let i = 0; i < teams.length; i++) {
+            var heading = document.createElement("h2");
+            heading.innerHTML = randomAttribute() + " " + teamColors[i] + "s: Countersign " + randomSign();
+            resultDiv.appendChild(heading);
+            for(let j = 0; j < teams[i].length; j++) {
+                var name = document.createElement("h4");
+                name.innerHTML = teams[i][j] + (j === 0 ? " (Leader)" : j + 1 === teams[i].length ? " (Assassin)" : "");
+                resultDiv.append(name);
+            }
+            resultDiv.append(document.createElement("br"));
+        }
+    }
+    function randomAttribute() {
+        if(cringe) {
+            return cringeAttributes.splice(randInt(0,cringeAttributes.length - 1), 1)[0];
+        }
+        return attributes.splice(randInt(0,attributes.length - 1), 1)[0];
+    }
+    function randomSign() {
+        if(curSign) {
+            return countersigns[curSign].splice(randInt(0, countersigns[curSign].length - 1),1);
+        } else {
+            curSign = randInt(0,signs.length -1);
+            return signs[curSign];
+        }
+    }
+    function randInt(min, max) {
+        if(max === undefined) {
+        max = min
+        min = 1
+        }
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+  </script>
+</body>
+</html> 
