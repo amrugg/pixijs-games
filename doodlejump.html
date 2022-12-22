@@ -173,7 +173,7 @@
     var blobs = [];
     var treasures = [];
     var powerups = [];
-    var powerupTypes = ["Magnet"];
+    var powerupTypes = ["Magnet","rocket","-1"];
     var curPower;
     var energy;
     var healthMultiplier = params.healthMultiplier || 1;
@@ -988,7 +988,7 @@
                         }
                     }
                 }
-                treasure.x += treasure.vx;
+                treasure.x += treasure.vx*3;
                 treasure.vx = treasure.vx > friction ? treasure.vx -= friction : treasure.vx > 0 ? treasure.vx = 0 : treasure.vx < -friction ? treasure.vx += friction : treasure.vx = 0;
                 if(hitTestRectangle(treasure,hero)) {
                     // --i;
