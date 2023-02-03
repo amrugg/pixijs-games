@@ -26,7 +26,7 @@ app.renderer.view.style.display = "block";
 app.renderer.autoResize = true;
 app.renderer.resize(window.innerWidth, window.innerHeight);
 document.body.appendChild(app.view);
-PIXI.loader.add(["sprites/squirrels/SquirrelSprite.png","sprites/birds/BirdSprite.png","sprites/food/birdseed.png","sprites/food/birdseed1.png","sprites/food/birdseed2.png","sprites/food/bird-feeder.png","sprites/food/bird-feeder1.png","sprites/food/bird-feeder2.png","sprites/food/bird-feeder3.png","sprites/food/bird-feeder-burped.png","sprites/birds/bird-victory.png","sprites/squirrels/squirrel-victory.png"]).load(setup);
+PIXI.loader.add(["sprites/squirrels/SquirrelSprite.png","sprites/birds/BirdSprite.png","sprites/food/birdseed.png","sprites/food/birdseed1.png","sprites/food/birdseed2.png","sprites/food/bird-feeder.png","sprites/food/bird-feeder1.png","sprites/food/bird-feeder2.png","sprites/food/bird-feeder3.png","sprites/food/bird-feeder-burped.png","sprites/birds/bird-victory.png","sprites/squirrels/squirrel-victory.png","sprites/food/background.png"]).load(setup);
 var loaded = 0;
 function setup() {
     if(++loaded === 2) {
@@ -55,6 +55,10 @@ window.player2 = player2;
 PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
 var animations = [];
 function run_simulation() {
+    var background = new Sprite(resources["sprites/food/background.png"].texture);
+    background.width = innerWidth;
+    background.height = innerHeight;
+    app.stage.addChild(background);
     var birdFeeder = new Sprite(resources["sprites/food/bird-feeder.png"].texture);
     app.stage.addChild(birdFeeder);
     birdFeeder.x = innerWidth/2;
