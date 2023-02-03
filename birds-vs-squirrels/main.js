@@ -17,6 +17,8 @@ var app = new Application({
     resolution: 1
     }
 );
+
+var playedMusic = false;
 app.renderer.backgroundColor = 0x7777EE;
 /// Fill the screen 
 app.renderer.view.style.position = "absolute";
@@ -24,22 +26,41 @@ app.renderer.view.style.display = "block";
 app.renderer.autoResize = true;
 app.renderer.resize(window.innerWidth, window.innerHeight);
 document.body.appendChild(app.view);
-PIXI.loader.add(["sprites/squirrels/SquirrelSprite.png","sprites/birds/BirdSprite.png","sprites/food/birdseed.png","sprites/food/bird-feeder.png"]).load(setup);
+PIXI.loader.add(["sprites/squirrels/SquirrelSprite.png","sprites/birds/BirdSprite.png","sprites/food/birdseed.png","sprites/food/birdseed1.png","sprites/food/birdseed2.png","sprites/food/bird-feeder.png","sprites/food/bird-feeder1.png","sprites/food/bird-feeder2.png","sprites/food/bird-feeder3.png","sprites/food/bird-feeder-burped.png","sprites/birds/bird-victory.png","sprites/squirrels/squirrel-victory.png"]).load(setup);
 var loaded = 0;
 function setup() {
     if(++loaded === 2) {
         run_simulation();
     }
 }
+var params = getParams();
+function getParams() {
+    var params = {};
+    location.search.substr(1).split("&").forEach(function(el) {
+    var data = el.replace(/\+/g, " ").split("=");
+    params[decodeURIComponent(data[0])] = data[1] ? decodeURIComponent(data[1]) : true;
+    });
+    return params;
+}
+var remainingSeed = params.remainingSeed || 1000;
+var threshold = params.threshold || 500;
 var player1 = {birdseed:0};
 var player2 = {birdseed:0};
 player1.counter = document.getElementById("score1");
 player2.counter = document.getElementById("score2");
+var birdSeedCounter = document.getElementById("gameEnd");
+birdSeedCounter.style.right = (innerWidth/2 - 150/2) + "px"
 window.player1 = player1;
 window.player2 = player2;
 PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
 var animations = [];
 function run_simulation() {
+    var birdFeeder = new Sprite(resources["sprites/food/bird-feeder.png"].texture);
+    app.stage.addChild(birdFeeder);
+    birdFeeder.x = innerWidth/2;
+    birdFeeder.y = innerHeight;
+    birdFeeder.anchor.set(0.5,1);
+    birdFeeder.scale.set(6)
     var birdTexture = TextureCache["sprites/birds/BirdSprite.png"];
     var birdRectangle = new Rectangle(0,0,16,16);
     birdTexture.frame = birdRectangle;
@@ -72,11 +93,13 @@ function run_simulation() {
     animations.push(squirrel.animation)
     var gravity = { x: 0.0, y: 98.1*5 };
     var world = new RAPIER.World(gravity);
-
-    var birdSeed = new PIXI.ParticleContainer(4000);
+    var birdsWonSprite = new Sprite(resources["sprites/birds/bird-victory.png"].texture);
+    var squirrelsWonSprite = new Sprite(resources["sprites/squirrels/squirrel-victory.png"].texture);
+ 
+    var birdSeed = new PIXI.Container(4000);
     app.stage.addChild(birdSeed);
     birdSeed.maxSize = 4000;
-    for(var i = 0; i < 40; i++) {
+    for(var i = 0; i < 0; i++) {
         var birdSeedParticle = new Sprite(resources["sprites/food/birdseed.png"].texture);
         var newRigidBodyDesc = RAPIER.RigidBodyDesc.dynamic().setTranslation(0 + Math.random() * innerWidth, 200+Math.random() * 200);
         newRigidBodyDesc.setAdditionalMass(0.001);
@@ -89,30 +112,24 @@ function run_simulation() {
         // Game loop. Replace by your own game loop system.
         birdSeed.addChild(birdSeedParticle);
     }
-    // Create the ground
+    // Create the birdfeeder
     var groundColliderDesc = RAPIER.ColliderDesc.cuboid(50, 150).setTranslation(innerWidth/2,innerHeight - 650);
 
     var feedPoint1 = {x: innerWidth/2 - 100, y: innerHeight - 550};
     var feedPoint2 = {x: innerWidth/2 + 100, y: innerHeight - 550};
 
     world.createCollider(groundColliderDesc);
-    var birdFeeder = new Sprite(resources["sprites/food/bird-feeder.png"].texture);
-    app.stage.addChild(birdFeeder);
-    birdFeeder.x = innerWidth/2;
-    birdFeeder.y = innerHeight;
-    birdFeeder.anchor.set(0.5,1);
-    birdFeeder.scale.set(6)
     
-    var groundColliderDesc0 = RAPIER.ColliderDesc.cuboid(innerWidth * 2, 2).setTranslation(0,20);
+    var groundColliderDesc0 = RAPIER.ColliderDesc.cuboid(innerWidth * 2, 50).setTranslation(0,-50);
     world.createCollider(groundColliderDesc0);
 
-    var groundColliderDesc = RAPIER.ColliderDesc.cuboid(innerWidth * 2, 2).setTranslation(0,innerHeight-20);
+    var groundColliderDesc = RAPIER.ColliderDesc.cuboid(innerWidth * 2, 50).setTranslation(0,innerHeight+30);
     world.createCollider(groundColliderDesc);
 
-    var groundColliderDesc1 = RAPIER.ColliderDesc.cuboid(2, innerHeight * 2).setTranslation(20,0);
+    var groundColliderDesc1 = RAPIER.ColliderDesc.cuboid(2, innerHeight * 50).setTranslation(10,0);
     world.createCollider(groundColliderDesc1);
 
-    var groundColliderDesc2 = RAPIER.ColliderDesc.cuboid(2, innerHeight * 2).setTranslation(innerWidth - 20,0);
+    var groundColliderDesc2 = RAPIER.ColliderDesc.cuboid(2, innerHeight * 50).setTranslation(innerWidth + 20,0);
     world.createCollider(groundColliderDesc2);
 
     // Create a dynamic rigid-body.
@@ -141,6 +158,8 @@ function run_simulation() {
     squirrel.continuance = 0;
     window.squirrel = squirrel;
     window.bird = bird;
+    bird.form.setDominanceGroup(1);
+    squirrel.form.setDominanceGroup(1);
 
     // console.log(rigidBody);
     // Create a cuboid collider attached to the dynamic rigidBody.
@@ -162,7 +181,6 @@ function run_simulation() {
             var translation = seed.collider.translation();
             seed.x = translation.x;
             seed.y = translation.y;
-            
         });
         squirrel.x = squirrel.form.translation().x
         squirrel.y = squirrel.form.translation().y
@@ -174,13 +192,16 @@ function run_simulation() {
         } else {
             squirrel.continuance = 0;
             squirrel.lastY = squirrel.y;
+            if(squirrel.canJump === 2) {
+                squirrel.canJump = false;
+            }
         }
         if(bird.locked) {
-            if(keys["Enter"] && (bird.animation.x === 0 || bird.animation.y !== 2)) {
+            if(keys["Enter"] && (bird.animation.x === 0 || bird.animation.y !== 2) && remainingSeed > 0) {
                 bird.animation.y = 2;
                 bird.animation.x = 0;
                 bird.animation.length = 3;
-                bird.animation.speed = 2;
+                bird.animation.speed = 3;
                 bird.animation.destructive = function() {
                     console.log("Destruct")
 
@@ -193,23 +214,35 @@ function run_simulation() {
                     bird.animation.speed = 50;
                     bird.animation.frameCount = 0;
                     bird.animation.destructive = false;
+                    --remainingSeed;
+                    if(Math.random() < 0.5) {
+                        --remainingSeed;
+                        if(bird.x === feedPoint1.x) {
+                            var location = {x:feedPoint2.x - 25, y: feedPoint2.y + 50}
+                            var impulse = {x:Math.random()*50,y:Math.random()*200-100};
+                        } else {
+                            var impulse = {x:Math.random()*-50,y:Math.random()*200-100};
+                            var location = {x:feedPoint1.x + 25, y: feedPoint1.y + 50}
+                        }
+                        let newBirdSeedParticle = makeNewBirdseedSprite();
+                        newBirdSeedParticle.tint = 0xffffb6;
+                        console.log(newBirdSeedParticle.texture);
+                        var rigidBodyDesc = RAPIER.RigidBodyDesc.dynamic().setTranslation(location.x,location.y);
+                        rigidBodyDesc.setAdditionalMass(0.1);
 
+                        var rigidBody = world.createRigidBody(rigidBodyDesc);
+                        var colliderDesc = RAPIER.ColliderDesc.cuboid(8,2).setDensity(0);
+                        var collider = world.createCollider(colliderDesc, rigidBody);
+                        newBirdSeedParticle.collider = collider;
+                        newBirdSeedParticle.form = rigidBody;
+                        setTimeout(function(){rigidBody.applyImpulse(impulse)},16)
+                        newBirdSeedParticle.x = location;
+                        newBirdSeedParticle.y = location;
 
-                    var birdSeedParticle = new Sprite(resources["sprites/food/birdseed.png"].texture);
-                    var newRigidBodyDesc = RAPIER.RigidBodyDesc.dynamic();
-                    if(bird.x === feedPoint1.x) {
-                        console.log({x:feedPoint2.x + 10, y: feedPoint2.y + Math.random() * -200})
-                        newRigidBodyDesc.setTranslation(feedPoint2.x + 10, feedPoint2.y + Math.random() * -200);
+                        // Game loop. Replace by your own game loop system.
+                        // console.log(newBirdSeedParticle);
+                        birdSeed.addChild(newBirdSeedParticle);
                     }
-                    newRigidBodyDesc.setAdditionalMass(0.001);
-                    var newRigidBody = world.createRigidBody(newRigidBodyDesc);
-                    // console.log(newRigidBody);
-                    // Create a cuboid collider attached to the dynamic newRigidBody.
-                    var colliderDesc = RAPIER.ColliderDesc.cuboid(8, 2).setDensity(0);
-                    var collider = world.createCollider(colliderDesc, newRigidBody);
-                    birdSeedParticle.collider = collider;
-                    // Game loop. Replace by your own game loop system.
-                    birdSeed.addChild(birdSeedParticle);
                 };
                 keys["Enter"] = false;
             }
@@ -235,7 +268,7 @@ function run_simulation() {
             bird.animation.y = 2;
             bird.animation.x = 0;
             bird.animation.length = 3;
-            bird.animation.speed = 2;
+            bird.animation.speed = 3;
             bird.animation.destructive = function() {
                 console.log("Destruct")
                 bird.animation.y = 0;
@@ -359,7 +392,7 @@ function run_simulation() {
         ///// Squirrel Code
         moving = false;
         if(squirrel.locked) {
-            if(keys[" "] && (squirrel.animation.x === 0 || squirrel.animation.y !== 4)) {
+            if(keys[" "] && (squirrel.animation.x === 0 || squirrel.animation.y !== 4) && remainingSeed > 0) {
                 squirrel.animation.y = 4;
                 squirrel.animation.x = 0;
                 squirrel.animation.length = 2;
@@ -367,6 +400,7 @@ function run_simulation() {
                 squirrel.animation.destructive = function() {
                     console.log("Destruct")
                     ++player2.birdseed;
+                    --remainingSeed;
                     player2.counter.textContent = (player2.birdseed < 10 ? "00" : player2.birdseed < 100 ? "0" : "") + player2.birdseed.toString();
 
                     squirrel.animation.y = 0;
@@ -375,6 +409,33 @@ function run_simulation() {
                     squirrel.animation.speed = 50;
                     squirrel.animation.frameCount = 45;
                     squirrel.animation.destructive = false;
+
+                    if(Math.random() < 0.5) {
+                        --remainingSeed;
+                        if(squirrel.x === feedPoint1.x) {
+                            var location = {x:feedPoint2.x - 25, y: feedPoint2.y + 50}
+                            var impulse = {x:Math.random()*50,y:Math.random()*200-100};
+                        } else {
+                            var impulse = {x:Math.random()*-50,y:Math.random()*200-100};
+                            var location = {x:feedPoint1.x + 25, y: feedPoint1.y + 50}
+                        }
+                        var birdSeedParticle = new Sprite(resources["sprites/food/birdseed.png"].texture);
+                        var rigidBodyDesc = RAPIER.RigidBodyDesc.dynamic().setTranslation(location.x,location.y);
+                        rigidBodyDesc.setAdditionalMass(0.1);
+
+                        var rigidBody = world.createRigidBody(rigidBodyDesc);
+                        var colliderDesc = RAPIER.ColliderDesc.cuboid(8,2).setDensity(0);
+                        var collider = world.createCollider(colliderDesc, rigidBody);
+                        birdSeedParticle.collider = collider;
+                        birdSeedParticle.form = rigidBody;
+                        setTimeout(function(){rigidBody.applyImpulse(impulse)},16)
+                        birdSeedParticle.x = location;
+                        birdSeedParticle.y = location;
+
+                        // Game loop. Replace by your own game loop system.
+                        console.log(birdSeedParticle);
+                        birdSeed.addChild(birdSeedParticle);
+                    }
                 };
                 squirrel.animation.frameCount = 0;
                 keys[" "] = false;
@@ -524,12 +585,51 @@ function run_simulation() {
 
 
 
+        birdSeedCounter.textContent = remainingSeed.toString();
+        if(remainingSeed >= 1000) {
+            birdSeedCounter.style.right = (innerWidth/2 - 150/2) + "px"
+        } else if(remainingSeed >= 100) {
+            birdSeedCounter.style.right = (innerWidth/2 - 110/2) + "px"
+        } else if(remainingSeed >= 10) {
+            birdSeedCounter.style.right = (innerWidth/2 - 70/2) + "px"
+        } else {
+            birdSeedCounter.style.right = (innerWidth/2 - 30/2) + "px"
+        }
+        if(remainingSeed > 750) {
+            birdFeeder.texture = resources["sprites/food/bird-feeder.png"].texture;
+        } else if(remainingSeed > 500) {
+            birdFeeder.texture = resources["sprites/food/bird-feeder1.png"].texture;
+        } else if(remainingSeed > 250) {
+            birdFeeder.texture = resources["sprites/food/bird-feeder2.png"].texture;
+        } else if(remainingSeed > 0) {
+            birdFeeder.texture = resources["sprites/food/bird-feeder3.png"].texture;
+        } else {
+            birdFeeder.texture = resources["sprites/food/bird-feeder-burped.png"].texture;
+        }
 
 
+        if(player1.birdseed > threshold) {
+            app.stage.addChild(birdsWonSprite);
+            birdsWonSprite.scale.set(3);
+            birdsWonSprite.x = innerWidth/2;
+            birdsWonSprite.y = innerHeight/2;
+            birdsWonSprite.anchor.set(0.5,0.5);
+            app.stage.removeChild(birdFeeder);
+            app.stage.removeChild(squirrel);
+            app.stage.removeChild(bird);
+        } else if(player2.birdseed > threshold) {
+            app.stage.addChild(squirrelsWonSprite);
+            squirrelsWonSprite.scale.set(3);
+            squirrelsWonSprite.x = innerWidth/2;
+            squirrelsWonSprite.y = innerHeight/2;
+            squirrelsWonSprite.anchor.set(0.5,0.5);
+            app.stage.removeChild(birdFeeder);
+            app.stage.removeChild(squirrel);
+            app.stage.removeChild(bird);
+        } else {
+            setTimeout(gameLoop, 16);
+        }
 
-
-
-        setTimeout(gameLoop, 16);
         animations.forEach(function(animation){
             if(animation.frameCount%animation.speed === 0) {
                 if(animation.x >= animation.length) {
@@ -552,8 +652,17 @@ function run_simulation() {
     };
     gameLoop();
 }
+
 addEventListener("keydown", function (e){
     keys[e.key] = true;
+    if(!playedMusic) {
+    var sound = new Howl({
+        src: ['crab.mp3']
+      });
+      sound.once('load',function(){console.log("ADSFD")})
+      sound.play();
+      playedMusic = true;
+    }
 });
 addEventListener("keyup", function (e){
     keys[e.key] = false;
@@ -563,6 +672,17 @@ RAPIER.init().then(function () {
         run_simulation();
     }
 });
+function makeNewBirdseedSprite() {
+    var rand = Math.random();
+    if(rand < 0.333333) {
+        var textureLocation = "sprites/food/birdseed.png"
+    } else if(rand < 0.66666) {
+        var textureLocation = "sprites/food/birdseed1.png"
+    } else {
+        var textureLocation = "sprites/food/birdseed2.png"
+    }
+    return new Sprite(resources[textureLocation].texture)
+}
 function getDistance(x1,y1,x2,y2) {
     /// Mine
     return Math.sqrt((x1-x2)**2+(y1-y2)**2);
