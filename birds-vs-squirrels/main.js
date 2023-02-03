@@ -33,6 +33,8 @@ function setup() {
 }
 var player1 = {birdseed:0};
 var player2 = {birdseed:0};
+player1.counter = document.getElementById("score1");
+player2.counter = document.getElementById("score2");
 window.player1 = player1;
 window.player2 = player2;
 PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
@@ -81,7 +83,7 @@ function run_simulation() {
         var newRigidBody = world.createRigidBody(newRigidBodyDesc);
         // console.log(newRigidBody);
         // Create a cuboid collider attached to the dynamic newRigidBody.
-        var colliderDesc = RAPIER.ColliderDesc.cuboid(8, 8).setDensity(0);
+        var colliderDesc = RAPIER.ColliderDesc.cuboid(8, 2).setDensity(0);
         var collider = world.createCollider(colliderDesc, newRigidBody);
         birdSeedParticle.collider = collider;
         // Game loop. Replace by your own game loop system.
@@ -101,6 +103,9 @@ function run_simulation() {
     birdFeeder.anchor.set(0.5,1);
     birdFeeder.scale.set(6)
     
+    var groundColliderDesc0 = RAPIER.ColliderDesc.cuboid(innerWidth * 2, 2).setTranslation(0,20);
+    world.createCollider(groundColliderDesc0);
+
     var groundColliderDesc = RAPIER.ColliderDesc.cuboid(innerWidth * 2, 2).setTranslation(0,innerHeight-20);
     world.createCollider(groundColliderDesc);
 
@@ -111,7 +116,7 @@ function run_simulation() {
     world.createCollider(groundColliderDesc2);
 
     // Create a dynamic rigid-body.
-    var rigidBodyDesc = RAPIER.RigidBodyDesc.dynamic().setTranslation(300.0, 0);
+    var rigidBodyDesc = RAPIER.RigidBodyDesc.dynamic().setTranslation(70, innerHeight - 100);
     rigidBodyDesc.setAdditionalMass(1);
     var rigidBody = world.createRigidBody(rigidBodyDesc);
     var colliderDesc = RAPIER.ColliderDesc.cuboid(50, 50).setDensity(0);
@@ -122,7 +127,7 @@ function run_simulation() {
 
 
     
-    var rigidBodyDesc2 = RAPIER.RigidBodyDesc.dynamic().setTranslation(700.0, 0);
+    var rigidBodyDesc2 = RAPIER.RigidBodyDesc.dynamic().setTranslation(innerWidth - 70, innerHeight - 100);
     rigidBodyDesc2.setAdditionalMass(1);
     var rigidBody2 = world.createRigidBody(rigidBodyDesc2);
     var colliderDesc = RAPIER.ColliderDesc.cuboid(64, 48).setDensity(0);
@@ -161,7 +166,7 @@ function run_simulation() {
         });
         squirrel.x = squirrel.form.translation().x
         squirrel.y = squirrel.form.translation().y
-        if(Math.abs(squirrel.y - squirrel.lastY) < 1) {
+        if(Math.abs(squirrel.y - squirrel.lastY) < 0.5) {
             ++squirrel.continuance;
             if(squirrel.continuance >= 10) {
                 squirrel.canJump = 2;
@@ -178,13 +183,33 @@ function run_simulation() {
                 bird.animation.speed = 2;
                 bird.animation.destructive = function() {
                     console.log("Destruct")
+
                     ++player1.birdseed;
+                    player1.counter.textContent = (player1.birdseed < 10 ? "00" : player1.birdseed < 100 ? "0" : "") + player1.birdseed.toString();
+
                     bird.animation.y = 0;
                     bird.animation.x = 0;
                     bird.animation.length = 2;
                     bird.animation.speed = 50;
                     bird.animation.frameCount = 0;
                     bird.animation.destructive = false;
+
+
+                    var birdSeedParticle = new Sprite(resources["sprites/food/birdseed.png"].texture);
+                    var newRigidBodyDesc = RAPIER.RigidBodyDesc.dynamic();
+                    if(bird.x === feedPoint1.x) {
+                        console.log({x:feedPoint2.x + 10, y: feedPoint2.y + Math.random() * -200})
+                        newRigidBodyDesc.setTranslation(feedPoint2.x + 10, feedPoint2.y + Math.random() * -200);
+                    }
+                    newRigidBodyDesc.setAdditionalMass(0.001);
+                    var newRigidBody = world.createRigidBody(newRigidBodyDesc);
+                    // console.log(newRigidBody);
+                    // Create a cuboid collider attached to the dynamic newRigidBody.
+                    var colliderDesc = RAPIER.ColliderDesc.cuboid(8, 2).setDensity(0);
+                    var collider = world.createCollider(colliderDesc, newRigidBody);
+                    birdSeedParticle.collider = collider;
+                    // Game loop. Replace by your own game loop system.
+                    birdSeed.addChild(birdSeedParticle);
                 };
                 keys["Enter"] = false;
             }
@@ -195,8 +220,8 @@ function run_simulation() {
                     setTimeout(function () {
                         bird.impulse = false;
                     }, 200)
-                    bird.form.setLinearDamping(1)
-                    bird.form.applyImpulse({x:0,y:-500});
+                    bird.form.setLinearDamping(1,true)
+                    bird.form.applyImpulse({x:0,y:-500},true);
                     bird.doubleJump = false;
                 } else {
                     bird.doubleJump = true;
@@ -233,6 +258,8 @@ function run_simulation() {
                     if(getDistance(seed.x,seed.y,birdX,birdY)<30) {
                         birdSeed.removeChild(seed);
                         console.log("Birdseed eaten");
+                        ++player1.birdseed;
+                        player1.counter.textContent = (player1.birdseed < 10 ? "00" : player1.birdseed < 100 ? "0" : "") + player1.birdseed.toString();
                         world.removeCollider(seed.collider);
                         // terminate = true;
                     }
@@ -248,6 +275,8 @@ function run_simulation() {
                         squirrel.impulse = true;
                     }
                     squirrel.locked = false;
+                    squirrel.canJump = false;
+
                     squirrel.form.setLinearDamping(1)
                     setTimeout(function() {
                         squirrel.impulse = false;
@@ -338,6 +367,8 @@ function run_simulation() {
                 squirrel.animation.destructive = function() {
                     console.log("Destruct")
                     ++player2.birdseed;
+                    player2.counter.textContent = (player2.birdseed < 10 ? "00" : player2.birdseed < 100 ? "0" : "") + player2.birdseed.toString();
+
                     squirrel.animation.y = 0;
                     squirrel.animation.x = 0;
                     squirrel.animation.length = 2;
@@ -356,9 +387,9 @@ function run_simulation() {
                         squirrel.impulse = false;
                     }, 500)
                     squirrel.form.setLinearDamping(1)
-                    squirrel.form.applyImpulse({x:0,y:-1000});
+                    squirrel.form.applyImpulse({x:0, y:-1000}, true);
                     squirrel.doubleJump = false;
-                    // squirrel.canJump = 2;
+                    squirrel.canJump = false;
                     // setTimeout(function() {
                     //     squirrel.canJump = false;
                     // }, 300);
@@ -398,6 +429,8 @@ function run_simulation() {
                     if(getDistance(seed.x,seed.y,squirrelX,squirrelY)<30) {
                         birdSeed.removeChild(seed);
                         console.log("Birdseed eaten");
+                        ++player2.birdseed;
+                        player2.counter.textContent = (player2.birdseed < 10 ? "00" : player2.birdseed < 100 ? "0" : "") + player2.birdseed.toString();
                         world.removeCollider(seed.collider);
                         // terminate = true;
                     }
@@ -408,12 +441,12 @@ function run_simulation() {
                     impulse.y /= Math.sqrt(impulse.x**2 + impulse.y **2);
                     impulse.x *= 1000;
                     impulse.y *= 1000;
-                    bird.form.applyImpulse(impulse);
+                    bird.form.applyImpulse(impulse,true);
                     if(!bird.impulse) {
                         bird.impulse = true;
                     }
                     bird.locked = false;
-                    bird.form.setLinearDamping(1)
+                    bird.form.setLinearDamping(1,true)
                     setTimeout(function() {
                         bird.impulse = false;
                     }, 500)
@@ -466,6 +499,11 @@ function run_simulation() {
                 squirrel.form.resetForces();
                 squirrel.form.setLinearDamping(Infinity)
                 console.log(squirrel.form.setTranslation(feedPoint1,true));
+
+                squirrel.animation.y = 0;
+                squirrel.animation.x = 0;
+                squirrel.animation.length = 6;
+                squirrel.animation.speed = 6;
             } else if(getDistance(squirrel.x,squirrel.y,feedPoint2.x,feedPoint2.y) < 25 && !squirrel.impulse) {
                 squirrel.locked = true;
                 console.log("Lock in place")
@@ -473,6 +511,11 @@ function run_simulation() {
                 squirrel.form.resetForces();
                 squirrel.form.setLinearDamping(Infinity)
                 console.log(squirrel.form.setTranslation(feedPoint2,true));
+
+                squirrel.animation.y = 0;
+                squirrel.animation.x = 0;
+                squirrel.animation.length = 6;
+                squirrel.animation.speed = 6;
             }
         }
 
@@ -523,4 +566,11 @@ RAPIER.init().then(function () {
 function getDistance(x1,y1,x2,y2) {
     /// Mine
     return Math.sqrt((x1-x2)**2+(y1-y2)**2);
+}
+function randInt(min, max) {
+    if(max === undefined) {
+      max = min
+      min = 1
+    }
+    return Math.floor(Math.random() * (max - min + 1)) + min;
 }
