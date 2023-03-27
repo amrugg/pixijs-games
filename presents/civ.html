@@ -1,0 +1,338 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Direction ship</title>
+</head>
+    <style>* {padding: 0; margin: 0}</style>
+    <script src="pixi/pixi.min.js"></script>
+    <script src="usefulFunctions.js"></script>
+<body>
+  <script type="text/javascript">
+    "use strict";
+    
+    var params = getParams();
+    function getParams() {
+      var params = {};
+      location.search.substr(1).split("&").forEach(function(el) {
+        var data = el.replace(/\+/g, " ").split("=");
+        params[decodeURIComponent(data[0])] = data[1] ? decodeURIComponent(data[1]) : true;
+      });
+      return params;
+    }
+    PIXI.utils.skipHello();
+    PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
+    let Application = PIXI.Application,
+        Container = PIXI.Container,
+        loader = PIXI.loader,
+        resources = PIXI.loader.resources,
+        TextureCache = PIXI.utils.TextureCache,
+        Sprite = PIXI.Sprite,
+        Rectangle = PIXI.Rectangle,
+        Graphics = PIXI.Graphics;
+    let app = new Application({ 
+        width: 800,
+        height: 800,              
+        antialias: true,
+        transparent: true,
+        resolution: 1
+      }
+    );
+    app.renderer.backgroundColor = 0x55DD55;
+    /// Fill the screen 
+    app.renderer.view.style.position = "absolute";
+    app.renderer.view.style.display = "block";
+    app.renderer.autoResize = true;
+    app.renderer.resize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(app.view);
+    var spritesToAdd = [];
+    var namesToAdd = ["ui/prepare.png", "ui/heal.png", "ui/move.png", "ui/sleep.png", "ui/moves.png", "landscape/flower.png", "characters/wooly"];
+    for(let i = 0; i < namesToAdd.length; i++) {
+        spritesToAdd.push("sprites/civ/" + namesToAdd[i]);
+    }
+    loader.add("sprites/civ/landscape/water.png").add("sprites/civ/landscape/grass.png").add("sprites/civ/landscape/forest.png").add("sprites/civ/characters/wooly.png").add(spritesToAdd).load(setup);
+    var state;
+    var keys = {};
+    var mouseX,mouseY;
+    var boardPieces = new PIXI.Container();
+    var boardLandcapeState = [];
+    for(let i = 0; i < 1000; i++) {
+        boardLandcapeState.push([]);
+        for(let j = 0; j < 1000; j++) {
+            boardLandcapeState[i].push(0);
+        }
+    }
+    var currentBoardX = 500;
+    var currentBoardY = 500;
+    var colorTiles = new PIXI.Container();
+    var ui = new PIXI.Container();
+    var characters = [];
+    function setup() {
+        state = play;
+        app.stage.addChild(boardPieces)
+        // var testSprite = new Sprite(resources["sprites/civ/landscape/grass.png"].texture);
+        // app.stage.addChild(testSprite);
+        var Wooly = {
+            name: "Wooly",
+            attackStrength: 4,
+            defenseStrength: 4,
+            rangedAttack: 0,
+            maxMovement: 4,
+            movement: 4,
+            health: 10,
+            healing: false,
+            prepared: false,
+            x: 501,
+            y: 501,
+            sprite: new Sprite(resources["sprites/civ/characters/wooly.png"].texture),
+            good: true,
+        }
+        app.stage.addChild(Wooly.sprite);
+        // Wooly.sprite.visible = false;
+        characters.push(Wooly);
+        // characters.push()
+
+        drawBoard();
+        app.stage.addChild(ui);
+        app.stage.addChild(colorTiles);
+        ui.y = innerHeight - 200;
+        ui.x = 4;
+        var heal = new Sprite(resources["sprites/civ/ui/heal.png"].texture);
+        var move = new Sprite(resources["sprites/civ/ui/move.png"].texture);
+        move.x += 140;
+        var prepare = new Sprite(resources["sprites/civ/ui/prepare.png"].texture);
+        prepare.x += 140*2;
+        var sleep = new Sprite(resources["sprites/civ/ui/sleep.png"].texture);
+        sleep.x += 140*3;
+        ui.addChild(heal);
+        ui.addChild(move);
+        ui.addChild(prepare);
+        ui.addChild(sleep);
+        ui.visible = false;
+        app.ticker.add(delta => gameLoop(delta));
+    }
+    function gameLoop(delta) {
+      state(delta)
+    }
+    var editorSetting = 0;
+    var actionSelected;
+    var characterSelected;
+    function play(){
+        if(params.edit) {
+            if(keys.mouse) {
+                var changeX = Math.floor(mouseX/128) + currentBoardX;
+                var changeY = Math.floor(mouseY/128) + currentBoardY;
+                if(boardLandcapeState[changeY][changeX] !== editorSetting) {
+                    boardLandcapeState[changeY][changeX] = editorSetting;
+                    drawBoard();
+                }
+            } else if (press("0")) {
+                editorSetting = 0;
+            } else if(press("1")) {
+                editorSetting = 1;
+            } else if(press("2")) {
+                editorSetting = 2;
+            } else if(press("3")) {
+                editorSetting = 3;
+            } else if(press("ArrowLeft")) {
+                currentBoardX--;
+                drawBoard();
+            } else if(press("ArrowRight")) {
+                currentBoardX++;
+                drawBoard();
+            } else if(press("ArrowUp")) {
+                currentBoardY--;
+                drawBoard();
+            } else if(press("ArrowDown")) {
+                currentBoardY++;
+                drawBoard();
+            } else if(press("p")) {
+                console.log(JSON.stringify(boardLandcapeState));
+            }
+        } else if(actionSelected) {
+            if(actionSelected === "heal") {
+                characterSelected.movement = 0;
+                characterSelected.prepared = false;
+                characterSelected.healing = true;
+                actionSelected = false;
+                characterSelected = false;
+                ui.visible = false;
+            } else if (actionSelected === "prepare") {
+                characterSelected.movement = 0;
+                characterSelected.prepared = true;
+                characterSelected.healing = false;
+                actionSelected = false;
+                characterSelected = false;
+                ui.visible = false;
+            } else if(actionSelected === "sleep") {
+                characterSelected.movement = 0;
+                characterSelected.prepared = false;
+                characterSelected.healing = false;
+                actionSelected = false;
+                characterSelected = false;
+                ui.visible = false;
+            } else if(actionSelected === "move") {
+
+                for(var i = characterSelected.x - Math.floor(characterSelected.movement); i <= characterSelected.x + Math.floor(characterSelected.movement); i++) {
+                    for(var j = characterSelected.y - Math.floor(characterSelected.movement); j <= characterSelected.y + Math.floor(characterSelected.movement); j++) {
+                        console.log("tick")
+                        if(getDistance(i,j,characterSelected.x,characterSelected.y) <= characterSelected.movement && (i !== characterSelected.x || j !== characterSelected.y)) {
+                            var glow = new Sprite(resources["sprites/civ/ui/moves.png"].texture);
+                            glow.x = (i - currentBoardX) * 128;
+                            glow.y = (j - currentBoardY) * 128;
+                            colorTiles.addChild(glow);
+                        }
+                    }
+                }
+                console.log(characterSelected.y - characterSelected.movement)
+                console.log(i,j)
+
+                actionSelected = "moving";
+            } else if(actionSelected === "moving") {
+                if(press("mouse")) {
+                    var clickX = Math.floor(mouseX/128) + currentBoardX;
+                    var clickY = Math.floor(mouseY/128) + currentBoardY;
+                    if(getDistance(characterSelected.x, characterSelected.y, clickX, clickY) <= characterSelected.movement && (clickX !== characterSelected.x || clickY !== characterSelected.y)) {
+                        characterSelected.movement -= getDistance(characterSelected.x, characterSelected.y, clickX, clickY);
+                        characterSelected.x = clickX;
+                        characterSelected.y = clickY;
+                        drawBoard();
+                        actionSelected = false;
+                        characterSelected = false;
+                        ui.visible = false;
+                        colorTiles.removeChildren();
+                    } else {
+                        colorTiles.removeChildren();
+                        actionSelected = false;
+                    }
+                }
+            }
+        } else if(characterSelected) {
+            if(press("mouse")) {
+                if(characterSelected.movement > 0) {
+                    if(within(mouseX,mouseY,4,innerHeight-100,128,128)) {
+                        actionSelected = "heal";
+                    } else if(within(mouseX,mouseY,4+140,innerHeight-200,128,128)) {
+                        actionSelected = "move";
+                    } else if(within(mouseX,mouseY,4+280,innerHeight-200,128,128)) {
+                        actionSelected = "prepare";
+                    } else if(within(mouseX,mouseY,4+420,innerHeight-200,128,128)) {
+                        actionSelected = "sleep";
+                    } else {
+                        characterSelected = false;
+                        ui.visible = false;
+                    }
+                } else {
+                    characterSelected = false;
+                    ui.visible = false;
+                }
+            }
+        } else {
+            if(press("mouse")) {
+                var clickX = Math.floor(mouseX/128) + currentBoardX;
+                var clickY = Math.floor(mouseY/128) + currentBoardY;
+                for(let i = 0; i < characters.length; i++) {
+                    if(characters[i].good && characters[i].x === clickX && characters[i].y === clickY) {
+                        characterSelected = characters[i];
+                        ui.visible = true;
+                        if(characterSelected.movement >= 1) {
+                            ui.alpha = 1;
+                        } else {
+                            ui.alpha = 0.5;
+                        }
+                        console.log(characterSelected.movement);
+                        break;
+                    }
+                }
+            } else if(press("ArrowLeft")) {
+                currentBoardX--;
+                drawBoard();
+            } else if(press("ArrowRight")) {
+                currentBoardX++;
+                drawBoard();
+            } else if(press("ArrowUp")) {
+                currentBoardY--;
+                drawBoard();
+            } else if(press("ArrowDown")) {
+                currentBoardY++;
+                drawBoard();
+            }
+        }
+    }
+    function within(x,y,rectX,rectY,width,height) {
+        if(x >= rectX && x <= rectX + width && y >= rectY && y <= rectY + height) {
+            return true;
+        }
+        return false;
+    }
+    function drawBoard() {
+        var numOfSquaresToDrawX = Math.ceil(innerWidth/128);
+        var numOfSquaresToDrawY = Math.ceil(innerHeight/128);
+        for(let i = currentBoardY; i < currentBoardY+numOfSquaresToDrawY; i++){
+            for(let j = currentBoardX; j < currentBoardX+numOfSquaresToDrawX; j++) {
+                if(boardLandcapeState[i][j] === 0) {
+                    var tile = new Sprite(resources["sprites/civ/landscape/grass.png"].texture);
+                } else if(boardLandcapeState[i][j] === 1) {
+                    var tile = new Sprite(resources["sprites/civ/landscape/water.png"].texture);
+                } else if(boardLandcapeState[i][j] === 2) {
+                    var tile = new Sprite(resources["sprites/civ/landscape/forest.png"].texture);
+                } else if(boardLandcapeState[i][j] === 3) {
+                    var tile = new Sprite(resources["sprites/civ/landscape/flower.png"].texture);
+                }
+                tile.y = (i-currentBoardY)*128;
+                tile.x = (j-currentBoardX)*128;
+                tile.zIndex = 100;
+                boardPieces.addChild(tile);
+            }
+        }
+        for(let i = 0; i < characters.length; i++) {
+            var character = characters[i];
+            if (character.x >= currentBoardX && character.x <= currentBoardX + numOfSquaresToDrawX && character.y >= currentBoardY && character.y <= currentBoardY + numOfSquaresToDrawY) {
+                character.sprite.visible = true;
+
+                character.sprite.x = (character.x - currentBoardX) * 128;
+                character.sprite.y = (character.y - currentBoardY) * 128;
+            } else {
+                character.sprite.visible = false;
+            }
+        }
+    }
+    function press(key){
+        if(keys[key]){
+            keys[key] = false;
+            return true;
+        }
+        return false;
+    }
+    addEventListener("mousedown",function(e){
+        if(e.button == 0) {
+            keys.mouse = true;
+        } else if(e.button == 2) {
+            keys.rightMouse = true;
+        }
+        mouseX = e.pageX;
+        mouseY = e.pageY;
+    });
+    addEventListener("mouseup",function(e){
+        if(e.button == 0) { 
+            keys.mouse = false;
+        } else if(e.button == 2) {
+            keys.rightMouse = true;
+        }
+    });
+    addEventListener("blur", function (){
+        keys = {};
+    });
+    addEventListener("mousemove",function(e){
+        mouseX = e.pageX;
+        mouseY = e.pageY;
+    });
+    addEventListener("keydown", function (e){
+        keys[e.key] = true;
+    });
+    addEventListener("keyup", function (e){
+        keys[e.key] = false;
+    });
+  </script>
+</body>
+</html> 
