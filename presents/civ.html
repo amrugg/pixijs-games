@@ -46,7 +46,8 @@
     app.renderer.resize(window.innerWidth, window.innerHeight);
     document.body.appendChild(app.view);
     var spritesToAdd = [];
-    var namesToAdd = ["ui/prepare.png", "ui/heal.png", "ui/move.png", "ui/sleep.png", "ui/moves.png", "landscape/flower.png", "characters/wooly"];
+    var namesToAdd = ["ui/prepare.png", "ui/heal.png", "ui/move.png", "ui/sleep.png", "ui/moves.png", "landscape/flower.png", "characters/elmer.png", "characters/shadow.png", "characters/iger.png",
+    "ui/attack.png"];
     for(let i = 0; i < namesToAdd.length; i++) {
         spritesToAdd.push("sprites/civ/" + namesToAdd[i]);
     }
@@ -56,14 +57,14 @@
     var mouseX,mouseY;
     var boardPieces = new PIXI.Container();
     var boardLandcapeState = [];
-    for(let i = 0; i < 1000; i++) {
+    for(let i = 0; i < 100; i++) {
         boardLandcapeState.push([]);
-        for(let j = 0; j < 1000; j++) {
+        for(let j = 0; j < 100; j++) {
             boardLandcapeState[i].push(0);
         }
     }
-    var currentBoardX = 500;
-    var currentBoardY = 500;
+    var currentBoardX = 50;
+    var currentBoardY = 50;
     var colorTiles = new PIXI.Container();
     var ui = new PIXI.Container();
     var characters = [];
@@ -82,15 +83,64 @@
             health: 10,
             healing: false,
             prepared: false,
-            x: 501,
-            y: 501,
+            x: 55,
+            y: 51,
             sprite: new Sprite(resources["sprites/civ/characters/wooly.png"].texture),
             good: true,
+        };
+        var Elmer = {
+            name: "Elmer",
+            attackStrength: 17,
+            defenseStrength: 23,
+            rangedAttack: 0,
+            maxMovement: 5,
+            movement: 5,
+            health: 10,
+            healing: false,
+            prepared: false,
+            x: 55,
+            y: 52,
+            sprite: new Sprite(resources["sprites/civ/characters/elmer.png"].texture),
+            good: true,
+        };
+        var Shadow = {
+            name: "Shadow",
+            attackStrength: 17,
+            defenseStrength: 10,
+            rangedAttack: 0,
+            maxMovement: 9,
+            movement: 9,
+            health: 10,
+            healing: false,
+            prepared: false,
+            x: 53,
+            y: 53,
+            sprite: new Sprite(resources["sprites/civ/characters/shadow.png"].texture),
+            good: true,
+        }
+        var Iger = {
+            name: "Iger",
+            attackStrength: 15,
+            defenseStrength: 1,
+            rangedAttack: 0,
+            maxMovement: 3,
+            movement: 3,
+            health: 10,
+            healing: false,
+            prepared: true,
+            x: 57,
+            y: 50,
+            sprite: new Sprite(resources["sprites/civ/characters/iger.png"].texture),
+            good: false,
         }
         app.stage.addChild(Wooly.sprite);
-        // Wooly.sprite.visible = false;
         characters.push(Wooly);
-        // characters.push()
+        app.stage.addChild(Elmer.sprite);
+        characters.push(Elmer);
+        app.stage.addChild(Shadow.sprite);
+        characters.push(Shadow);
+        app.stage.addChild(Iger.sprite);
+        characters.push(Iger);
 
         drawBoard();
         app.stage.addChild(ui);
@@ -114,6 +164,7 @@
     function gameLoop(delta) {
       state(delta)
     }
+    var fighters;
     var editorSetting = 0;
     var actionSelected;
     var characterSelected;
@@ -134,16 +185,16 @@
                 editorSetting = 2;
             } else if(press("3")) {
                 editorSetting = 3;
-            } else if(press("ArrowLeft")) {
+            } else if(press("ArrowLeft") && currentBoardX > 0) {
                 currentBoardX--;
                 drawBoard();
-            } else if(press("ArrowRight")) {
+            } else if(press("ArrowRight") && currentBoardX + Math.ceil(innerWidth/128) < 100) {
                 currentBoardX++;
                 drawBoard();
-            } else if(press("ArrowUp")) {
+            } else if(press("ArrowUp") && currentBoardY > 0) {
                 currentBoardY--;
                 drawBoard();
-            } else if(press("ArrowDown")) {
+            } else if(press("ArrowDown") && currentBoardY + Math.ceil(innerHeight/128) < 100) {
                 currentBoardY++;
                 drawBoard();
             } else if(press("p")) {
@@ -176,11 +227,18 @@
                 for(var i = characterSelected.x - Math.floor(characterSelected.movement); i <= characterSelected.x + Math.floor(characterSelected.movement); i++) {
                     for(var j = characterSelected.y - Math.floor(characterSelected.movement); j <= characterSelected.y + Math.floor(characterSelected.movement); j++) {
                         console.log("tick")
-                        if(getDistance(i,j,characterSelected.x,characterSelected.y) <= characterSelected.movement && (i !== characterSelected.x || j !== characterSelected.y)) {
-                            var glow = new Sprite(resources["sprites/civ/ui/moves.png"].texture);
-                            glow.x = (i - currentBoardX) * 128;
-                            glow.y = (j - currentBoardY) * 128;
-                            colorTiles.addChild(glow);
+                        if(getDistance(i,j,characterSelected.x,characterSelected.y) <= characterSelected.movement) {
+                            if(friendAtTile(i,j) === false) {
+                                var glow = new Sprite(resources["sprites/civ/ui/moves.png"].texture);
+                                glow.x = (i - currentBoardX) * 128;
+                                glow.y = (j - currentBoardY) * 128;
+                                colorTiles.addChild(glow);
+                            } else if(friendAtTile(i,j) === "enemy") {
+                                var glow = new Sprite(resources["sprites/civ/ui/attack.png"].texture);
+                                glow.x = (i - currentBoardX) * 128;
+                                glow.y = (j - currentBoardY) * 128;
+                                colorTiles.addChild(glow);
+                            }
                         }
                     }
                 }
@@ -192,15 +250,143 @@
                 if(press("mouse")) {
                     var clickX = Math.floor(mouseX/128) + currentBoardX;
                     var clickY = Math.floor(mouseY/128) + currentBoardY;
-                    if(getDistance(characterSelected.x, characterSelected.y, clickX, clickY) <= characterSelected.movement && (clickX !== characterSelected.x || clickY !== characterSelected.y)) {
-                        characterSelected.movement -= getDistance(characterSelected.x, characterSelected.y, clickX, clickY);
-                        characterSelected.x = clickX;
-                        characterSelected.y = clickY;
-                        drawBoard();
-                        actionSelected = false;
-                        characterSelected = false;
-                        ui.visible = false;
-                        colorTiles.removeChildren();
+                    if(getDistance(characterSelected.x, characterSelected.y, clickX, clickY) <= characterSelected.movement) {
+                        if(!friendAtTile(clickX,clickY)) {
+                            var movementSpent = 0;
+                            var charX = characterSelected.x;
+                            var charY = characterSelected.y;
+                            var sim = true;
+                            while(sim) {
+                                var dist = 0;
+                                var acc = 0;
+                                var cx = 0;
+                                var cy = 0;
+                                if(clickX < charX) {
+                                    charX--;
+                                    cx = -1;
+                                    dist++;
+                                } else if(clickX > charX) {
+                                    charX++;
+                                    cx = 1;
+                                } else {
+                                    acc++;
+                                }
+                                if(clickY < charY) {
+                                    charY--;
+                                    cy = -1;
+                                    dist++;
+                                } else if(clickY > charY) {
+                                    charY++;
+                                    cy = 1;
+                                } else {
+                                    acc++;
+                                }
+                                if(acc === 2) {
+                                    sim = false;
+                                } else if(friendAtTile(charX,charY) !== "enemy" && boardLandcapeState[charY][charX] !== 1){
+                                    movementSpent += Math.sqrt(dist);
+                                } else {
+                                    sim = "FAIL";
+                                    charX -= cx;
+                                    charY -= cy;
+                                    break;
+                                }
+                            }
+                            if(sim === "FAIL") {
+                                characterSelected.movement -= movementSpent;
+                                characterSelected.x = charX;
+                                characterSelected.y = charY;
+                            } else {
+                                characterSelected.movement -= getDistance(characterSelected.x, characterSelected.y, clickX, clickY);
+                                characterSelected.x = clickX;
+                                characterSelected.y = clickY;
+                            }
+                            drawBoard();
+                            actionSelected = false;
+                            characterSelected = false;
+                            ui.visible = false;
+                            colorTiles.removeChildren();
+                        } else if(friendAtTile(clickX, clickY) === "enemy") {
+                            var movementSpent = 0;
+                            var charX = characterSelected.x;
+                            var charY = characterSelected.y;
+                            var sim = true;
+                            while(sim) {
+                                var dist = 0;
+                                var acc = 0;
+                                var cx = 0;
+                                var cy = 0;
+                                if(clickX < charX) {
+                                    charX--;
+                                    cx = -1;
+                                    dist++;
+                                } else if(clickX > charX) {
+                                    charX++;
+                                    cx = 1;
+                                } else {
+                                    acc++;
+                                }
+                                if(clickY < charY) {
+                                    charY--;
+                                    cy = -1;
+                                    dist++;
+                                } else if(clickY > charY) {
+                                    charY++;
+                                    cy = 1;
+                                } else {
+                                    acc++;
+                                }
+                                if(acc === 2) {
+                                    sim = false;
+                                } else if(friendAtTile(charX,charY) !== "enemy" && boardLandcapeState[charY][charX] !== 1){
+                                    movementSpent += Math.sqrt(dist);
+                                } else {
+                                    sim = "FIGHT";
+                                    charX -= cx;
+                                    charY -= cy;
+                                    break;
+                                }
+                            }
+                            if(sim === "FIGHT") {
+                                characterSelected.x = charX;
+                                characterSelected.y = charY;
+                                characterSelected.movement -= getDistance(characterSelected.x, characterSelected.y, clickX, clickY);
+
+                                drawBoard();
+
+                                state = fight;
+                                fighters = {unit1: characterSelected, unit2: getCharacterAt(clickX,clickY,false)}
+                                fighters.midPointX = (fighters.unit1.sprite.x + fighters.unit2.sprite.x)/2;
+                                fighters.midPointY = (fighters.unit1.sprite.y + fighters.unit2.sprite.y)/2;
+                                fighters.damage1 = (fighters.unit1.attackStrength/fighters.unit2.defenseStrength) * (5 + Math.random()*2-1);
+                                fighters.damage2 = (fighters.unit2.defenseStrength/fighters.unit1.attackStrength) * (5 + Math.random()*2-1);
+                                fighters.unit1.health -= Math.round(fighters.damage2);
+                                fighters.unit2.health -= Math.round(fighters.damage1);
+                                if(fighters.unit1.health <= 0 && fighters.unit2.health > 0) {
+                                    fighters.result = 1;
+                                } else if(fighters.unit2.health <= 0 && fighters.unit1.health > 0) {
+                                    fighters.result = -1;
+                                } else if(fighters.unit1.health > 0 && fighters.unit2.health > 0)  {
+                                    fighters.result = 0;
+                                } else {
+                                    fighters.unit1.health = 1;
+                                    fighters.unit2.health = 1;
+                                    fighters.result = 0;
+                                }
+                                /// moving towards
+                                fighters.phase = 0;
+                                fighters.reps = 3;
+                                fighters.ticker = 0;
+                                fighters.originalPoint1 = {x:fighters.unit1.sprite.x,y:fighters.unit1.sprite.y};
+                                fighters.originalPoint2 = {x:fighters.unit2.sprite.x,y:fighters.unit2.sprite.y};
+                                fighters.unit1.targetPoint = {x: fighters.midPointX, y:fighters.midPointY};
+                                fighters.unit2.targetPoint = {x: fighters.midPointX, y:fighters.midPointY};
+                            }
+                            actionSelected = false;
+                            characterSelected = false;
+                            ui.visible = false;
+                            colorTiles.removeChildren();
+                        }
                     } else {
                         colorTiles.removeChildren();
                         actionSelected = false;
@@ -258,6 +444,107 @@
                 drawBoard();
             }
         }
+    }
+    function fight() {
+        if(fighters.unit1.sprite.x < fighters.unit1.targetPoint.x) {
+            fighters.unit1.sprite.x++;
+        } else if(fighters.unit1.sprite.x > fighters.unit1.targetPoint.x) {
+            fighters.unit1.sprite.x--;
+        }
+        if(fighters.unit1.sprite.y < fighters.unit1.targetPoint.y) {
+            fighters.unit1.sprite.y++;
+        } else if(fighters.unit1.sprite.y > fighters.unit1.targetPoint.y) {
+            fighters.unit1.sprite.y--;
+        }
+        if(fighters.unit1.dying) {
+            fighters.unit1.sprite.alpha -= 0.02;
+        }
+        if(fighters.unit2.sprite.x < fighters.unit2.targetPoint.x) {
+            fighters.unit2.sprite.x++;
+        } else if(fighters.unit2.sprite.x > fighters.unit2.targetPoint.x) {
+            fighters.unit2.sprite.x--;
+        }
+        if(fighters.unit2.sprite.y < fighters.unit2.targetPoint.y) {
+            fighters.unit2.sprite.y++;
+        } else if(fighters.unit2.sprite.y > fighters.unit2.targetPoint.y) {
+            fighters.unit2.sprite.y--;
+        }
+
+        if(fighters.unit2.dying) {
+            fighters.unit2.sprite.alpha -= 0.02;
+        }
+        ++fighters.ticker;
+        console.log(fighters.phase);
+        if(fighters.ticker > 49) {
+            if(fighters.phase === 0) {
+                --fighters.reps;
+                if(fighters.reps < 1) {
+                    if(fighters.result === -1 && !fighters.unit2.captive && fighters.unit1.good) {
+                        fighters.unit1.targetPoint =  fighters.originalPoint2;
+                        fighters.unit2.dying = true;
+                        fighters.unit1.x = fighters.unit2.x;
+                        fighters.unit1.y = fighters.unit2.y;
+                        for(let i = 0; i < characters.length; i++) {
+                            if(characters[i] === fighters.unit2) {
+                                characters.splice(i,1);
+                                break;
+                            }
+                        }
+                    } else if(fighters.result === 0) {
+                        fighters.unit1.targetPoint = fighters.originalPoint1;
+                        fighters.unit2.targetPoint = fighters.originalPoint2;
+                    } else if(fighters.result === 1 && fighters.unit1.good) {
+                        fighters.unit1.targetPoint = fighters.originalPoint1;
+                        fighters.unit2.targetPoint = fighters.originalPoint1;
+                        fighters.unit2.x = fighters.unit1.x;
+                        fighters.unit2.y = fighters.unit1.y;
+                    }
+                } else {
+                    fighters.unit1.targetPoint = fighters.originalPoint1;
+                    fighters.unit2.targetPoint = fighters.originalPoint2;
+                }
+                fighters.phase = 1;
+                fighters.ticker = 0;
+            } else {
+                fighters.phase = 0;
+                fighters.ticker = 0;
+                if(fighters.reps > 0) {
+                    fighters.unit1.targetPoint = {x:fighters.midPointX,y:fighters.midPointY};
+                    fighters.unit2.targetPoint = {x:fighters.midPointX,y:fighters.midPointY};
+                }
+                if(fighters.reps < 1) {
+                    drawBoard();
+                    state = play;
+                    if(fighters.result === -1 && !fighters.unit2.captive && fighters.unit1.good) {
+                        app.stage.removeChild(fighters.unit2.sprite);
+                    }
+                }
+            }
+        }
+    }
+    function friendAtTile(x,y) {
+        for(let i = 0; i < characters.length; i++) {
+            if(characters[i].x === x && characters[i].y === y) {
+                if(characters[i].good) {
+                    if(!characters[i].captor) {
+                        return true;
+                    }
+                } else {
+                    return "enemy";
+                }
+            }
+        }
+        return false;
+    }
+    function getCharacterAt(x,y,captive) {
+        for(let i = 0; i < characters.length; i++) {
+            if(characters[i].x === x && characters[i].y === y) {
+                if((characters[i].captor && captive || (!characters[i].captor && !captive))) { 
+                    return characters[i];
+                }
+            }
+        }
+        return false;
     }
     function within(x,y,rectX,rectY,width,height) {
         if(x >= rectX && x <= rectX + width && y >= rectY && y <= rectY + height) {
