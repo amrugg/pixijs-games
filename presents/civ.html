@@ -112,6 +112,7 @@
             }
         }
     }*/
+    var igerStrength = {strength: 0, invading: 0, IgeronKing: false};
     var currentBoardX = 50;
     var currentBoardY = 50;
     var colorTiles = new PIXI.Container();
@@ -137,16 +138,139 @@
             healing: false,
             prepared: true,
             x: 59,
-            y: 65,
+            y: 54,
             sprite: new Sprite(resources["sprites/civ/characters/iger.png"].texture),
             good: false,
         }
+        var Iger2 = {
+            name: "Iger",
+            attackStrength: 1,
+            defenseStrength: 1,
+            rangedAttack: 0,
+            maxMovement: 3,
+            movement: 3,
+            health: 10,
+            healing: false,
+            prepared: true,
+            x: 58,
+            y: 54,
+            sprite: new Sprite(resources["sprites/civ/characters/iger.png"].texture),
+            good: false,
+        }
+
+        var Iger3 = {
+            name: "Iger",
+            attackStrength: 1,
+            defenseStrength: 1,
+            rangedAttack: 0,
+            maxMovement: 3,
+            movement: 3,
+            health: 10,
+            healing: false,
+            prepared: true,
+            x: 60,
+            y: 54,
+            sprite: new Sprite(resources["sprites/civ/characters/iger.png"].texture),
+            good: false,
+        }
+
+        var Iger4 = {
+            name: "Iger",
+            attackStrength: 1,
+            defenseStrength: 1,
+            rangedAttack: 0,
+            maxMovement: 3,
+            movement: 3,
+            health: 10,
+            healing: false,
+            prepared: true,
+            x: 59,
+            y: 56,
+            sprite: new Sprite(resources["sprites/civ/characters/iger.png"].texture),
+            good: false,
+        }
+        var Iger5 = {
+            name: "Iger",
+            attackStrength: 1,
+            defenseStrength: 1,
+            rangedAttack: 0,
+            maxMovement: 3,
+            movement: 3,
+            health: 10,
+            healing: false,
+            prepared: true,
+            x: 58,
+            y: 56,
+            sprite: new Sprite(resources["sprites/civ/characters/iger.png"].texture),
+            good: false,
+        }
+        var Iger6 = {
+            name: "Iger",
+            attackStrength: 1,
+            defenseStrength: 1,
+            rangedAttack: 0,
+            maxMovement: 3,
+            movement: 3,
+            health: 10,
+            healing: false,
+            prepared: true,
+            x: 60,
+            y: 56,
+            sprite: new Sprite(resources["sprites/civ/characters/iger.png"].texture),
+            good: false,
+        }
+        var Iger7 = {
+            name: "Iger",
+            attackStrength: 1,
+            defenseStrength: 1,
+            rangedAttack: 0,
+            maxMovement: 3,
+            movement: 3,
+            health: 10,
+            healing: false,
+            prepared: true,
+            x: 60,
+            y: 55,
+            sprite: new Sprite(resources["sprites/civ/characters/iger.png"].texture),
+            good: false,
+        }
+
+        var Iger8 = {
+            name: "Iger",
+            attackStrength: 1,
+            defenseStrength: 1,
+            rangedAttack: 0,
+            maxMovement: 3,
+            movement: 3,
+            health: 10,
+            healing: false,
+            prepared: true,
+            x: 58,
+            y: 55,
+            sprite: new Sprite(resources["sprites/civ/characters/iger.png"].texture),
+            good: false,
+        }
+        app.stage.addChild(Iger.sprite);
+        characters.push(Iger);
+        app.stage.addChild(Iger2.sprite);
+        characters.push(Iger2);
+        app.stage.addChild(Iger3.sprite);
+        characters.push(Iger3);
+        app.stage.addChild(Iger4.sprite);
+        characters.push(Iger4);
+        app.stage.addChild(Iger5.sprite);
+        characters.push(Iger5);
+        app.stage.addChild(Iger6.sprite);
+        characters.push(Iger6);
+        app.stage.addChild(Iger7.sprite);
+        characters.push(Iger7);
+        app.stage.addChild(Iger8.sprite);
+        characters.push(Iger8);
+
         nextTurnButton = new Sprite(resources["sprites/civ/ui/next.png"].texture);
         app.stage.addChild(nextTurnButton);
         nextTurnButton.x = 10;
         nextTurnButton.y = innerHeight - 100;
-        app.stage.addChild(Iger.sprite);
-        characters.push(Iger);
         addHouses();
         drawBoard();
         app.stage.addChild(ui);
@@ -523,11 +647,10 @@
                 console.log(JSON.stringify(boardLandcapeState));
             }
         } else if(actionSelected) {
-            console.log(actionSelected);
             if(actionSelected === "heal") {
                 characterSelected.movement = 0;
                 characterSelected.prepared = false;
-                console.log(characterSelected);
+                (characterSelected);
                 characterSelected.healing = true;
                 actionSelected = false;
                 characterSelected = false;
