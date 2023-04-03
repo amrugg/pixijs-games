@@ -50,18 +50,20 @@
     "ui/attack.png", "houses/chesselnut.png", "houses/elmer.png", "houses/wooly.png", "houses/spot.png", "houses/kit.png", "houses/plata.png", "houses/humber.png", "houses/shadow.png", "ui/next.png", "characters/ion.png", "characters/igeron-king.png", 
       "characters/chesselnut.png", "characters/eleanor.png", "characters/kit.png", "characters/spot.png", "characters/humber.png", "characters/plata.png", "houses/cave.png", "houses/cavel.png", "houses/caver.png", "ui/sun.png", "ui/food.png"];
     
-    var landscape = ["landscape/apple.png", "landscape/bamboo.png", "landscape/flower2.png", "landscape/flower3.png", "landscape/flower.png", "landscape/forest2.png", "landscape/forest.png", "landscape/grass.png", "landscape/honey.png", "landscape/nut.png", "landscape/water.png", "landscape/forest3.png", "landscape/cattails.png","landscape/path.png", "landscape/mustard.png",];
+    var landscape = ["apple.png", "bamboo.png", "flower2.png", "flower3.png", "flower.png", "forest2.png", "forest.png", "grass.png", "honey.png", "nut.png", "water.png", "forest3.png", "cattails.png","path.png", "mustard.png",];
     var landscapeSeasonPrime = [184, 150, 92, 92, 92, 185, Infinity, Infinity, 135, 184, 285, 184, 214, Infinity, 123];
     var landscapeChangingPrime = [15, -1, -1, -1, -1, 16, -1, -1, 17, 18, -1, 19, 10, -1, 7];
     // var landscapeChangingEnd = [224, 180, 150, 150, 150, 258]
-    var day = 0;
+    var day = 1;
     var food = 50;
 
     for(let i = 0; i < namesToAdd.length; i++) {
         spritesToAdd.push("sprites/civ/" + namesToAdd[i]);
     }
     for(let i = 0; i < landscape.length; i++) {
-        spritesToAdd.push("sprites/civ/" + landscape[i]);
+        spritesToAdd.push("sprites/civ/landscape/" + landscape[i]);
+        spritesToAdd.push("sprites/civ/landscape/fall" + landscape[i]);
+        spritesToAdd.push("sprites/civ/landscape/winter" + landscape[i]);
     }
     loader.add("sprites/civ/characters/wooly.png").add(spritesToAdd).load(setup);
     var state;
@@ -155,6 +157,7 @@
     var houses = [];
     var nextTurnButton;
     var foodText;
+    var sunText;
     var messageText;
     function setup() {
         state = play;
@@ -313,19 +316,25 @@
         var foodIcon = new Sprite(resources["sprites/civ/ui/food.png"].texture);
         var sunIcon = new Sprite(resources["sprites/civ/ui/sun.png"].texture);
         foodText = new PIXI.Text("50", {fontFamily: "Arial", fontSize: 24});
-        foodText.anchor.set(0.5,0.5);
-        foodText.x = 64;
+        foodText.anchor.set(0,0.5);
+        foodText.x = 52;
         foodText.y = 32;
         app.stage.addChild(foodText);
 
         messageText = new PIXI.Text("", {fontFamily: "Arial", fontSize: 24});
         app.stage.addChild(messageText);
 
-        messageText.anchor.set(0.5,0.5);
+        messageText.anchor.set(0,0.5);
         messageText.x = innerWidth/2;
         messageText.y = 32;
 
-        sunIcon.x = innerWidth - 100;
+        sunIcon.x = innerWidth - 128;
+        sunText =  new PIXI.Text("1", {fontFamily: "Arial", fontSize: 24});
+        sunText.y = 16;
+        sunText.x = innerWidth-60;
+        foodText.anchor.set(0,0.5);
+
+        app.stage.addChild(sunText);
         app.stage.addChild(foodIcon);
         app.stage.addChild(sunIcon);
 
@@ -1126,15 +1135,8 @@
                 }
             }
             nextTurnButton.visible = true;
-            day++;
-            for(let i = 0; i < boardLandcapeState.length; i++) {
-                for(let j = 0; j < boardLandcapeState[i].length; j++) {
-                    if(landscapeSeasonPrime[boardLandcapeState[i][j]] < day && landscapeChangingPrime[boardLandcapeState[i][j]] > -1) {
-                        boardLandcapeState[i][j] = landscapeChangingPrime[boardLandcapeState[i][j]];
-                        console.log(true);
-                    }
-                }
-            }
+            ++day;
+            sunText.text = day;
             food -= 3;
             if(food < 0) {
                 dfadf = 20;
@@ -1320,7 +1322,11 @@
         boardPieces.removeChildren();
         for(let i = currentBoardY; i < currentBoardY+numOfSquaresToDrawY; i++){
             for(let j = currentBoardX; j < currentBoardX+numOfSquaresToDrawX; j++) {
-                var tile = new Sprite(resources["sprites/civ/" + landscape[boardLandcapeState[i][j]]].texture);
+                if(landscapeSeasonPrime[boardLandcapeState[i][j]] < day) {
+                    var tile = new Sprite(resources["sprites/civ/landscape/fall" + landscape[boardLandcapeState[i][j]]].texture);
+                } else {
+                    var tile = new Sprite(resources["sprites/civ/landscape/" + landscape[boardLandcapeState[i][j]]].texture);
+                }
                 tile.y = (i-currentBoardY)*128;
                 tile.x = (j-currentBoardX)*128;
                 tile.zIndex = 100;
