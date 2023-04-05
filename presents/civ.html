@@ -46,9 +46,9 @@
     app.renderer.resize(window.innerWidth, window.innerHeight);
     document.body.appendChild(app.view);
     var spritesToAdd = [];
-    var namesToAdd = ["ui/prepare.png", "ui/heal.png", "ui/move.png", "ui/sleep.png", "ui/moves.png", "characters/elmer.png", "characters/shadow.png", "characters/iger.png", "ui/gather.png",
+    var namesToAdd = ["ui/prepare.png", "ui/heal.png", "ui/move.png", "ui/sleep.png", "ui/moves.png", "characters/elmer.png", "characters/shadow.png", "characters/iger.png", "ui/gather.png", "ui/nut.png",
     "ui/attack.png", "houses/chesselnut.png", "houses/elmer.png", "houses/wooly.png", "houses/spot.png", "houses/kit.png", "houses/plata.png", "houses/humber.png", "houses/shadow.png", "ui/next.png", "characters/ion.png", "characters/igeron-king.png", 
-      "characters/chesselnut.png", "characters/eleanor.png", "characters/kit.png", "characters/spot.png", "characters/humber.png", "characters/plata.png", "houses/cave.png", "houses/cavel.png", "houses/caver.png", "ui/sun.png", "ui/food.png"];
+      "characters/chesselnut.png", "characters/eleanor.png", "characters/kit.png", "characters/spot.png", "characters/humber.png", "characters/plata.png", "houses/cave.png", "houses/cavel.png", "houses/caver.png", "ui/sun.png", "ui/food.png", "ui/ability.png"];
     
     var landscape = ["apple.png", "bamboo.png", "flower2.png", "flower3.png", "flower.png", "forest2.png", "forest.png", "grass.png", "honey.png", "nut.png", "water.png", "forest3.png", "cattails.png","path.png", "mustard.png",];
     var landscapeSeasonPrime = [184, 150, 92, 92, 92, 185, Infinity, Infinity, 135, 184, 285, 184, 214, Infinity, 123];
@@ -62,8 +62,8 @@
     }
     for(let i = 0; i < landscape.length; i++) {
         spritesToAdd.push("sprites/civ/landscape/" + landscape[i]);
-        spritesToAdd.push("sprites/civ/landscape/fall" + landscape[i]);
-        spritesToAdd.push("sprites/civ/landscape/winter" + landscape[i]);
+        spritesToAdd.push("sprites/civ/landscape/fall/" + landscape[i]);
+        spritesToAdd.push("sprites/civ/landscape/winter/" + landscape[i]);
     }
     loader.add("sprites/civ/characters/wooly.png").add(spritesToAdd).load(setup);
     var state;
@@ -125,6 +125,7 @@
             }
         }
     }*/
+    var projectile;
     var foodLandscapeState = [];
     for(let i = 0; i < 100; i++) {
         foodLandscapeState.push([]);
@@ -166,7 +167,7 @@
         // app.stage.addChild(testSprite);
         addFriends();
         addEnemies();
-        var Iger = {
+        /*var Iger = {
             name: "Iger",
             attackStrength: 1,
             defenseStrength: 1,
@@ -304,7 +305,7 @@
         app.stage.addChild(Iger7.sprite);
         characters.push(Iger7);
         app.stage.addChild(Iger8.sprite);
-        characters.push(Iger8);
+        characters.push(Iger8);*/
 
         nextTurnButton = new Sprite(resources["sprites/civ/ui/next.png"].texture);
         app.stage.addChild(nextTurnButton);
@@ -324,7 +325,7 @@
         messageText = new PIXI.Text("", {fontFamily: "Arial", fontSize: 24});
         app.stage.addChild(messageText);
 
-        messageText.anchor.set(0,0.5);
+        messageText.anchor.set(0.5,0.5);
         messageText.x = innerWidth/2;
         messageText.y = 32;
 
@@ -351,11 +352,18 @@
         sleep.x += 140*3;
         var gather = new Sprite(resources["sprites/civ/ui/gather.png"].texture);
         gather.x += 140*4;
+        var special = new Sprite(resources["sprites/civ/ui/ability.png"].texture);
+        special.x += 140*5;
+        var healthBar = new PIXI.Graphics();
+        healthBar.x = 140*6;
         ui.addChild(heal);        
         ui.addChild(move)
         ui.addChild(prepare);
         ui.addChild(sleep);
         ui.addChild(gather);
+        ui.addChild(special);
+        ui.addChild(healthBar);
+        ui.healthBar = healthBar;
         ui.visible = false;
         app.ticker.add(delta => gameLoop(delta));
     }
@@ -397,6 +405,27 @@
             });
         }
     }
+    function getClosestEnemy (x,y) {
+        var enemy = false;
+        var bestDistance = Infinity;
+        for(let i = 0; i < characters.length; i++) {
+            if(!characters[i].good) {
+                if(getDistance(x,y,characters[i].x,characters[i].y) < bestDistance && (characters[i].x !== x || characters[i].y !== y)) {
+                    enemy = characters[i];
+                    bestDistance = getDistance(x,y,characters[i].x,characters[i].y);
+
+                }
+            }
+        }
+        return enemy;
+    }
+    function addEffect(character, effect) {
+        if(character.effects) {
+            character.effects.push(effect);
+        } else {
+            character.effects = [effect];
+        }
+    }
     function addFriends() {
         var Wooly = {
             name: "Wooly",
@@ -412,6 +441,46 @@
             y: 93,
             sprite: new Sprite(resources["sprites/civ/characters/wooly.png"].texture),
             good: true,
+            special: function(me) {
+                var igersNearMe = [];
+                for(let i = 0; i < characters.length; i++) {
+                    if(getDistance(characters[i].x, characters[i].y, me.x, me.y) < 2 && characters[i].good === false) {
+                        igersNearMe.push(characters[i]);
+                    }
+                }
+                for(let i = 0; i < igersNearMe.length; i++) {
+                    var closestEnemy = getClosestEnemy(igersNearMe[i].x, igersNearMe[i].y)
+                    if(getDistance(closestEnemy.x,closestEnemy.y, igersNearMe[i].x, igersNearMe[i].y) < 2) {
+                        var damage1 = (igersNearMe[i].attackStrength/closestEnemy.defenseStrength)*5
+                        var damage2 = (closestEnemy.defenseStrength/igersNearMe[i].attackStrength)*5
+                        closestEnemy.health = Math.max(1, closestEnemy.health-damage1);
+                        igersNearMe[i].health = Math.max(1, igersNearMe[i].health-damage2);
+                        messageText.text = "Wooly Confused two adjacent enemies!";
+                        me.health = Math.max(1, me.health - 3);
+                        setTimeout(function(){
+                            messageText.text = "";
+                        }, 2000);
+                        me.movement = 0;
+                        state = fight;
+                        fighters = {unit1: igersNearMe[i], unit2: closestEnemy};
+                        fighters.midPointX = (fighters.unit1.sprite.x + fighters.unit2.sprite.x)/2;
+                        fighters.midPointY = (fighters.unit1.sprite.y + fighters.unit2.sprite.y)/2;
+                        fighters.result = 0;
+                        /// moving towards
+                        fighters.phase = 0;
+                        fighters.reps = 1;
+                        fighters.ticker = 0;
+                        fighters.originalPoint1 = {x:fighters.unit1.sprite.x,y:fighters.unit1.sprite.y};
+                        fighters.originalPoint2 = {x:fighters.unit2.sprite.x,y:fighters.unit2.sprite.y};
+                        fighters.unit1.targetPoint = {x: fighters.midPointX, y:fighters.midPointY};
+                        fighters.returnFunction = play;
+                        fighters.unit2.targetPoint = {x: fighters.midPointX, y:fighters.midPointY};
+
+                        return true;
+                    }
+                }
+                return false;
+            }
         };
         var Elmer = {
             name: "Elmer",
@@ -427,6 +496,58 @@
             y: 56,
             sprite: new Sprite(resources["sprites/civ/characters/elmer.png"].texture),
             good: true,
+            lastDBG: -10,
+            special: function(me) {
+                if(day - me.lastDBG < 3) {
+                    return false;
+                }
+                var enemiesToEvaluate = [];
+                for(let i = 0; i < characters.length; i++) {
+                    var char = characters[i];
+                    if(getDistance(me.x, me.y,char.x,char.y) < 3 && char !== me) {
+                        enemiesToEvaluate.push(char);
+                    }
+                }
+                enemiesToEvaluate.sort(function(a,b) {
+                    return getDistance(b.x,b.y,me.x,me.y)-getDistance(a.x,a.y,me.x,me.y);
+                });
+                for(var i = 0; i < enemiesToEvaluate.length; i++) {
+                    var enemy = enemiesToEvaluate[i];
+                    var newX = enemy.x;
+                    var newY = enemy.y;
+                    if(enemy.x < me.x) {
+                        --newX;
+                    } else if(enemy.x > me.x) {
+                        ++newX;
+                    }
+                    if(enemy.y < me.y) {
+                        --newY;
+                    } else if(enemy.y > me.y) {
+                        ++newY;
+                    }
+                    if(!getCharacterAt(newX,newY)) {
+                        if(enemy.captive) {
+                            enemy.captive.x = newX;
+                            enemy.captive.y = newY;
+                        }
+                        enemy.x = newX;
+                        enemy.y = newY;
+                    }
+                    addEffect(enemy,{name: "Deadly Battle Gases", duration: 2, effect: 0.8});
+                }
+                if(i) {
+                    messageText.text = "Elmer used Deadly Battle Gases to drive off the enemy troops!";
+                    me.lastDBG = day;
+
+                    setTimeout(function() {
+                        messageText.text = "";
+                    }, 2000);
+                    drawBoard();
+                    return true;
+                } else {
+                    return false;
+                }
+            }
         };
         var Shadow = {
             name: "Shadow",
@@ -440,6 +561,24 @@
             prepared: false,
             x: 69,
             y: 55,
+            special: function(me) {
+                if(day-me.lastHS < 3) {
+                    return false;
+                }
+                for(let i = 0; i < characters.length; i++) {
+                    var char = characters[i];
+                    if(!char.good && getDistance(me.x,me.y,char.x,char.y) < 3) {
+                        char.movement = 0;
+                    }
+                }
+                me.movement = 0;
+                messageText.text = "Shadow gave a history lesson!";
+                setTimeout(function(){
+                    messageText.text = "";
+                }, 2000);
+                me.lastHS = day;
+                return true;
+            },
             sprite: new Sprite(resources["sprites/civ/characters/shadow.png"].texture),
             good: true,
         }
@@ -455,6 +594,21 @@
             prepared: false,
             x: 64,
             y: 93,
+            special: function(me) {
+                var peopleHealed = 0;
+                for(let i = 0; i < characters.length; i++) {
+                    if(characters[i].good && getDistance(characters[i].x,characters[i].y,me.x,me.y) < 2 && characters[i] !== me) {
+                        characters[i].health = Math.min(10,characters[i].health + 2);
+                        ++peopleHealed;
+                    }
+                }
+                setTimeout(function(){
+                    messageText.text = "";
+                }, 1000);
+                messageText.text = "Eleanor healed " + peopleHealed + " units!";
+                me.movement = 0;
+                return true;
+            },
             sprite: new Sprite(resources["sprites/civ/characters/eleanor.png"].texture),
             good: true,
         }
@@ -470,6 +624,15 @@
             prepared: false,
             x: 59,
             y: 55,
+            special: function (me) {
+                messageText.text = "Humber became invisible!"
+                me.invisible = true;
+                me.sprite.alpha = 0.5;
+                setTimeout(function(){
+                    messageText.text = "";
+                }, 1000);
+                return true;
+            },
             sprite: new Sprite(resources["sprites/civ/characters/humber.png"].texture),
             good: true,
         }
@@ -485,6 +648,56 @@
             prepared: false,
             x: 98,
             y: 54,
+            special: function(me) {
+                fighters = {unit1: me, unit2: getClosestEnemy(me.x,me.y)};
+                if(getDistance(fighters.unit2.x,fighters.unit2.y,me.x,me.y) >= 2) {
+                    return false;
+                }
+                state = fight;
+                fighters.midPointX = (fighters.unit1.sprite.x + fighters.unit2.sprite.x)/2;
+                fighters.midPointY = (fighters.unit1.sprite.y + fighters.unit2.sprite.y)/2;
+
+                var attackStrength1 = fighters.unit1.attackStrength;
+                var defenseStrength2 = fighters.unit2.defenseStrength;
+                if(fighters.unit1.effects) {
+                    fighters.unit1.effects.forEach(function(effect){
+                        attackStrength1 *= effect.effect;
+                    });
+                }
+                if(fighters.unit2.effects) { 
+                    fighters.unit2.effects.forEach(function(effect){
+                        defenseStrength2 *= effect.effect;
+                    });
+                }
+                fighters.damage1 = (attackStrength1/(defenseStrength2 * (fighters.unit2.prepared? 1.5 : 1)) * (5 + Math.random()*2-1));
+                fighters.damage2 = 0;//((defenseStrength2 * (fighters.unit2.prepared? 1.5 : 1))/attackStrength1) * (5 + Math.random()*2-1);
+                fighters.unit1.health -= Math.round(fighters.damage2);
+                fighters.unit2.health -= Math.round(fighters.damage1);
+                if(fighters.unit1.health <= 0 && fighters.unit2.health > 0) {
+                    fighters.result = 1;
+                } else if(fighters.unit2.health <= 0 && fighters.unit1.health > 0) {
+                    fighters.result = -1;
+                } else if(fighters.unit1.health > 0 && fighters.unit2.health > 0)  {
+                    fighters.result = 0;
+                } else if(fighters.unit1.health + Math.round(fighters.damage2) > fighters.unit2.health + Math.round(fighters.damage1)){
+                    fighters.unit1.health = 1;
+                    fighters.result = -1;
+                } else if(fighters.unit2.health + Math.round(fighters.damage1) > fighters.unit1.health + Math.round(fighters.damage2)){
+                    fighters.unit2.health = 1;
+                    fighters.result = 1;
+                }
+                /// moving towards
+                fighters.phase = 0;
+                fighters.reps = 1;
+                fighters.ticker = 0;
+                fighters.originalPoint1 = {x:fighters.unit1.sprite.x,y:fighters.unit1.sprite.y};
+                fighters.originalPoint2 = {x:fighters.unit2.sprite.x,y:fighters.unit2.sprite.y};
+                fighters.unit1.targetPoint = {x: fighters.midPointX, y:fighters.midPointY};
+                fighters.returnFunction = play;
+                fighters.unit2.targetPoint = {x: fighters.midPointX, y:fighters.midPointY};
+                messageText.text = "Kit did a flee attack for no damage!"
+                return true;
+            },
             sprite: new Sprite(resources["sprites/civ/characters/kit.png"].texture),
             good: true,
         }
@@ -496,10 +709,30 @@
             maxMovement: 4,
             movement: 4,
             health: 10,
+            lastBOI: -10,
             healing: false,
             prepared: false,
             x: 98,
             y: 57,
+            special: function(me) {
+                var unitsInspired = 0;
+                if(day-me.lastBOI < 3) {
+                    return false;
+                }
+                for(let i = 0; i < characters.length; i++) {
+                    var char = characters[i];
+                    if(getDistance(char.x,char.y,me.x,me.y) < 3 && char.good && char !== me) {
+                        char.movement += me.movement;
+                        ++unitsInspired;
+                    }
+                }
+                me.movement = 0;
+                messageText.text = "Spot inspired " + unitsInspired + " units!";
+                setTimeout(function(){
+                    messageText.text = "";
+                }, 2000);
+                return true;
+            },
             sprite: new Sprite(resources["sprites/civ/characters/spot.png"].texture),
             good: true,
         }
@@ -513,6 +746,18 @@
             health: 10,
             healing: false,
             prepared: false,
+            special: function (me) {
+                if(boardLandcapeState[me.y][me.x] !== 12 && boardLandcapeState[me.y][me.x] !== 10) {
+                    return false;
+                }
+                me.invisible = true;
+                me.sprite.alpha = 0.25;
+                messageText.text = "Plata dived!";
+                setTimeout(function() {
+                    messageText.text = "";
+                }, 2000);
+                return true;
+            },
             x: 87,
             y: 51,
             sprite: new Sprite(resources["sprites/civ/characters/plata.png"].texture),
@@ -522,7 +767,8 @@
             name: "Chesselnut",
             attackStrength: 6,
             defenseStrength: 6,
-            rangedAttack: 0,
+            rangedAttack: 6,
+            range: 3,
             maxMovement: 8,
             movement: 8,
             health: 10,
@@ -530,6 +776,18 @@
             prepared: false,
             x: 94,
             y: 97,
+            special: function (me) {
+                characterSelected = me;
+                me.movement -= 3;
+                for(let i = 0; i < characters.length; i++) {
+                    var char = characters[i];
+                    if(!char.good && getDistance(char.x,char.y,me.x,me.y) <= 3) {
+                        actionSelected = "ranged";
+                        return "continue";
+                    }
+                }
+                return false;
+            },
             sprite: new Sprite(resources["sprites/civ/characters/chesselnut.png"].texture),
             good: true,
         }
@@ -716,9 +974,11 @@
             }
         } else if(actionSelected) {
             if(actionSelected === "heal") {
+                if(characterSelected.name === "Eleanor") {
+                    characterSelected.health = Math.min(10,characterSelected.health + 1);
+                }
                 characterSelected.movement = 0;
                 characterSelected.prepared = false;
-                (characterSelected);
                 characterSelected.healing = true;
                 actionSelected = false;
                 characterSelected = false;
@@ -738,9 +998,20 @@
                 characterSelected = false;
                 ui.visible = false;
             } else if(actionSelected === "move") {
-                for(var i = Math.max(0, characterSelected.x - Math.floor(characterSelected.movement)); i <= Math.min(99,characterSelected.x + Math.floor(characterSelected.movement)); i++) {
-                    for(var j = Math.max(0, characterSelected.y - Math.floor(characterSelected.movement)); j <= Math.min(99,characterSelected.y + Math.floor(characterSelected.movement)); j++) {
-                        if(getDistance(i,j,characterSelected.x,characterSelected.y) <= characterSelected.movement) {
+                if(!characterSelected.name === "Plata" || (boardLandcapeState[characterSelected.y][characterSelected.x] !== 10 && boardLandcapeState[characterSelected.y][characterSelected.x] !== 12)) {
+                    var minI = Math.max(0, characterSelected.x - Math.floor(characterSelected.movement));
+                    var maxI = Math.min(99,characterSelected.x + Math.floor(characterSelected.movement));
+                    var minJ = Math.max(0, characterSelected.y - Math.floor(characterSelected.movement));
+                    var maxJ = Math.min(99,characterSelected.y + Math.floor(characterSelected.movement));
+                } else {
+                    var minI = Math.max(0, characterSelected.x - Math.floor(characterSelected.movement*6));
+                    var maxI = Math.min(99,characterSelected.x + Math.floor(characterSelected.movement*6));
+                    var minJ = Math.max(0, characterSelected.y - Math.floor(characterSelected.movement*6));
+                    var maxJ = Math.min(99,characterSelected.y + Math.floor(characterSelected.movement*6));
+                }
+                for(var i = minI; i <= maxI; i++) {
+                    for(var j = minJ; j <= maxJ; j++) {
+                        if(getDistance(i,j,characterSelected.x,characterSelected.y) <= characterSelected.movement || (characterSelected.name === "Plata" && (boardLandcapeState[j][i] === 10 || boardLandcapeState[j][i] === 12) && (boardLandcapeState[characterSelected.y][characterSelected.x] === 10 || boardLandcapeState[characterSelected.y][characterSelected.x] === 12) &&getDistance(i,j,characterSelected.x,characterSelected.y) < characterSelected.movement * 6)) {
                             if(friendAtTile(i,j) === false && (characterSelected.name === "Humber" || characterSelected.name === "Plata" || boardLandcapeState[j][i] !== 10 && boardLandcapeState[j][i] !== 12)) {
                                 var glow = new Sprite(resources["sprites/civ/ui/moves.png"].texture);
                                 glow.x = (i - currentBoardX) * 128;
@@ -760,7 +1031,7 @@
                 if(press("mouse")) {
                     var clickX = Math.floor(mouseX/128) + currentBoardX;
                     var clickY = Math.floor(mouseY/128) + currentBoardY;
-                    if(getDistance(characterSelected.x, characterSelected.y, clickX, clickY) <= characterSelected.movement) {
+                    if(getDistance(characterSelected.x, characterSelected.y, clickX, clickY) <= characterSelected.movement || (characterSelected.name === "Plata" && (boardLandcapeState[characterSelected.y][characterSelected.x] === 10 || boardLandcapeState[characterSelected.y][characterSelected.x] === 12) && (boardLandcapeState[clickY][clickX] === 10 || boardLandcapeState[clickY][clickX] === 12) && getDistance(clickX,clickY,characterSelected.x,characterSelected.y) < characterSelected.movement * 6)) {
                         if(!friendAtTile(clickX,clickY)) {
                             var movementSpent = 0;
                             var charX = characterSelected.x;
@@ -807,11 +1078,20 @@
                                 characterSelected.x = charX;
                                 characterSelected.y = charY;
                             } else {
-                                characterSelected.movement -= getDistance(characterSelected.x, characterSelected.y, clickX, clickY);
+                                debugger;
+                                if((boardLandcapeState[clickY][clickX] === 10 || boardLandcapeState[clickY][clickX] === 12) && (characterSelected.name === "Plata" && (boardLandcapeState[characterSelected.y][characterSelected.x] === 10 || boardLandcapeState[characterSelected.y][characterSelected.x] === 12))) {
+                                    characterSelected.movement -= getDistance(characterSelected.x, characterSelected.y, clickX, clickY)/6;
+                                } else {
+                                    characterSelected.movement -= getDistance(characterSelected.x, characterSelected.y, clickX, clickY);
+                                }
                                 characterSelected.x = clickX;
                                 characterSelected.y = clickY;
                             }
                             drawBoard();
+                            if(characterSelected.name === "Plata" && characterSelected.invisible && (boardLandcapeState[clickY][clickX] !== 10 && boardLandcapeState[clickY][clickX] !== 12)) {
+                                characterSelected.invisible = false;
+                                characterSelected.sprite.alpha = 1;
+                            }
                             characterSelected.healing = false;
                             characterSelected.prepared = false;
                             actionSelected = false;
@@ -873,8 +1153,21 @@
                                 fighters = {unit1: characterSelected, unit2: getCharacterAt(clickX,clickY,false)}
                                 fighters.midPointX = (fighters.unit1.sprite.x + fighters.unit2.sprite.x)/2;
                                 fighters.midPointY = (fighters.unit1.sprite.y + fighters.unit2.sprite.y)/2;
-                                fighters.damage1 = (fighters.unit1.attackStrength/fighters.unit2.defenseStrength) * (5 + Math.random()*2-1);
-                                fighters.damage2 = (fighters.unit2.defenseStrength/fighters.unit1.attackStrength) * (5 + Math.random()*2-1);
+
+                                var attackStrength1 = fighters.unit1.attackStrength * (fighters.unit1.invisible ? 1.5 : 1);
+                                var defenseStrength2 = fighters.unit2.defenseStrength;
+                                if(fighters.unit1.effects) {
+                                    fighters.unit1.effects.forEach(function(effect){
+                                        attackStrength1 *= effect.effect;
+                                    });
+                                }
+                                if(fighters.unit2.effects) { 
+                                    fighters.unit2.effects.forEach(function(effect){
+                                        defenseStrength2 *= effect.effect;
+                                    });
+                                }
+                                fighters.damage1 = (attackStrength1/(defenseStrength2 * (fighters.unit2.prepared? 1.5 : 1)) * (5 + Math.random()*2-1));
+                                fighters.damage2 = ((defenseStrength2 * (fighters.unit2.prepared? 1.5 : 1))/attackStrength1) * (5 + Math.random()*2-1);
                                 fighters.unit1.health -= Math.round(fighters.damage2);
                                 fighters.unit2.health -= Math.round(fighters.damage1);
                                 if(fighters.unit1.health <= 0 && fighters.unit2.health > 0) {
@@ -883,10 +1176,12 @@
                                     fighters.result = -1;
                                 } else if(fighters.unit1.health > 0 && fighters.unit2.health > 0)  {
                                     fighters.result = 0;
-                                } else {
+                                } else if(fighters.unit1.health + Math.round(fighters.damage2) > fighters.unit2.health + Math.round(fighters.damage1)){
                                     fighters.unit1.health = 1;
+                                    fighters.result = -1;
+                                } else if(fighters.unit2.health + Math.round(fighters.damage1) > fighters.unit1.health + Math.round(fighters.damage2)){
                                     fighters.unit2.health = 1;
-                                    fighters.result = 0;
+                                    fighters.result = 1;
                                 }
                                 /// moving towards
                                 fighters.phase = 0;
@@ -899,7 +1194,10 @@
                                 fighters.unit2.targetPoint = {x: fighters.midPointX, y:fighters.midPointY};
                             }
                             drawBoard();
-
+                            if(characterSelected.name === "Plata" && boardLandcapeState[characterSelected.y][characterSelected.x] !== 12 && boardLandcapeState[characterSelected.y][characterSelected.x] !== 10) {
+                                characterSelected.invisible = false;
+                                characterSelected.sprite.alpha = 1;
+                            }
                             characterSelected.healing = false;
                             characterSelected.prepared = false;
                             actionSelected = false;
@@ -913,7 +1211,6 @@
                     }
                 }
             } else if(actionSelected === "gather") {
-                console.log(characterSelected.name);
                 var curTile = boardLandcapeState[characterSelected.y][characterSelected.x];
                 var foodOnTile = foodLandscapeState[characterSelected.y][characterSelected.x];
                 if(foodOnTile === 0) {
@@ -937,9 +1234,12 @@
                     return;
                 } else if((characterSelected.name === "Wooly" && curTile === 8) || (characterSelected.name === "Plata" && curTile === 12) || (characterSelected.name === "Humber" && curTile > 1 && curTile < 5) || 
                 (characterSelected.name === "Elmer" && curTile < 2) || (characterSelected.name === "Shadow" && curTile === 0) || (characterSelected.name === "Chesselnut" && curTile === 9) || (characterSelected.name === "Plata" && curTile === 12)) {
-                    var possibleFoodGathered = characterSelected.movement*2;
+                    var possibleFoodGathered = Math.round(characterSelected.movement*2);
+                    if(characterSelected.name === "Plata") {
+                        possibleFoodGathered *= 3;
+                    }
                 } else {
-                    var possibleFoodGathered = characterSelected.movement;
+                    var possibleFoodGathered = Math.round(characterSelected.movement);
                 }
                 if(foodOnTile > possibleFoodGathered) {
                     messageText.text = "You gathered " + possibleFoodGathered + " food!";
@@ -962,10 +1262,79 @@
                 actionSelected = false;
                 characterSelected = false;
                 ui.visible = false;
+            } else if(actionSelected === "special") {
+                var result = characterSelected.special(characterSelected);
+                if(!result) {
+                    messageText.text = "That special ability does not work right now.";
+                    setTimeout(function() {
+                        messageText.text = "";
+                    }, 2000);
+                } else if(result === "continue") {
+                    return;
+                }
+                actionSelected = false;
+                characterSelected = false;
+                ui.visible = false;
+            } else if(actionSelected === "ranged") {
+                var minI = Math.max(0, characterSelected.x - Math.floor(characterSelected.range));
+                var maxI = Math.min(99,characterSelected.x + Math.floor(characterSelected.range));
+                var minJ = Math.max(0, characterSelected.y - Math.floor(characterSelected.range));
+                var maxJ = Math.min(99,characterSelected.y + Math.floor(characterSelected.range));
+                for(var i = minI; i <= maxI; i++) {
+                    for(var j = minJ; j <= maxJ; j++) {
+                        if(getDistance(i,j,characterSelected.x,characterSelected.y) <= characterSelected.range) {
+                            if(friendAtTile(i,j) === "enemy") {
+                                var glow = new Sprite(resources["sprites/civ/ui/attack.png"].texture);
+                                glow.x = (i - currentBoardX) * 128;
+                                glow.y = (j - currentBoardY) * 128;
+                                colorTiles.addChild(glow);
+                            }
+                        }
+                    }
+                }
+                actionSelected = "shooting";
+            } else if(actionSelected === "shooting") {
+                if(press("mouse")) {
+                    var clickX = Math.floor(mouseX/128) + currentBoardX;
+                    var clickY = Math.floor(mouseY/128) + currentBoardY;
+                    for(let i = 0; i < characters.length; i++) {
+                        var char = characters[i];
+                        if(getDistance(char.x,char.y,characterSelected.x,characterSelected.y) <= 3 && !char.good && char.x === clickX && char.y === clickY) {
+                            state = shoot;
+                            projectile = {sprite: new Sprite(resources["sprites/civ/ui/nut.png"].texture), attackX: char.sprite.x, attackY: char.sprite.y, enemy: char, phase: 0, ticker: 0, tickerMax: getDistance(char.x,char.y,characterSelected.x,characterSelected.y) * 50/3};
+                            projectile.sprite.x = characterSelected.sprite.x + characterSelected.sprite.width/2;
+                            projectile.sprite.y = characterSelected.sprite.y + characterSelected.sprite.height/2;
+                            app.stage.addChild(projectile.sprite);
+                            projectile.sprite.scale.set(2);
+                            projectile.sprite.anchor.set(0.5,0.5);
+                            
+                            projectile.rateX = ((char.sprite.x+char.sprite.width/2)-projectile.sprite.x)/projectile.tickerMax;
+                            projectile.rateY = ((char.sprite.y+char.sprite.height/2)-projectile.sprite.y)/projectile.tickerMax;
+                            char.health -= Math.round((characterSelected.rangedAttack/char.defenseStrength)*5);
+                            if(char.health <= 0) {
+                                projectile.result = 1;
+                                if(char.captive) {
+                                    char.captive.captor = false;
+                                    char.captive = false;
+                                }
+                            } else {
+                                projectile.result = 0;
+                            }
+                            characterSelected.healing = false;
+                            characterSelected.prepared = false;
+                            actionSelected = false;
+                            characterSelected = false;
+                            ui.visible = false;
+                            colorTiles.removeChildren();
+                            console.log(projectile);
+                            break;
+                        }
+                    }
+                }
             }
         } else if(characterSelected) {
             if(press("mouse")) {
-                if(characterSelected.movement > 0) {
+                if(characterSelected.movement >= 1 || (characterSelected.name === "Plata" && characterSelected.movement > 0)) {
                     if(within(mouseX,mouseY,4,innerHeight-200,128,128)) {
                         actionSelected = "heal";
                     } else if(within(mouseX,mouseY,4+140,innerHeight-200,128,128)) {
@@ -976,7 +1345,9 @@
                         actionSelected = "sleep";
                     } else if(within(mouseX,mouseY,4+560,innerHeight-200,128,128)) {
                         actionSelected = "gather";
-                    } else {
+                    } else if(within(mouseX,mouseY,4+700,innerHeight-200,128,128)) {
+                        actionSelected = "special";
+                    }else {
                         characterSelected = false;
                         ui.visible = false;
                     }
@@ -993,6 +1364,11 @@
                     characters.forEach(function(character) {
                         if(character.good) {
                             if(character.healing) {
+                                for(let i = 0; i < houses.length; i++) {
+                                    if(character.x === houses[i].x && character.y === houses[i].y) {
+                                        character.health = Math.min(character.health + 2, 10);
+                                    }
+                                }
                                 character.health = Math.min(character.health + 1, 10);
                             }
                             character.movement = character.maxMovement;
@@ -1002,10 +1378,22 @@
                     var clickX = Math.floor(mouseX/128) + currentBoardX;
                     var clickY = Math.floor(mouseY/128) + currentBoardY;
                     for(let i = 0; i < characters.length; i++) {
-                        if(characters[i].good && characters[i].x === clickX && characters[i].y === clickY) {
+                        if(characters[i].good && characters[i].x === clickX && characters[i].y === clickY && !characters[i].captor) {
                             characterSelected = characters[i];
                             ui.visible = true;
-                            if(characterSelected.movement >= 1) {
+                            ui.healthBar.clear();
+                            ui.healthBar.beginFill(0xffffff);
+                            ui.healthBar.lineStyle(5,0x000000);
+                            ui.healthBar.drawRect(0,0,32,128);
+                            if(characterSelected.health > 5) {
+                                var fill = ((characterSelected.health-5)*0x00ff00 + (10-characterSelected.health)*0xffff00)/5
+                            } else {
+                                var fill = ((characterSelected.health)*0xffff00 + (5-characterSelected.health)*0xff0000)/5
+                            }
+                            ui.healthBar.beginFill(fill);
+                            ui.healthBar.lineStyle(5,0x000000);
+                            ui.healthBar.drawRect(0,128*(1-characterSelected.health/10),32,128*characterSelected.health/10);
+                            if(characterSelected.movement >= 1 || (characterSelected.name === "Plata" && characterSelected.movement > 0)) {
                                 ui.alpha = 1;
                             } else {
                                 ui.alpha = 0.5;
@@ -1032,14 +1420,21 @@
     function nextTurn() {
         var didSomethingThisTurn = false;
         for(let i = 0; i < characters.length; i++) {
-            if(!characters[i].good && characters[i].movement) {
+            if(!characters[i].good && characters[i].movement && !characters[i].captive) {
                 var enemy = characters[i];
                 if(getDistance(getClosestFriend(enemy.x,enemy.y).x, getClosestFriend(enemy.x,enemy.y).y, enemy.x, enemy.y) < 2 && !enemy.captive) {
                     fighters = {unit1: enemy, unit2: getClosestFriend(enemy.x, enemy.y)};
                     fighters.midPointX = (fighters.unit1.sprite.x + fighters.unit2.sprite.x)/2;
                     fighters.midPointY = (fighters.unit1.sprite.y + fighters.unit2.sprite.y)/2;
-                    fighters.damage1 = (fighters.unit1.attackStrength/fighters.unit2.defenseStrength) * (5 + Math.random()*2-1);
-                    fighters.damage2 = (fighters.unit2.defenseStrength/fighters.unit1.attackStrength) * (5 + Math.random()*2-1);
+                    var attackStrength1 = fighters.unit1.attackStrength;
+                    var defenseStrength2 = fighters.unit2.defenseStrength;
+                    if(fighters.unit1.effects) { 
+                        fighters.unit1.effects.forEach(function(effect){
+                            attackStrength1 *= effect.effect;
+                        });ui.visible = true
+                    }
+                    fighters.damage1 = (attackStrength1/(defenseStrength2 * (fighters.unit2.prepared? 1.5 : 1))) * (5 + Math.random()*2-1);
+                    fighters.damage2 = ((defenseStrength2 * (fighters.unit2.prepared? 1.5 : 1))/attackStrength1) * (5 + Math.random()*2-1);
                     fighters.unit1.health -= Math.round(fighters.damage2);
                     fighters.unit2.health -= Math.round(fighters.damage1);
                     if(fighters.unit1.health <= 0 && fighters.unit2.health > 0) {
@@ -1048,10 +1443,12 @@
                         fighters.result = -1;
                     } else if(fighters.unit1.health > 0 && fighters.unit2.health > 0)  {
                         fighters.result = 0;
-                    } else {
+                    } else if(fighters.unit1.health + Math.round(fighters.damage2) > fighters.unit2.health + Math.round(fighters.damage1)){
                         fighters.unit1.health = 1;
+                        fighters.result = -1;
+                    } else if(fighters.unit2.health + Math.round(fighters.damage1) > fighters.unit1.health + Math.round(fighters.damage2)){
                         fighters.unit2.health = 1;
-                        fighters.result = 0;
+                        fighters.result = 1;
                     }
                     /// moving towards
                     fighters.phase = 0;
@@ -1064,9 +1461,14 @@
                     fighters.returnFunction = nextTurn;
                     state = fight;
                     didSomethingThisTurn = true;
+                    fighters.unit1.health = Math.max(0,fighters.unit1.health);
+                    fighters.unit2.health = Math.max(0,fighters.unit2.health);
                     break;
                 } else if(getDistance(getClosestFriend(enemy.x,enemy.y).x, getClosestFriend(enemy.x,enemy.y).y, enemy.x, enemy.y) <= enemy.movement || !enemy.guard) {
                     var target = getClosestFriend(enemy.x,enemy.y)
+                    var targetX = target.x// + randInt(-1,1);
+                    var targetY = target.y// + randInt(-1,1);
+
                     var movementSpent = 0;
                     var charX = enemy.x;
                     var charY = enemy.y;
@@ -1076,29 +1478,30 @@
                         var acc = 0;
                         var cx = 0;
                         var cy = 0;
-                        if(target.x < charX) {
+                        if(targetX < charX) {
                             charX--;
                             cx = -1;
                             dist++;
-                        } else if(target.x > charX) {
+                        } else if(targetX > charX) {
                             charX++;
                             cx = 1;
                         } else {
                             acc++;
                         }
-                        if(target.y < charY) {
+                        if(targetY < charY) {
                             charY--;
                             cy = -1;
                             dist++;
-                        } else if(target.y > charY) {
+                        } else if(targetY > charY) {
                             charY++;
                             cy = 1;
                         } else {
                             acc++;
                         }
+                        ++movementSpent;
                         if(acc === 2) {
                             sim = false;
-                        } else if(!friendAtTile(charX,charY) && boardLandcapeState[charY][charX] !== 10 && boardLandcapeState[charY][charX] !== 12){
+                        } else if((!friendAtTile(charX,charY) && boardLandcapeState[charY][charX] !== 10 && boardLandcapeState[charY][charX] !== 12) || movementSpent > enemy.movement){
                             movementSpent += Math.sqrt(dist);
                             if(movementSpent > enemy.movement) {
                                 sim = "FAIL";
@@ -1118,20 +1521,30 @@
                         enemy.x = charX;
                         enemy.y = charY;
                     } else {
-                        enemy.movement -= getDistance(enemy.x, enemy.y, clickX, clickY);
-                        enemy.x = target.y;
-                        enemy.y = clickY;
+                        enemy.movement -= getDistance(enemy.x, enemy.y, targetX, targetY);
+                        enemy.x = targetX;
+                        enemy.y = targetY;
                     }
+                    ui.visible = false;
                     drawBoard();
                 }
             }
         }
         if(!didSomethingThisTurn) {
             state = play;
-            console.log("Owlgories");
             for(let i = 0; i < characters.length; i++) {
                 if(!characters[i].good) {
                     characters[i].movement = characters[i].maxMovement;
+                }
+                if(!characters[i].effects) {
+                    continue;
+                }
+                for(let j = 0; j < characters[i].effects.length; j++) {
+                    --characters[i].effects[j].duration;
+                    if(characters[i].effects[j].duration <= 0) {
+                        characters[i].effects.splice(j,1);
+                        --j;
+                    }
                 }
             }
             nextTurnButton.visible = true;
@@ -1142,14 +1555,109 @@
                 dfadf = 20;
             }
             foodText.text = food;
+            ++igerStrength.strength;
+            if(!igerStrength.invading) {
+                if(igerStrength.strength > 12 && Math.random() < 0.1) {
+                    var notDone = false;
+                    var beginX = randInt(1,98);
+                    var beginY = randInt(52,54);
+
+                    while(true) {
+                        if(getCharacterAt(beginX,beginY) === false){
+                            break;
+                        } else {
+                            beginX = randInt(1,98);
+                            beginY = randInt(52,54);
+                        }
+                    }
+                    if(!isAlive("Igeron King")) {
+                        var igeronKing = {
+                            name: "Igeron King",
+                            attackStrength: 21,
+                            defenseStrength: 21,
+                            maxMovement: 6,
+                            movement: 6,
+                            health: 10,
+                            healing: false,
+                            prepared: false,
+                            x: beginX,
+                            y: beginY,
+                            sprite: new Sprite(resources["sprites/civ/characters/igeron-king.png"].texture),
+                            good: false
+                        }
+
+                        characters.push(igeronKing);
+                        app.stage.addChild(igeronKing.sprite);
+                    }
+                    for(let i = 0; i < igerStrength.strength / 7; i++) {
+                        var newIger = {
+                            name: "Iger",
+                            attackStrength: 15,
+                            defenseStrength: 18,
+                            maxMovement: 5,
+                            movement: 5,
+                            health: 10,
+                            healing: false,
+                            prepared: true,
+                            x: beginX+randInt(-Math.floor(igerStrength.strength/7), Math.floor(igerStrength.strength/7)),
+                            y: beginY+randInt(-Math.floor(igerStrength.strength/7), Math.floor(igerStrength.strength/7)),
+                            sprite: new Sprite(resources["sprites/civ/characters/iger.png"].texture),
+                            good: false
+                        };
+                        var newIon = {
+                            name: "Ion",
+                            attackStrength: 16,
+                            defenseStrength: 14,
+                            maxMovement: 5,
+                            movement: 5,
+                            health: 10,
+                            healing: false,
+                            prepared: true,
+                            x: beginX+randInt(-Math.floor(igerStrength.strength/7), Math.floor(igerStrength.strength/7)),
+                            y: beginY+randInt(-Math.floor(igerStrength.strength/7), Math.floor(igerStrength.strength/7)),
+                            sprite: new Sprite(resources["sprites/civ/characters/ion.png"].texture),
+                            good: false
+                        };
+                        if(newIon.x > -1 && newIon.x < 99 && newIon.y > -1 && newIon.y < 99) {
+                            if(getCharacterAt(newIon.x,newIon.y) === false && boardLandcapeState[newIon.y][newIon.x] !== 10 && boardLandcapeState[newIon.y][newIon.x] !== 12) {
+                                app.stage.addChild(newIon.sprite);
+                                characters.push(newIon);
+                            }
+                        }
+                        if(newIger.x > -1 && newIger.x < 99 && newIger.y > -1 && newIger.y < 99) {
+                            if(getCharacterAt(newIger.x,newIger.y) === false && boardLandcapeState[newIger.y][newIger.x] !== 10 && boardLandcapeState[newIger.y][newIger.x] !== 12) {
+                                app.stage.addChild(newIger.sprite);
+                                characters.push(newIger);
+                            }
+                        }
+                    }
+                    igerStrength.invading = 10;
+                    igerStrength.strength = false;
+                    messageText.text = "The Igeron King has breached the river!";
+                    setTimeout(function(){
+                        messageText.text = "";
+                    }, 5000);
+                }
+            } else {
+                igerStrength.invading--;
+                igerStrength.strength--;
+            }
             drawBoard();
         }
+    }
+    function isAlive(name) {
+        for(let i = 0; i < characters.length; i++) {
+            if(characters[i].name === name) {
+                return true;
+            } 
+        }
+        return false;
     }
     function getClosestFriend(x,y) {
         var friend = false;
         var bestDistance = Infinity;
         for(let i = 0; i < characters.length; i++) {
-            if(characters[i].good && !characters[i].captor) {
+            if(characters[i].good && !characters[i].captor && !characters[i].invisible) {
                 if(getDistance(x,y,characters[i].x,characters[i].y) < bestDistance) {
                     bestDistance = getDistance(x,y,characters[i].x,characters[i].y);
                     friend = characters[i];
@@ -1157,6 +1665,36 @@
             }
         }
         return friend;
+    }
+    function shoot() {
+        if(projectile.phase === 0) {
+            ++projectile.ticker;
+            projectile.sprite.x += projectile.rateX;
+            projectile.sprite.y += projectile.rateY;
+            projectile.sprite.rotation += Math.PI*5/projectile.tickerMax;
+            if(projectile.ticker > projectile.tickerMax) {
+                projectile.phase = 1;
+                projectile.ticker = 0;
+                app.stage.removeChild(projectile.sprite);
+            }
+        } else {
+            if(projectile.result) {
+                projectile.enemy.sprite.alpha -= 1/projectile.tickerMax;
+            }
+            ++projectile.ticker;
+            if(projectile.ticker > projectile.tickerMax) {
+                if(projectile.result) {
+                    app.stage.removeChild(projectile.enemy.sprite);
+                    for(let i = 0; i < characters.length; i++) {
+                        if(characters[i] === projectile.enemy) {
+                            characters.splice(i,1);
+                            break;
+                        }
+                    }
+                }
+                state = play;
+            }
+        }
     }
     function fight() {
         if(fighters.unit1.sprite.x < fighters.unit1.targetPoint.x) {
@@ -1276,7 +1814,11 @@
                 if(fighters.reps < 1) {
                     drawBoard();
                     state = fighters.returnFunction;
-                    if(fighters.result === -1 && !fighters.unit2.captive && fighters.unit1.good) {
+                    fighters.unit1.invisible = false;
+                    fighters.unit2.invisible = false;
+                    fighters.unit1.sprite.alpha = 1;
+                    fighters.unit2.sprite.alpha = 1;
+                    if(fighters.result === -1 && fighters.unit1.good) {
                         app.stage.removeChild(fighters.unit2.sprite);
                     } else if(fighters.result === 1 && fighters.unit2.good) {
                         app.stage.removeChild(fighters.unit1.sprite);
@@ -1323,7 +1865,7 @@
         for(let i = currentBoardY; i < currentBoardY+numOfSquaresToDrawY; i++){
             for(let j = currentBoardX; j < currentBoardX+numOfSquaresToDrawX; j++) {
                 if(landscapeSeasonPrime[boardLandcapeState[i][j]] < day) {
-                    var tile = new Sprite(resources["sprites/civ/landscape/fall" + landscape[boardLandcapeState[i][j]]].texture);
+                    var tile = new Sprite(resources["sprites/civ/landscape/fall/" + landscape[boardLandcapeState[i][j]]].texture);
                 } else {
                     var tile = new Sprite(resources["sprites/civ/landscape/" + landscape[boardLandcapeState[i][j]]].texture);
                 }
