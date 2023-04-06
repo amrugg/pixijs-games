@@ -51,7 +51,7 @@
       "characters/chesselnut.png", "characters/eleanor.png", "characters/kit.png", "characters/spot.png", "characters/humber.png", "characters/plata.png", "houses/cave.png", "houses/cavel.png", "houses/caver.png", "ui/sun.png", "ui/food.png", "ui/ability.png"];
     
     var landscape = ["apple.png", "bamboo.png", "flower2.png", "flower3.png", "flower.png", "forest2.png", "forest.png", "grass.png", "honey.png", "nut.png", "water.png", "forest3.png", "cattails.png","path.png", "mustard.png",];
-    var landscapeSeasonPrime = [184, 150, 92, 92, 92, 185, Infinity, Infinity, 135, 184, 285, 184, 214, Infinity, 123];
+    var landscapeSeasonPrime = [184, 184, 92, 92, 92, 184, Infinity, Infinity, 184, 184, 285, 184, 214, Infinity, 123];
     var landscapeFoodMax = [12,8,6,6,6,0,0,0,15,12,0,0,10,0,5];
     var landscapeSeasonEnd = [224, 180, 150, 150, 150, 258]
     var day = 1;
@@ -1196,8 +1196,10 @@
                             }
                             if(foundOne) {
                                 nextTurnButton.texture = resources["sprites/civ/ui/uno.png"].texture;
+                                forceNextTurnButton.visible = true;
                             } else {
                                 nextTurnButton.texture = resources["sprites/civ/ui/next.png"].texture;
+                                forceNextTurnButton.visible = false;
                             }
                         } else if(friendAtTile(clickX, clickY) === "enemy" && canFight) {
                             var movementSpent = 0;
@@ -1334,8 +1336,10 @@
                             }
                             if(foundOne) {
                                 nextTurnButton.texture = resources["sprites/civ/ui/uno.png"].texture;
+                                forceNextTurnButton.visible = true;
                             } else {
                                 nextTurnButton.texture = resources["sprites/civ/ui/next.png"].texture;
+                                forceNextTurnButton.visible = false;
                             }
                         }
                     } else {
@@ -1814,13 +1818,13 @@
                 dfadf = 20;
             }
             foodText.text = food;
-            if(day % 10 === 0) {
+            if(day % 20 === 0) {
                 for(let i = 0; i < foodLandscapeState.length; i++) {
                     for(let j = 0; j < foodLandscapeState[i].length; j++) {
                         var curFood = foodLandscapeState[i][j];
                         var curTile = boardLandcapeState[i][j];
                         if(landscapeSeasonPrime[curTile] > day) {
-                            foodLandscapeState[i][j]++;
+                            foodLandscapeState[i][j] = Math.min(foodLandscapeState[i][j]+1, landscapeFoodMax[curTile]);
                         } else {
                             foodLandscapeState[i][j]--;
                         }
