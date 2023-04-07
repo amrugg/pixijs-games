@@ -49,7 +49,8 @@
     var spritesToAdd = [];
     var namesToAdd = ["ui/prepare.png", "ui/heal.png", "ui/move.png", "ui/sleep.png", "ui/moves.png", "characters/elmer.png", "characters/shadow.png", "characters/iger.png", "ui/gather.png", "ui/nut.png", "ui/uno.png", "ui/sword.png", "ui/buckler.png", "ui/logo.png",
     "ui/attack.png", "houses/chesselnut.png", "houses/elmer.png", "houses/wooly.png", "houses/spot.png", "houses/kit.png", "houses/plata.png", "houses/humber.png", "houses/shadow.png", "ui/next.png", "characters/ion.png", "characters/igeron-king.png", 
-      "characters/chesselnut.png", "characters/eleanor.png", "characters/kit.png", "characters/spot.png", "characters/humber.png", "characters/plata.png", "houses/cave.png", "houses/cavel.png", "houses/caver.png", "ui/sun.png", "ui/food.png", "ui/ability.png"];
+      "characters/chesselnut.png", "characters/eleanor.png", "characters/kit.png", "characters/spot.png", "characters/humber.png", "characters/plata.png", "houses/cave.png", "houses/cavel.png", "houses/caver.png", "ui/sun.png", "ui/food.png", "ui/ability.png",
+    "intro/Wooly.png", "intro/Spot.png", "intro/Kit.png", "intro/Humber.png", "intro/Chesselnut.png", "intro/Shadow.png", "intro/Elmer.png", "intro/Plata.png", "intro/Eleanor.png"];
     
     var landscape = ["apple.png", "bamboo.png", "flower2.png", "flower3.png", "flower.png", "forest2.png", "forest.png", "grass.png", "honey.png", "nut.png", "water.png", "forest3.png", "cattails.png","path.png", "mustard.png",];
     var landscapeSeasonPrime = [184, 184, 92, 92, 92, 184, Infinity, Infinity, 184, 184, 285, 184, 214, Infinity, 123];
@@ -93,7 +94,10 @@
                 general = "Kit";
             }
             if(general) {
-                paper();
+                midContainer.removeChildren();
+                setTimeout(function(){
+                    paper();
+                },3000);
                 music.fade(0.1,0,3000);
                 setTimeout(function(){
                     var intro = new Howl({src: ["music/" + general + ".mp3"], volume: 0.25, onend: function() {
@@ -115,7 +119,23 @@
     });
     var logo;
     function paper() {
-        midContainer.removeChildren();
+        var paperSprite = new Sprite(resources["sprites/civ/intro/"+general+".png"].texture);
+        var generalSprite = new Sprite(resources["sprites/civ/characters/"+general.toLowerCase()+".png"].texture);
+
+        paperSprite.scale.set(2);
+        paperSprite.anchor.set(0.5,0.5);
+
+        paperSprite.x = innerWidth / 2;
+        paperSprite.y = innerHeight / 2;
+
+        generalSprite.scale.set(2);
+        generalSprite.anchor.set(0.5,0.5);
+
+        generalSprite.x = innerWidth / 2 - paperSprite.width;
+        generalSprite.y = innerHeight / 2;
+
+        app.stage.addChild(generalSprite);
+        app.stage.addChild(paperSprite);
     }
     function begin() {
         app.renderer.backgroundColor = 0;
