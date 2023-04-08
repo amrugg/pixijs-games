@@ -47,13 +47,13 @@
     app.renderer.resize(window.innerWidth, window.innerHeight);
     document.body.appendChild(app.view);
     var spritesToAdd = [];
-    var namesToAdd = ["ui/prepare.png", "ui/heal.png", "ui/move.png", "ui/sleep.png", "ui/moves.png", "characters/elmer.png", "characters/shadow.png", "characters/iger.png", "ui/gather.png", "ui/nut.png", "ui/uno.png", "ui/sword.png", "ui/buckler.png", "ui/logo.png",
+    var namesToAdd = ["ui/prepare.png", "ui/heal.png", "ui/move.png", "ui/sleep.png", "ui/moves.png", "characters/elmer.png", "characters/shadow.png", "characters/iger.png", "ui/gather.png", "ui/nut.png", "ui/uno.png", "ui/sword.png", "ui/buckler.png", "ui/logo.png", "ui/Verse.png", "ui/WonVerse.png", "ui/LostVerse.png",
     "ui/attack.png", "houses/chesselnut.png", "houses/elmer.png", "houses/wooly.png", "houses/spot.png", "houses/kit.png", "houses/plata.png", "houses/humber.png", "houses/shadow.png", "ui/next.png", "characters/ion.png", "characters/igeron-king.png", 
       "characters/chesselnut.png", "characters/eleanor.png", "characters/kit.png", "characters/spot.png", "characters/humber.png", "characters/plata.png", "houses/cave.png", "houses/cavel.png", "houses/caver.png", "ui/sun.png", "ui/food.png", "ui/ability.png",
-    "intro/Wooly.png", "intro/Spot.png", "intro/Kit.png", "intro/Humber.png", "intro/Chesselnut.png", "intro/Shadow.png", "intro/Elmer.png", "intro/Plata.png", "intro/Eleanor.png",
+    "intro/Wooly.png", "intro/Spot.png", "intro/Kit.png", "intro/Humber.png", "intro/Chesselnut.png", "intro/Shadow.png", "intro/Elmer.png", "intro/Plata.png", "intro/Eleanor.png", "flag.png", "dam.png",
 "houses/fall/chesselnut.png", "houses/fall/elmer.png", "houses/fall/wooly.png", "houses/fall/spot.png", "houses/fall/kit.png", "houses/fall/plata.png", "houses/fall/humber.png", "houses/fall/shadow.png", "houses/fall/cave.png", "houses/fall/cavel.png", "houses/fall/caver.png",
 "houses/winter/chesselnut.png", "houses/winter/elmer.png", "houses/winter/wooly.png", "houses/winter/spot.png", "houses/winter/kit.png", "houses/winter/plata.png", "houses/winter/humber.png", "houses/winter/shadow.png", "houses/winter/cave.png", "houses/winter/cavel.png", "houses/winter/caver.png",];
-    
+    var specials = [];
     var landscape = ["apple.png", "bamboo.png", "flower2.png", "flower3.png", "flower.png", "forest2.png", "forest.png", "grass.png", "honey.png", "nut.png", "water.png", "forest3.png", "cattails.png","path.png", "mustard.png",];
     var landscapeSeasonPrime = [184, 184, 92, 92, 92, 184, Infinity, Infinity, 184, 184, 285, 184, 214, Infinity, 123];
     var landscapeFoodMax = [12,8,6,6,6,0,0,0,15,12,0,0,10,0,5];
@@ -104,13 +104,14 @@
                 music.fade(0.1,0,3000);
                 setTimeout(function(){
                     var intro = new Howl({src: ["music/" + general + ".mp3"], volume: 0.25, onend: function() {
+                        app.stage.removeChildren();
                         setup();
                     }, onload: function() {
                         setTimeout(function(){
                             intro.fade(0.25,0,3000);
                             setTimeout(function(){
-                                var music = new Howl({src: ["6.mp3"], autoplay: true, loop: true, volume: 0.1});
-                                music.fade(0,0.1, 3000);    
+                                regMusic = new Howl({src: ["6.mp3"], autoplay: true, loop: true, volume: 0.1});
+                                regMusic.fade(0,0.1, 3000);    
                             },3000);
                         }, intro._duration * 1000 - 3000);
                     }});
@@ -120,10 +121,15 @@
             }
         }
     });
+    var regMusic;
     var logo;
+    var paperSprite;
+    var capitol = {}; 
+    var loseVerse;
+    var generalSprite;
     function paper() {
-        var paperSprite = new Sprite(resources["sprites/civ/intro/"+general+".png"].texture);
-        var generalSprite = new Sprite(resources["sprites/civ/characters/"+general.toLowerCase()+".png"].texture);
+        paperSprite = new Sprite(resources["sprites/civ/intro/"+general+".png"].texture);
+        generalSprite = new Sprite(resources["sprites/civ/characters/"+general.toLowerCase()+".png"].texture);
 
         paperSprite.scale.set(2);
         paperSprite.anchor.set(0.5,0.5);
@@ -140,18 +146,26 @@
         app.stage.addChild(generalSprite);
         app.stage.addChild(paperSprite);
     }
+    var verse;
     function begin() {
         app.renderer.backgroundColor = 0;
         logo = new Sprite(resources["sprites/civ/ui/logo.png"].texture);
+        verse = new Sprite(resources["sprites/civ/ui/Verse.png"].texture);
         app.stage.addChild(logo);
         logo.anchor.set(0.5,0.5);
         logo.x = innerWidth / 2;
         logo.y = innerHeight / 2;
+        app.stage.addChild(verse);
+        verse.anchor.set(0.5,0.5);
+        verse.scale.set(2);
+        verse.x = innerWidth / 2;
+        verse.y = innerHeight / 2 - 400;
     }
     var midContainer;
     function chooseGeneral() {
         app.renderer.backgroundColor = 0x551133;
         logo.visible = false;
+        verse.visible = false;
         midContainer = new PIXI.Container();
         var wooly = new Sprite(resources["sprites/civ/characters/wooly.png"].texture);
         midContainer.addChild(wooly);
@@ -265,7 +279,7 @@
     var sunText;
     var messageText;
     function setup() {
-        healthBarPreview = {state: general === "Plata" ? 1 : 0, lastEnemyRendered: false};
+        healthBarPreview = {state: 0, lastEnemyRendered: false};
         for(let i = 0; i < 100; i++) {
             foodLandscapeState.push([]);
             for(let j = 0; j < 100; j++) {
@@ -292,6 +306,17 @@
         app.stage.addChild(boardPieces)
         // var testSprite = new Sprite(resources["sprites/civ/landscape/grass.png"].texture);
         // app.stage.addChild(testSprite);
+        specials.push({
+            name: "dam",
+            health: 0,
+            strength: 0,
+            x: 87,
+            y: 49,
+            sprite: new Sprite(resources["sprites/civ/dam.png"].texture),
+            good: false,
+            textureName: "dam.png",
+        });
+        app.stage.addChild(specials[0].sprite);
         addFriends();
         addEnemies();
         /*var Iger = {
@@ -574,6 +599,43 @@
             character.effects.push(effect);
         } else {
             character.effects = [effect];
+        }
+    }
+    var wonVerse;
+    function win () {
+        var shouldStop = true;
+        wonVerse.alpha += 0.01;
+        app.stage.children.forEach(function(child){
+            if(child === wonVerse) {
+                return;
+            }
+            child.alpha -= 0.01;
+            if(child.alpha > 0) {
+                shouldStop = false;
+            }
+        });
+        if(shouldStop) {
+            state = function(){
+
+            }
+        }
+    }
+    function lose () {
+        var shouldStop = true;
+        loseVerse.alpha += 0.01;
+        app.stage.children.forEach(function(child){
+            if(child === loseVerse) {
+                return;
+            }
+            child.alpha -= 0.01;
+            if(child.alpha > 0) {
+                shouldStop = false;
+            }
+        });
+        if(shouldStop) {
+            state = function(){
+
+            }
         }
     }
     function addFriends() {
@@ -1084,6 +1146,25 @@
             good: false,
             textureName: "caver.png",
         });
+        for(let i = 0; i < houses.length; i++) {
+            var house = houses[i];
+            if(house.name === general + "'s House") {
+
+                specials.push({
+                name: "flag",
+                health: 0,
+                strength: 0,
+                x: house.x,
+                y: house.y,
+                sprite: new Sprite(resources["sprites/civ/flag.png"].texture),
+                good: false,
+                textureName: "flag.png",
+            });
+            capitol.x = house.x;
+            capitol.y = house.y;
+            console.log("flag at", specials[1]);
+            }
+        }
         app.stage.addChild(houses[0].sprite);
         app.stage.addChild(houses[1].sprite);
         app.stage.addChild(houses[2].sprite);
@@ -1095,6 +1176,8 @@
         app.stage.addChild(houses[8].sprite);
         app.stage.addChild(houses[9].sprite);
         app.stage.addChild(houses[10].sprite);
+        app.stage.addChild(specials[1].sprite);
+        specials[1].sprite.anchor.set(-0,-2);
     }
     function gameLoop(delta) {
       state(delta)
@@ -1577,10 +1660,30 @@
                                     });
                                 }
                                 fighters.damage1 = (attackStrength1/(defenseStrength2 * (fighters.unit2.prepared? 1.5 : 1)) * (5 + Math.random()*2-1));
-                                IgeronKingCaveCapitol.health -= Math.round(fighters.damage1);
+                                IgeronKingCaveCapitol.health -= Math.round(fighters.damage1) * 100;
                                 if(IgeronKingCaveCapitol.health <= 0) {
-
+                                    messageText.text = characterSelected.name + "destroyed the Igeron King's cave granting you a domination victory!";
+                                    setTimeout(function(){
+                                        state = win;
+                                        wonVerse = new Sprite(resources["sprites/civ/ui/WonVerse.png"].texture);
+                                        app.stage.addChild(wonVerse);
+                                        wonVerse.alpha = 0;
+                                        wonVerse.anchor.set(0.5,0.5);
+                                        wonVerse.scale.set(2);
+                                        wonVerse.x = innerWidth / 2;
+                                        wonVerse.y = innerHeight / 2;
+                                        regMusic.fade(0.1,0,2000)
+                                        setTimeout(function(){
+                                            var winMusic = new Howl({src: ["win.flac"], autoplay: true, loop: true, volume: 0});
+                                            winMusic.fade(0,0.1,2000);
+                                        },2000);
+                                    },2000);
+                                }  else {
+                                    messageText.text = characterSelected.name + " attacked the Igeron King's cave for " + Math.round(fighters.damage1) + " damage!";
                                 }
+                                setTimeout(function(){
+                                    messageText.text = "";
+                                }, 2000);
                                 fighters.result = 0;
 
                                 /// moving towards
@@ -1598,10 +1701,6 @@
                                 characterSelected.invisible = false;
                                 characterSelected.sprite.alpha = 1;
                             }
-                            messageText.text = characterSelected.name + " attacked the Igeron King's cave for " + Math.round(fighters.damage1) + " damage!";
-                            setTimeout(function(){
-                                messageText.text = "";
-                            }, 1000);
                             characterSelected.healing = false;
                             characterSelected.prepared = false;
                             actionSelected = false;
@@ -1633,7 +1732,7 @@
                 } else {
                     var clickX = Math.floor(mouseX/128) + currentBoardX;
                     var clickY = Math.floor(mouseY/128) + currentBoardY;
-                    if(friendAtTile(clickX,clickY) === "enemy" && getCharacterAt(clickX,clickY) !== healthBarPreview.lastEnemyRendered) {
+                    if(friendAtTile(clickX,clickY) === "enemy" && getCharacterAt(clickX,clickY) !== healthBarPreview.lastEnemyRendered && general === "Plata") {
                         var enemy = getCharacterAt(clickX,clickY);    
                         healthBarPreview.lastEnemyRendered = enemy;
                         var attackStrength1 = characterSelected.attackStrength * (characterSelected.invisible ? 1.5 : 1);
@@ -2112,8 +2211,12 @@
                     for(let i = 0; i < affectedFriends.length; i++) {
                         if(general === "Spot") {
                             addEffect(affectedFriends[i], {name: "Terrorize", duration: 3, effect: 0.5 + findFriendsWithinTiles(affectedFriends[i].x,affectedFriends[i].y, 1.5).length/32});
+                            affectedFriends[i].movement /= 2;
                         } else {
                             addEffect(affectedFriends[i], {name: "Terrorize", duration: 3, effect: 0.75 + findFriendsWithinTiles(affectedFriends[i].x,affectedFriends[i].y, 1.5).length/32});
+                            affectedFriends.movement = 0;
+                            affectedFriends.prepared = false;
+                            affectedFriends.healing = false;
                         }
                     }
                     messageText.text = "The Igeron King terrorized " + affectedFriends.length + " friends!";
@@ -2121,8 +2224,71 @@
                         messageText.text = "";
                     }, 1000);
                     enemy.lastTER = day;
-                } else if(getDistance(getClosestFriend(enemy.x,enemy.y).x, getClosestFriend(enemy.x,enemy.y).y, enemy.x, enemy.y) <= enemy.movement || !enemy.guard) {
+                } else if(getDistance(getClosestFriend(enemy.x,enemy.y).x, getClosestFriend(enemy.x,enemy.y).y, enemy.x, enemy.y) <= enemy.movement) {
                     var target = getClosestFriend(enemy.x,enemy.y)
+                    var targetX = target.x// + randInt(-1,1);
+                    var targetY = target.y// + randInt(-1,1);
+
+                    var movementSpent = 0;
+                    var charX = enemy.x;
+                    var charY = enemy.y;
+                    var sim = true;
+                    while(sim) {
+                        var dist = 0;
+                        var acc = 0;
+                        var cx = 0;
+                        var cy = 0;
+                        if(targetX < charX) {
+                            charX--;
+                            cx = -1;
+                            dist++;
+                        } else if(targetX > charX) {
+                            charX++;
+                            cx = 1;
+                        } else {
+                            acc++;
+                        }
+                        if(targetY < charY) {
+                            charY--;
+                            cy = -1;
+                            dist++;
+                        } else if(targetY > charY) {
+                            charY++;
+                            cy = 1;
+                        } else {
+                            acc++;
+                        }
+                        ++movementSpent;
+                        if(acc === 2) {
+                            sim = false;
+                        } else if((!friendAtTile(charX,charY) && boardLandcapeState[charY][charX] !== 10 && boardLandcapeState[charY][charX] !== 12) || movementSpent > enemy.movement){
+                            movementSpent += Math.sqrt(dist);
+                            if(movementSpent > enemy.movement) {
+                                sim = "FAIL";
+                                charX -= cx;
+                                charY -= cy;
+                                break;
+                            }
+                        } else {
+                            sim = "FAIL";
+                            charX -= cx;
+                            charY -= cy;
+                            break;
+                        }
+                    }
+                    if(sim === "FAIL") {
+                        enemy.movement -= movementSpent;
+                        enemy.x = charX;
+                        enemy.y = charY;
+                    } else {
+                        enemy.movement -= getDistance(enemy.x, enemy.y, targetX, targetY);
+                        enemy.x = targetX;
+                        enemy.y = targetY;
+                    }
+                    ui.visible = false;
+                    drawBoard();
+                } else if(!enemy.guard){
+                    var target = capitol;
                     var targetX = target.x// + randInt(-1,1);
                     var targetY = target.y// + randInt(-1,1);
 
@@ -2193,6 +2359,25 @@
             for(let i = 0; i < characters.length; i++) {
                 if(!characters[i].good) {
                     characters[i].movement = characters[i].maxMovement;
+                    if(characters[i].x === capitol.x && characters[i].y === capitol.y) {
+                        
+                        messageText.text = "The Igers captured your General's house granting them a domination victory!.";
+
+                        regMusic.fade(0.1,0,10);
+                        var loseMusic = new Howl({src: ["lose.flac"], volume: 0.1});
+                        loseMusic.play();
+                        setTimeout(function(){
+                            state = lose;
+                            loseVerse = new Sprite(resources["sprites/civ/ui/LostVerse.png"].texture);
+                            app.stage.addChild(loseVerse);
+                            loseVerse.alpha = 0;
+                            loseVerse.anchor.set(0.5,0.5);
+                            loseVerse.scale.set(2);
+                            loseVerse.x = innerWidth / 2;
+                            loseVerse.y = innerHeight / 2;
+                        },2000);
+                        return;
+                    }
                 }
                 if(characters[i].good && general === "Elmer") {
                     addEffect(characters[i], {name: "General Food Bonus", duration: 2, effect: Math.max(1,1+(food-200)/100)});
@@ -2214,7 +2399,22 @@
             sunText.text = day;
             food -= 3;
             if(food < 0) {
-                dfadf = 20;
+                messageText.text = "The friends starved! You lose.";
+
+                regMusic.fade(0.1,0,10);
+                var loseMusic = new Howl({src: ["lose.flac"], volume: 0.1});
+                loseMusic.play();
+                setTimeout(function(){
+                    state = lose;
+                    loseVerse = new Sprite(resources["sprites/civ/ui/LostVerse.png"].texture);
+                    app.stage.addChild(loseVerse);
+                    loseVerse.alpha = 0;
+                    loseVerse.anchor.set(0.5,0.5);
+                    loseVerse.scale.set(2);
+                    loseVerse.x = innerWidth / 2;
+                    loseVerse.y = innerHeight / 2;
+                },2000);
+                return;
             }
             foodText.text = food;
             if(day % 20 === 0) {
@@ -2236,9 +2436,38 @@
                     console.log(houses[i]);
                     houses[i].sprite.texture = resources["sprites/civ/houses/fall/" + houses[i].textureName].texture;
                 }
-            } else if(day === 285) {
+            } else if(day === 286) {
                 for(let i = 0; i < houses.length; i++) {
                     houses[i].sprite.texture = resources["sprites/civ/houses/winter/" + houses[i].textureName].texture;
+                }
+                if(food >= 500) {
+                    messageText.text = "You have reached 500 food and it is now winter time! This grants you a food victory!";
+                    setTimeout(function(){
+                        state = win;
+                        wonVerse = new Sprite(resources["sprites/civ/ui/WonVerse.png"].texture);
+                        app.stage.addChild(wonVerse);
+                        wonVerse.alpha = 0;
+                        wonVerse.anchor.set(0.5,0.5);
+                        wonVerse.scale.set(2);
+                        wonVerse.x = innerWidth / 2;
+                        wonVerse.y = innerHeight / 2;
+                        regMusic.fade(0.1,0,2000)
+                        setTimeout(function(){
+                            var winMusic = new Howl({src: ["win.flac"], autoplay: true, loop: true, volume: 0});
+                            winMusic.fade(0,0.1,2000);
+                        },2000);
+                    },2000);
+                    return;
+                } else {
+                    messageText.text = "It is now winter and you do not have 500 food. You no longer have the capacity for a food victory.";
+                    for(let i = 0; i < foodLandscapeState.length; i++) {
+                        for(let j = 0; j < foodLandscapeState[i].length; j++) {
+                            foodLandscapeState[i][j] = 0;
+                        }
+                    }
+                    setTimeout(function(){
+                        messageText.text = "";
+                    }, 2000);
                 }
             }
             ++igerStrength.strength;
@@ -2586,6 +2815,17 @@
                 house.sprite.y = (house.y - currentBoardY) * 128;
             } else {
                 house.sprite.visible = false;
+            }
+        }
+        for(let i = 0; i < specials.length; i++) {
+            var special = specials[i];
+            if (special.x >= currentBoardX && special.x <= currentBoardX + numOfSquaresToDrawX && special.y >= currentBoardY && special.y <= currentBoardY + numOfSquaresToDrawY) {
+                special.sprite.visible = true;
+
+                special.sprite.x = (special.x - currentBoardX) * 128;
+                special.sprite.y = (special.y - currentBoardY) * 128;
+            } else {
+                special.sprite.visible = false;
             }
         }
     }
