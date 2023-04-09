@@ -55,7 +55,7 @@
 "houses/winter/chesselnut.png", "houses/winter/elmer.png", "houses/winter/wooly.png", "houses/winter/spot.png", "houses/winter/kit.png", "houses/winter/plata.png", "houses/winter/humber.png", "houses/winter/shadow.png", "houses/winter/cave.png", "houses/winter/cavel.png", "houses/winter/caver.png",];
     var specials = [];
     var landscape = ["apple.png", "bamboo.png", "flower2.png", "flower3.png", "flower.png", "forest2.png", "forest.png", "grass.png", "honey.png", "nut.png", "water.png", "forest3.png", "cattails.png","path.png", "mustard.png",];
-    var landscapeSeasonPrime = [184, 184, 92, 92, 92, 184, Infinity, Infinity, 184, 184, 285, 184, 214, Infinity, 123];
+    var landscapeSeasonPrime = [100, 100, 92, 92, 92, 100, Infinity, Infinity, 100, 100, 200, 100, 100, Infinity, 120];
     var landscapeFoodMax = [12,8,6,6,6,0,0,0,15,12,0,0,10,0,5];
     var landscapeSeasonEnd = [224, 180, 150, 150, 150, 258]
     var day = 1;
@@ -148,6 +148,8 @@
     }
     var verse;
     function begin() {
+        var newText = new PIXI.Text("v1.01", {fontFamily: "Arial", fontSize: 24, fill: "white"});
+        app.stage.addChild(newText);
         app.renderer.backgroundColor = 0;
         logo = new Sprite(resources["sprites/civ/ui/logo.png"].texture);
         verse = new Sprite(resources["sprites/civ/ui/Verse.png"].texture);
@@ -487,7 +489,7 @@
         messageText.y = 32;
 
         sunIcon.x = innerWidth - 128;
-        sunText =  new PIXI.Text("1", {fontFamily: "Arial", fontSize: 24});
+        sunText = new PIXI.Text("1", {fontFamily: "Arial", fontSize: 24});
         sunText.y = 16;
         sunText.x = innerWidth-60;
         foodText.anchor.set(0,0.5);
@@ -1162,7 +1164,6 @@
             });
             capitol.x = house.x;
             capitol.y = house.y;
-            console.log("flag at", specials[1]);
             }
         }
         app.stage.addChild(houses[0].sprite);
@@ -1249,7 +1250,7 @@
                 var foundOne = false;
                 for(let i = 0; i < characters.length; i++) {
                     var char = characters[i];
-                    if(char.good && char.movement >= 1 && !char.captor) {
+                    if(char.good && char.movement >= 1 && !char.captor && !char.prepared && !char.healing) {
                         foundOne = true;
                         break;
                     }
@@ -1272,7 +1273,7 @@
                 var foundOne = false;
                 for(let i = 0; i < characters.length; i++) {
                     var char = characters[i];
-                    if(char.good && char.movement >= 1 && !char.captor) {
+                    if(char.good && char.movement >= 1 && !char.captor && !char.prepared && !char.healing) {
                         foundOne = true;
                         break;
                     }
@@ -1295,7 +1296,7 @@
                 var foundOne = false;
                 for(let i = 0; i < characters.length; i++) {
                     var char = characters[i];
-                    if(char.good && char.movement >= 1 && !char.captor) {
+                    if(char.good && char.movement >= 1 && !char.captor && !char.prepared && !char.healing) {
                         foundOne = true;
                         break;
                     }
@@ -1426,9 +1427,8 @@
                             var foundOne = false;
                             for(let i = 0; i < characters.length; i++) {
                                 var char = characters[i];
-                                if(char.good && char.movement >= 1 && !char.captor) {
+                                if(char.good && char.movement >= 1 && !char.captor && !char.prepared && !char.healing) {
                                     foundOne = true;
-                                    console.log(char,"char");
                                     break;
                                 }
                             }
@@ -1566,9 +1566,8 @@
                             var foundOne = false;
                             for(let i = 0; i < characters.length; i++) {
                                 var char = characters[i];
-                                if(char.good && char.movement >= 1 && !char.captor) {
+                                if(char.good && char.movement >= 1 && !char.captor && !char.prepared && !char.healing) {
                                     foundOne = true;
-                                    console.log(char,"char");
                                     break;
                                 }
                             }
@@ -1660,7 +1659,7 @@
                                     });
                                 }
                                 fighters.damage1 = (attackStrength1/(defenseStrength2 * (fighters.unit2.prepared? 1.5 : 1)) * (5 + Math.random()*2-1));
-                                IgeronKingCaveCapitol.health -= Math.round(fighters.damage1) * 100;
+                                IgeronKingCaveCapitol.health -= Math.round(fighters.damage1);
                                 if(IgeronKingCaveCapitol.health <= 0) {
                                     messageText.text = characterSelected.name + "destroyed the Igeron King's cave granting you a domination victory!";
                                     setTimeout(function(){
@@ -1672,10 +1671,10 @@
                                         wonVerse.scale.set(2);
                                         wonVerse.x = innerWidth / 2;
                                         wonVerse.y = innerHeight / 2;
-                                        regMusic.fade(0.1,0,2000)
+                                        regMusic.fade(0.25,0,2000)
                                         setTimeout(function(){
                                             var winMusic = new Howl({src: ["win.flac"], autoplay: true, loop: true, volume: 0});
-                                            winMusic.fade(0,0.1,2000);
+                                            winMusic.fade(0,0.25,2000);
                                         },2000);
                                     },2000);
                                 }  else {
@@ -1710,9 +1709,8 @@
                             var foundOne = false;
                             for(let i = 0; i < characters.length; i++) {
                                 var char = characters[i];
-                                if(char.good && char.movement >= 1 && !char.captor) {
+                                if(char.good && char.movement >= 1 && !char.captor && !char.prepared && !char.healing) {
                                     foundOne = true;
-                                    console.log(char,"char");
                                     break;
                                 }
                             }
@@ -1724,7 +1722,6 @@
                                 forceNextTurnButton.visible = false;
                             }
                         }
-                        console.log(clickX,clickY);
                     } else {
                         colorTiles.removeChildren();
                         actionSelected = false;
@@ -1773,7 +1770,6 @@
                         } else {
                             var fill1 = ((health1)*0xffff00 + (5-health1)*0xff0000)/5
                         }
-                        console.log(fill1.toString(16));
                         ui.healthBar.beginFill(fill1);
                         ui.healthBar.lineStyle(5,0x000000);
                         ui.healthBar.drawRect(innerWidth-ui.healthBar.x - 70,128*(1-health1/10),32,128*health1/10);
@@ -1787,7 +1783,6 @@
                         } else {
                             var fill2 = ((health2)*0xffff00 + (5-health2)*0xff0000)/5
                         }
-                        console.log(fill2.toString(16));
                         ui.healthBar.beginFill(fill2);
                         ui.healthBar.lineStyle(5,0x000000);
                         ui.healthBar.drawRect(innerWidth-ui.healthBar.x - 35,128*(1-health2/10),32,128*health2/10);
@@ -1850,7 +1845,6 @@
                     }, 1000);
                     foodLandscapeState[characterSelected.y][characterSelected.x] = 0;
                     food += foodOnTile+1;
-                    console.log(Math.ceil(foodOnTile/bonus));
                     characterSelected.movement -= Math.ceil(foodOnTile/bonus);
                 } else {
                     messageText.text = "You gathered " + foodOnTile + " food!";
@@ -1859,7 +1853,6 @@
                     }, 1000);
                     foodLandscapeState[characterSelected.y][characterSelected.x] = 0;
                     food += foodOnTile;
-                    console.log(Math.ceil(foodOnTile/bonus));
                     characterSelected.movement -= Math.ceil(foodOnTile/bonus);
                 }
                 foodText.text = food;
@@ -1869,7 +1862,7 @@
                 var foundOne = false;
                 for(let i = 0; i < characters.length; i++) {
                     var char = characters[i];
-                    if(char.good && char.movement >= 1 && !char.captor) {
+                    if(char.good && char.movement >= 1 && !char.captor && !char.prepared && !char.healing) {
                         foundOne = true;
                         break;
                     }
@@ -1898,7 +1891,7 @@
                 var foundOne = false;
                 for(let i = 0; i < characters.length; i++) {
                     var char = characters[i];
-                    if(char.good && char.movement >= 1 && !char.captor) {
+                    if(char.good && char.movement >= 1 && !char.captor && !char.prepared && !char.healing) {
                         foundOne = true;
                         break;
                     }
@@ -1932,7 +1925,7 @@
                 var foundOne = false;
                 for(let i = 0; i < characters.length; i++) {
                     var char = characters[i];
-                    if(char.good && char.movement >= 1 && !char.captor) {
+                    if(char.good && char.movement >= 1 && !char.captor && !char.prepared && !char.healing) {
                         foundOne = true;
                         break;
                     }
@@ -1979,7 +1972,6 @@
                             characterSelected = false;
                             ui.visible = false;
                             colorTiles.removeChildren();
-                            console.log(projectile);
                             break;
                         }
                     }
@@ -1987,7 +1979,7 @@
                 var foundOne = false;
                 for(let i = 0; i < characters.length; i++) {
                     var char = characters[i];
-                    if(char.good && char.movement >= 1 && !char.captor) {
+                    if(char.good && char.movement >= 1 && !char.captor && !char.prepared && !char.healing) {
                         foundOne = true;
                         break;
                     }
@@ -2047,13 +2039,12 @@
                     var foundOne = false;
                     for(let i = 0; i < characters.length; i++) {
                         var char = characters[i];
-                        if(char.good && char.movement >= 1 && !char.captor) {
+                        if(char.good && char.movement >= 1 && !char.captor && !char.prepared && !char.healing) {
                             foundOne = char;
                             break;
                         }
                     }
                     if(foundOne) {
-                        console.log(foundOne);
                         currentBoardX = foundOne.x - Math.ceil(innerWidth/128)/2;
                         currentBoardY = foundOne.y - Math.ceil(innerHeight/128)/2;
                         currentBoardX = Math.min(99-Math.ceil(innerWidth/128),currentBoardX);
@@ -2112,7 +2103,7 @@
                             ui.healthBar.lineStyle(5,0x000000);
                             ui.healthBar.drawRect(0,128*(1-characterSelected.health/10),32,128*characterSelected.health/10);
 
-                            if(characterSelected.movement >= 1 || (characterSelected.name === "Plata" && characterSelected.movement > 0)) {
+                            if(characterSelected.movement >= 1 || (characterSelected.name === "Plata" && characterSelected.movement*6 >= 1)) {
                                 ui.alpha = 1;
                             } else {
                                 ui.alpha = 0.5;
@@ -2146,6 +2137,7 @@
         }
         return arr;
     }
+    var passes = 5;
     function nextTurn() {
         var didSomethingThisTurn = false;
         for(let i = 0; i < characters.length; i++) {
@@ -2214,15 +2206,16 @@
                             affectedFriends[i].movement /= 2;
                         } else {
                             addEffect(affectedFriends[i], {name: "Terrorize", duration: 3, effect: 0.75 + findFriendsWithinTiles(affectedFriends[i].x,affectedFriends[i].y, 1.5).length/32});
-                            affectedFriends.movement = 0;
-                            affectedFriends.prepared = false;
-                            affectedFriends.healing = false;
+                            affectedFriends[i].movement = 0;
+                            affectedFriends[i].prepared = false;
+                            affectedFriends[i].healing = false;
                         }
                     }
                     messageText.text = "The Igeron King terrorized " + affectedFriends.length + " friends!";
                     setTimeout(function(){
                         messageText.text = "";
                     }, 1000);
+                    didSomethingThisTurn = true;
                     enemy.lastTER = day;
                 } else if(getDistance(getClosestFriend(enemy.x,enemy.y).x, getClosestFriend(enemy.x,enemy.y).y, enemy.x, enemy.y) <= enemy.movement) {
                     var target = getClosestFriend(enemy.x,enemy.y)
@@ -2353,7 +2346,8 @@
                 }
             }
         }
-        if(!didSomethingThisTurn) {
+        if(!didSomethingThisTurn && --passes < 1) {
+            passes = 5;
             nextTurnButton.texture = resources["sprites/civ/ui/uno.png"].texture;
             state = play;
             for(let i = 0; i < characters.length; i++) {
@@ -2363,8 +2357,8 @@
                         
                         messageText.text = "The Igers captured your General's house granting them a domination victory!.";
 
-                        regMusic.fade(0.1,0,10);
-                        var loseMusic = new Howl({src: ["lose.flac"], volume: 0.1});
+                        regMusic.fade(0.25,0,10);
+                        var loseMusic = new Howl({src: ["lose.flac"], volume: 0.25});
                         loseMusic.play();
                         setTimeout(function(){
                             state = lose;
@@ -2401,8 +2395,8 @@
             if(food < 0) {
                 messageText.text = "The friends starved! You lose.";
 
-                regMusic.fade(0.1,0,10);
-                var loseMusic = new Howl({src: ["lose.flac"], volume: 0.1});
+                regMusic.fade(0.25,0,10);
+                var loseMusic = new Howl({src: ["lose.flac"], volume: 0.25});
                 loseMusic.play();
                 setTimeout(function(){
                     state = lose;
@@ -2417,7 +2411,7 @@
                 return;
             }
             foodText.text = food;
-            if(day % 20 === 0) {
+            if(day % 7 === 0) {
                 for(let i = 0; i < foodLandscapeState.length; i++) {
                     for(let j = 0; j < foodLandscapeState[i].length; j++) {
                         var curFood = foodLandscapeState[i][j];
@@ -2431,12 +2425,10 @@
                 }
             }
             if(day === 185) {
-                debugger;
                 for(let i = 0; i < houses.length; i++) {
-                    console.log(houses[i]);
                     houses[i].sprite.texture = resources["sprites/civ/houses/fall/" + houses[i].textureName].texture;
                 }
-            } else if(day === 286) {
+            } else if(day === 200) {
                 for(let i = 0; i < houses.length; i++) {
                     houses[i].sprite.texture = resources["sprites/civ/houses/winter/" + houses[i].textureName].texture;
                 }
@@ -2451,10 +2443,10 @@
                         wonVerse.scale.set(2);
                         wonVerse.x = innerWidth / 2;
                         wonVerse.y = innerHeight / 2;
-                        regMusic.fade(0.1,0,2000)
+                        regMusic.fade(0.25,0,2000)
                         setTimeout(function(){
                             var winMusic = new Howl({src: ["win.flac"], autoplay: true, loop: true, volume: 0});
-                            winMusic.fade(0,0.1,2000);
+                            winMusic.fade(0,0.25,2000);
                         },2000);
                     },2000);
                     return;
@@ -2475,8 +2467,8 @@
             if(!igerStrength.invading) {
                 if(igerStrength.strength > 12 && Math.random() < 0.1) {
                     var notDone = false;
-                    var beginX = randInt(1,98);
-                    var beginY = randInt(52,54);
+                    var beginX = randInt(1 + Math.floor(igerStrength.strength/7),98 - Math.floor(igerStrength.strength/7));
+                    var beginY = randInt(52 + Math.floor(igerStrength.strength/7),54 + Math.floor(igerStrength.strength/7));
 
                     while(true) {
                         if(getCharacterAt(beginX,beginY) === false){
@@ -2535,17 +2527,23 @@
                             sprite: new Sprite(resources["sprites/civ/characters/ion.png"].texture),
                             good: false
                         };
+                        var acc = 0;
                         if(newIon.x > -1 && newIon.x < 99 && newIon.y > -1 && newIon.y < 99) {
                             if(getCharacterAt(newIon.x,newIon.y) === false && boardLandcapeState[newIon.y][newIon.x] !== 10 && boardLandcapeState[newIon.y][newIon.x] !== 12) {
                                 app.stage.addChild(newIon.sprite);
                                 characters.push(newIon);
+                                ++acc;
                             }
                         }
                         if(newIger.x > -1 && newIger.x < 99 && newIger.y > -1 && newIger.y < 99) {
                             if(getCharacterAt(newIger.x,newIger.y) === false && boardLandcapeState[newIger.y][newIger.x] !== 10 && boardLandcapeState[newIger.y][newIger.x] !== 12) {
                                 app.stage.addChild(newIger.sprite);
                                 characters.push(newIger);
+                                ++acc;
                             }
+                        }
+                        if(acc === 0) {
+                            --i;
                         }
                     }
                     igerStrength.invading = 10;
@@ -2782,7 +2780,7 @@
         boardPieces.removeChildren();
         for(let i = currentBoardY; i < currentBoardY+numOfSquaresToDrawY; i++){
             for(let j = currentBoardX; j < currentBoardX+numOfSquaresToDrawX; j++) {
-                if(284 < day) {
+                if(199 < day) {
                     var tile = new Sprite(resources["sprites/civ/landscape/winter/" + landscape[boardLandcapeState[i][j]]].texture);
                 } else if(landscapeSeasonPrime[boardLandcapeState[i][j]] < day) {
                     var tile = new Sprite(resources["sprites/civ/landscape/fall/" + landscape[boardLandcapeState[i][j]]].texture);
