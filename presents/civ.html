@@ -101,7 +101,7 @@
                 setTimeout(function(){
                     paper();
                 },3000);
-                music.fade(0.1,0,3000);
+                music.fade(0.25,0,3000);
                 setTimeout(function(){
                     var intro = new Howl({src: ["music/" + general + ".mp3"], volume: 0.25, onend: function() {
                         app.stage.removeChildren();
@@ -110,8 +110,8 @@
                         setTimeout(function(){
                             intro.fade(0.25,0,3000);
                             setTimeout(function(){
-                                regMusic = new Howl({src: ["6.mp3"], autoplay: true, loop: true, volume: 0.1});
-                                regMusic.fade(0,0.1, 3000);    
+                                regMusic = new Howl({src: ["6.mp3"], autoplay: true, loop: true, volume: 0.25});
+                                regMusic.fade(0,0.25, 3000);    
                             },3000);
                         }, intro._duration * 1000 - 3000);
                     }});
@@ -148,7 +148,7 @@
     }
     var verse;
     function begin() {
-        var newText = new PIXI.Text("v1.01", {fontFamily: "Arial", fontSize: 24, fill: "white"});
+        var newText = new PIXI.Text("v1.1", {fontFamily: "Arial", fontSize: 24, fill: "white"});
         app.stage.addChild(newText);
         app.renderer.backgroundColor = 0;
         logo = new Sprite(resources["sprites/civ/ui/logo.png"].texture);
@@ -2218,9 +2218,16 @@
                     didSomethingThisTurn = true;
                     enemy.lastTER = day;
                 } else if(getDistance(getClosestFriend(enemy.x,enemy.y).x, getClosestFriend(enemy.x,enemy.y).y, enemy.x, enemy.y) <= enemy.movement) {
-                    var target = getClosestFriend(enemy.x,enemy.y)
-                    var targetX = target.x// + randInt(-1,1);
-                    var targetY = target.y// + randInt(-1,1);
+                    var target = getClosestFriend(enemy.x,enemy.y);
+                    if(enemy.moveInRandomDir === day) {
+                        var targetX = randInt(enemy.x - 3, enemy.x + 3);
+                        var targetY = randInt(enemy.y - 3, enemy.y + 3);
+                    } else {
+                        var targetX = target.x;
+                        var targetY = target.y;
+                    }
+                    // + randInt(-1,1);
+                    // + randInt(-1,1);
 
                     var movementSpent = 0;
                     var charX = enemy.x;
@@ -2237,6 +2244,7 @@
                             dist++;
                         } else if(targetX > charX) {
                             charX++;
+                            dist++;
                             cx = 1;
                         } else {
                             acc++;
@@ -2247,22 +2255,20 @@
                             dist++;
                         } else if(targetY > charY) {
                             charY++;
+                            dist++;
                             cy = 1;
                         } else {
                             acc++;
                         }
-                        ++movementSpent;
+                        movementSpent += Math.sqrt(dist);
                         if(acc === 2) {
                             sim = false;
-                        } else if((!friendAtTile(charX,charY) && boardLandcapeState[charY][charX] !== 10 && boardLandcapeState[charY][charX] !== 12) || movementSpent > enemy.movement){
+                        } else if((!friendAtTile(charX,charY)) && boardLandcapeState[charY][charX] !== 10 && boardLandcapeState[charY][charX] !== 12){
                             movementSpent += Math.sqrt(dist);
-                            if(movementSpent > enemy.movement) {
-                                sim = "FAIL";
-                                charX -= cx;
-                                charY -= cy;
-                                break;
-                            }
                         } else {
+                            if(movementSpent <= 2) {
+                                enemy.moveInRandomDir = day;
+                            }
                             sim = "FAIL";
                             charX -= cx;
                             charY -= cy;
@@ -2834,7 +2840,7 @@
         }
         return false;
     }
-    var music = new Howl({src: ["rook.m4a"], autoplay: true, loop: true, volume: 0.1});
+    var music = new Howl({src: ["rook.m4a"], autoplay: true, loop: true, volume: 0.25});
     addEventListener("mousedown",function(e){
         if(e.button == 0) {
             keys.mouse = true;
