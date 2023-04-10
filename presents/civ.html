@@ -101,17 +101,17 @@
                 setTimeout(function(){
                     paper();
                 },3000);
-                music.fade(0.25,0,3000);
+                music.fade(0.5,0,3000);
                 setTimeout(function(){
-                    var intro = new Howl({src: ["music/" + general + ".mp3"], volume: 0.25, onend: function() {
+                    var intro = new Howl({src: ["music/" + general + ".mp3"], volume: 0.5, onend: function() {
                         app.stage.removeChildren();
                         setup();
                     }, onload: function() {
                         setTimeout(function(){
-                            intro.fade(0.25,0,3000);
+                            intro.fade(0.5,0,3000);
                             setTimeout(function(){
-                                regMusic = new Howl({src: ["6.mp3"], autoplay: true, loop: true, volume: 0.25});
-                                regMusic.fade(0,0.25, 3000);    
+                                regMusic = new Howl({src: ["6.mp3"], autoplay: true, loop: true, volume: 0.5});
+                                regMusic.fade(0,0.5, 3000);    
                             },3000);
                         }, intro._duration * 1000 - 3000);
                     }});
@@ -148,7 +148,7 @@
     }
     var verse;
     function begin() {
-        var newText = new PIXI.Text("v1.1", {fontFamily: "Arial", fontSize: 24, fill: "white"});
+        var newText = new PIXI.Text("v1.3 Many new changes!", {fontFamily: "Arial", fontSize: 24, fill: "white"});
         app.stage.addChild(newText);
         app.renderer.backgroundColor = 0;
         logo = new Sprite(resources["sprites/civ/ui/logo.png"].texture);
@@ -1150,7 +1150,7 @@
         });
         for(let i = 0; i < houses.length; i++) {
             var house = houses[i];
-            if(house.name === general + "'s House") {
+            if(house.name === general + "'s House" || (general === "Eleanor" && house.name === "Wooly's House")) {
                 specials.push({
                     name: "flag",
                     health: 0,
@@ -1673,10 +1673,10 @@
                                         wonVerse.scale.set(2);
                                         wonVerse.x = innerWidth / 2;
                                         wonVerse.y = innerHeight / 2;
-                                        regMusic.fade(0.25,0,2000)
+                                        regMusic.fade(0.5,0,2000)
                                         setTimeout(function(){
                                             var winMusic = new Howl({src: ["win.flac"], autoplay: true, loop: true, volume: 0});
-                                            winMusic.fade(0,0.25,2000);
+                                            winMusic.fade(0,0.5,2000);
                                         },2000);
                                     },2000);
                                 }  else {
@@ -2222,8 +2222,8 @@
                 } else if(getDistance(getClosestFriend(enemy.x,enemy.y).x, getClosestFriend(enemy.x,enemy.y).y, enemy.x, enemy.y) <= enemy.movement) {
                     var target = getClosestFriend(enemy.x,enemy.y);
                     if(enemy.moveInRandomDir === day) {
-                        var targetX = randInt(enemy.x - 3, enemy.x + 3);
-                        var targetY = randInt(enemy.y - 3, enemy.y + 3);
+                        var targetX = Math.max(0,Math.min(randInt(enemy.x - 3, enemy.x + 3),99));
+                        var targetY = Math.max(0,Math.min(randInt(enemy.y - 3, enemy.y + 3),99));
                     } else {
                         var targetX = target.x;
                         var targetY = target.y;
@@ -2288,7 +2288,7 @@
                     }
                     ui.visible = false;
                     drawBoard();
-                } else if(!enemy.guard){
+                } else if(!enemy.guard && !enemy.prowler){
                     var target = capitol;
                     var targetX = target.x// + randInt(-1,1);
                     var targetY = target.y// + randInt(-1,1);
@@ -2351,7 +2351,83 @@
                     }
                     ui.visible = false;
                     drawBoard();
-                }
+                } else if(enemy.prowler) {
+                    if(enemy.moveInRandomDir === day) {
+                        var targetX = randInt(0,99);
+                        var targetY = randInt(0,45);
+                        enemy.moveInRandomDir = day + randInt(0,10);
+                        enemy.target.x = targetX;
+                        enemy.target.y = targetY;
+                    } else {
+                        var targetX = enemy.target.x;
+                        var targetY = enemy.target.y;
+                    }
+                    // + randInt(-1,1);
+                    // + randInt(-1,1);
+
+                    var movementSpent = 0;
+                    var charX = enemy.x;
+                    var charY = enemy.y;
+                    var sim = true;
+                    while(sim) {
+                        var dist = 0;
+                        var acc = 0;
+                        var cx = 0;
+                        var cy = 0;
+                        if(targetX < charX) {
+                            charX--;
+                            cx = -1;
+                            dist++;
+                        } else if(targetX > charX) {
+                            charX++;
+                            dist++;
+                            cx = 1;
+                        } else {
+                            acc++;
+                        }
+                        if(targetY < charY) {
+                            charY--;
+                            cy = -1;
+                            dist++;
+                        } else if(targetY > charY) {
+                            charY++;
+                            dist++;
+                            cy = 1;
+                        } else {
+                            acc++;
+                        }
+                        movementSpent += Math.sqrt(dist);
+                        if(acc === 2) {
+                            sim = false;
+                            var targetX = randInt(enemy.x - 3, enemy.x + 3);
+                            var targetY = randInt(enemy.y - 3, enemy.y + 3);
+                            enemy.moveInRandomDir = day + randInt(0,10);
+                            enemy.target.x = targetX;
+                            enemy.target.y = targetY;
+                        } else if((!friendAtTile(charX,charY)) && boardLandcapeState[charY][charX] !== 10 && boardLandcapeState[charY][charX] !== 12 && (charY !== 9 || charX !== 58) && (charY !== 9 || charX !== 57) && (charY !== 9 || charX !== 56)){
+                            movementSpent += Math.sqrt(dist);
+                        } else {
+                            if(movementSpent <= 2) {
+                                enemy.moveInRandomDir = day;
+                            }
+                            sim = "FAIL";
+                            charX -= cx;
+                            charY -= cy;
+                            break;
+                        }
+                    }
+                    if(sim === "FAIL") {
+                        enemy.movement -= movementSpent;
+                        enemy.x = charX;
+                        enemy.y = charY;
+                    } else {
+                        enemy.movement -= getDistance(enemy.x, enemy.y, targetX, targetY);
+                        enemy.x = targetX;
+                        enemy.y = targetY;
+                    }
+                    ui.visible = false;
+                    drawBoard();
+                } 
             }
         }
         if(!didSomethingThisTurn && --passes < 1) {
@@ -2363,10 +2439,10 @@
                     characters[i].movement = characters[i].maxMovement;
                     if(characters[i].x === capitol.x && characters[i].y === capitol.y) {
                         
-                        messageText.text = "The Igers captured your General's house granting them a domination victory!.";
+                        messageText.text = "The Igers captured your General's house granting them a domination victory!";
 
-                        regMusic.fade(0.25,0,10);
-                        var loseMusic = new Howl({src: ["lose.flac"], volume: 0.25});
+                        regMusic.fade(0.5,0,10);
+                        var loseMusic = new Howl({src: ["lose.flac"], volume: 0.5});
                         loseMusic.play();
                         setTimeout(function(){
                             state = lose;
@@ -2383,6 +2459,28 @@
                 }
                 if(characters[i].good && general === "Elmer") {
                     addEffect(characters[i], {name: "General Food Bonus", duration: 2, effect: Math.max(1,1+(food-200)/100)});
+                }
+                console.log(characters[i].captor);
+                if(characters[i].captor && characters[i].dead) {
+                    characters[i].dead--;
+                }
+                if(characters[i].captor && characters[i].dead === 0) {
+                    messageText.text = characters[i].name + " was devoured by the Igers granting them a gobbleation victory!";
+
+                    regMusic.fade(0.5,0,10);
+                    var loseMusic = new Howl({src: ["lose.flac"], volume: 0.5});
+                    loseMusic.play();
+                    setTimeout(function(){
+                        state = lose;
+                        loseVerse = new Sprite(resources["sprites/civ/ui/LostVerse.png"].texture);
+                        app.stage.addChild(loseVerse);
+                        loseVerse.alpha = 0;
+                        loseVerse.anchor.set(0.5,0.5);
+                        loseVerse.scale.set(2);
+                        loseVerse.x = innerWidth / 2;
+                        loseVerse.y = innerHeight / 2;
+                    },2000);
+                    return;
                 }
                 if(!characters[i].effects) {
                     continue;
@@ -2403,8 +2501,8 @@
             if(food < 0) {
                 messageText.text = "The friends starved! You lose.";
 
-                regMusic.fade(0.25,0,10);
-                var loseMusic = new Howl({src: ["lose.flac"], volume: 0.25});
+                regMusic.fade(0.5,0,10);
+                var loseMusic = new Howl({src: ["lose.flac"], volume: 0.5});
                 loseMusic.play();
                 setTimeout(function(){
                     state = lose;
@@ -2451,10 +2549,10 @@
                         wonVerse.scale.set(2);
                         wonVerse.x = innerWidth / 2;
                         wonVerse.y = innerHeight / 2;
-                        regMusic.fade(0.25,0,2000)
+                        regMusic.fade(0.5,0,2000)
                         setTimeout(function(){
                             var winMusic = new Howl({src: ["win.flac"], autoplay: true, loop: true, volume: 0});
-                            winMusic.fade(0,0.25,2000);
+                            winMusic.fade(0,0.5,2000);
                         },2000);
                     },2000);
                     return;
@@ -2534,6 +2632,60 @@
                             y: beginY+randInt(-Math.floor(igerStrength.strength/7), Math.floor(igerStrength.strength/7)),
                             sprite: new Sprite(resources["sprites/civ/characters/ion.png"].texture),
                             good: false
+                        };
+                        var acc = 0;
+                        if(newIon.x > -1 && newIon.x < 99 && newIon.y > -1 && newIon.y < 99) {
+                            if(getCharacterAt(newIon.x,newIon.y) === false && boardLandcapeState[newIon.y][newIon.x] !== 10 && boardLandcapeState[newIon.y][newIon.x] !== 12) {
+                                app.stage.addChild(newIon.sprite);
+                                characters.push(newIon);
+                                ++acc;
+                            }
+                        }
+                        if(newIger.x > -1 && newIger.x < 99 && newIger.y > -1 && newIger.y < 99) {
+                            if(getCharacterAt(newIger.x,newIger.y) === false && boardLandcapeState[newIger.y][newIger.x] !== 10 && boardLandcapeState[newIger.y][newIger.x] !== 12) {
+                                app.stage.addChild(newIger.sprite);
+                                characters.push(newIger);
+                                ++acc;
+                            }
+                        }
+                        if(acc === 0) {
+                            --i;
+                        }
+                    }
+                    for(let i = 0; i < Math.floor(igerStrength.strength / 10); i++) {
+                        var newIger = {
+                            name: "Iger",
+                            attackStrength: 15,
+                            defenseStrength: 18,
+                            maxMovement: 5,
+                            movement: 5,
+                            health: 10,
+                            healing: false,
+                            prepared: true,
+                            x: randInt(0,98),
+                            y: randInt(0,40),
+                            sprite: new Sprite(resources["sprites/civ/characters/iger.png"].texture),
+                            prowler: true,
+                            moveInRandomDir: day + randInt(0,10),
+                            good: false,
+                            target: {x: randInt(0,98), y: randInt(0,40)},
+                        };
+                        var newIon = {
+                            name: "Ion",
+                            attackStrength: 16,
+                            defenseStrength: 14,
+                            maxMovement: 5,
+                            movement: 5,
+                            health: 10,
+                            healing: false,
+                            prepared: true,
+                            x: randInt(0,98),
+                            y: randInt(0,40),
+                            sprite: new Sprite(resources["sprites/civ/characters/ion.png"].texture),
+                            good: false,
+                            moveInRandomDir: day + randInt(0,10),
+                            prowler: true,
+                            target: {x: randInt(0,98), y: randInt(0,40)},
                         };
                         var acc = 0;
                         if(newIon.x > -1 && newIon.x < 99 && newIon.y > -1 && newIon.y < 99) {
@@ -2687,6 +2839,11 @@
                             fighters.unit1.y = fighters.unit2.y;
                             fighters.unit2.captive = fighters.unit1;
                             fighters.unit1.captor = fighters.unit2;
+                            messageText.text = fighters.unit1.name + " was captured by the enemy! Rescue him or he will be devoured!";
+                            setTimeout(function(){
+                                messageText.text = "";
+                            }, 5000);
+                            fighters.unit1.dead = 5;
                         } else {
                             fighters.unit1.targetPoint = fighters.originalPoint1;
                             fighters.unit2.targetPoint = fighters.originalPoint2;
@@ -2701,6 +2858,11 @@
                             fighters.unit1.y = fighters.unit2.y;
                             fighters.unit1.captive = fighters.unit2;
                             fighters.unit2.captor = fighters.unit1;
+                            messageText.text = fighters.unit2.name + " was captured by the enemy! Rescue him or he will be devoured!";
+                            setTimeout(function(){
+                                messageText.text = "";
+                            }, 5000);
+                            fighters.unit2.dead = 5;
                         } else if(fighters.result === 1) {
                             fighters.unit2.targetPoint = fighters.originalPoint2;
                             fighters.unit1.dying = true;
@@ -2842,7 +3004,7 @@
         }
         return false;
     }
-    var music = new Howl({src: ["rook.m4a"], autoplay: true, loop: true, volume: 0.25});
+    var music = new Howl({src: ["rook.m4a"], autoplay: true, loop: true, volume: 0.5});
     addEventListener("mousedown",function(e){
         if(e.button == 0) {
             keys.mouse = true;
