@@ -1151,19 +1151,21 @@
         for(let i = 0; i < houses.length; i++) {
             var house = houses[i];
             if(house.name === general + "'s House") {
-
                 specials.push({
-                name: "flag",
-                health: 0,
-                strength: 0,
-                x: house.x,
-                y: house.y,
-                sprite: new Sprite(resources["sprites/civ/flag.png"].texture),
-                good: false,
-                textureName: "flag.png",
-            });
-            capitol.x = house.x;
-            capitol.y = house.y;
+                    name: "flag",
+                    health: 0,
+                    strength: 0,
+                    x: house.x,
+                    y: house.y + (general === "Plata" ? 1 : 0),
+                    sprite: new Sprite(resources["sprites/civ/flag.png"].texture),
+                    good: false,
+                    textureName: "flag.png",
+                });
+                capitol.x = house.x;
+                capitol.y = house.y;
+                if(general === "Plata") {
+                    capitol.y++;
+                }
             }
         }
         app.stage.addChild(houses[0].sprite);
@@ -1379,7 +1381,7 @@
                                 if(acc === 2) {
                                     sim = false;
                                     lastTimeHitFriend = false;
-                                } else if(((friendAtTile(charX,charY) !== "enemy" && moveThroughFriendOk) || !friendAtTile(charX,charY)) && (characterSelected.name === "Humber" || characterSelected.name === "Plata" || boardLandcapeState[charY][charX] !== 10 && boardLandcapeState[charY][charX] !== 12)){
+                                } else if(((friendAtTile(charX,charY) !== "enemy" && moveThroughFriendOk) || !friendAtTile(charX,charY)) && (characterSelected.name === "Humber" || characterSelected.name === "Plata" || boardLandcapeState[charY][charX] !== 10 && boardLandcapeState[charY][charX] !== 12) && (clickY !== 9 || clickX !== 58) && (clickY !== 9 || clickX !== 57) && (clickY !== 9 || clickX !== 56)){
                                     movementSpent += Math.sqrt(dist);
                                     if(friendAtTile(charX,charY)) {
                                         lastTimeHitFriend = true;
@@ -2263,7 +2265,7 @@
                         movementSpent += Math.sqrt(dist);
                         if(acc === 2) {
                             sim = false;
-                        } else if((!friendAtTile(charX,charY)) && boardLandcapeState[charY][charX] !== 10 && boardLandcapeState[charY][charX] !== 12){
+                        } else if((!friendAtTile(charX,charY)) && boardLandcapeState[charY][charX] !== 10 && boardLandcapeState[charY][charX] !== 12 && (charY !== 9 || charX !== 58) && (charY !== 9 || charX !== 57) && (charY !== 9 || charX !== 56)){
                             movementSpent += Math.sqrt(dist);
                         } else {
                             if(movementSpent <= 2) {
