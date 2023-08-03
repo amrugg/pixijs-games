@@ -1,0 +1,193 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Direction ship</title>
+</head>
+    <style>* {padding: 0; margin: 0}</style>
+    <script src="pixi/pixi.min.js"></script>
+    <script src="usefulFunctions.js"></script>
+<body>
+  <script type="text/javascript">
+    "use strict";
+    
+    var params = getParams();
+    function getParams() {
+      var params = {};
+      location.search.substr(1).split("&").forEach(function(el) {
+        var data = el.replace(/\+/g, " ").split("=");
+        params[decodeURIComponent(data[0])] = data[1] ? decodeURIComponent(data[1]) : true;
+      });
+      return params;
+    }
+    PIXI.utils.skipHello();
+    PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
+    let Application = PIXI.Application,
+        Container = PIXI.Container,
+        loader = PIXI.loader,
+        resources = PIXI.loader.resources,
+        TextureCache = PIXI.utils.TextureCache,
+        Sprite = PIXI.Sprite,
+        Rectangle = PIXI.Rectangle,
+        Graphics = PIXI.Graphics;
+    let app = new Application({ 
+        width: 800,
+        height: 800,              
+        antialias: true,
+        transparent: false,
+        resolution: 1
+      }
+    );
+    app.renderer.backgroundColor = 0x5555DD;
+    /// Fill the screen 
+    app.renderer.view.style.position = "absolute";
+    app.renderer.view.style.display = "block";
+    app.renderer.autoResize = true;
+    app.renderer.resize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(app.view);
+    loader.add("sprites/war/jet.png").load(setup);
+    addEventListener("resize",function(){
+        app.renderer.view.style.position = "absolute";
+    app.renderer.view.style.display = "block";
+    app.renderer.autoResize = true;
+    app.renderer.resize(window.innerWidth, window.innerHeight);
+    });
+    var state;
+    var keys = {};
+    var mouseX,mouseY;
+    var landscape = [];
+    var xSpacing = 30;
+    var landscapeSize = 1000;
+    var y = -300;
+    var yDiff = 15;
+    for(let i = 0; i < landscapeSize; i++) {
+        landscape.push(y);
+        y += randInt(-yDiff,yDiff);
+        // if((landscapeSize - i -1) * 10 >= landscape)
+    }
+    var groundMesh;
+    var plane;
+    function setup() {
+        state = play;
+        groundMesh = new PIXI.Graphics;
+        groundMesh.beginFill(0x017a1c);
+        var x = -xSpacing*5;
+        var path = [-xSpacing*5,innerHeight];
+        for(var i = 0; i <= Math.ceil(innerWidth/xSpacing) + 10; i++) {
+            path.push(x);
+            path.push(landscape[i]);
+            console.log("L",landscape[i]);
+            x += xSpacing;
+        }
+        groundMesh.beginX = -xSpacing*5;
+        groundMesh.endX = x-xSpacing;
+        groundMesh.beginI = 0;
+        groundMesh.endI = i-1;
+        path.push(innerWidth+xSpacing*5);
+        path.push(innerHeight);
+        groundMesh.drawPolygon(path);
+        groundMesh.y = innerHeight;
+        app.stage.addChild(groundMesh);
+        plane = new Sprite(resources["sprites/war/jet.png"].texture);
+        plane.anchor.set(0.5,0.5);
+        plane.x = innerWidth/2;
+        plane.y = innerHeight/2;
+        app.stage.addChild(plane);
+        plane.scale.set(2);
+        
+        // groundMesh.y = innerHeight;
+        app.ticker.add(delta => gameLoop(delta));
+    }
+    function update(){
+        if(groundMesh.endX + groundMesh.x < innerWidth) {
+            // console.log("END")
+            while(groundMesh.endX + groundMesh.x < innerWidth){
+                var path = [groundMesh.endX,innerHeight,groundMesh.endX,landscape[groundMesh.endI]];
+                console.log("E:",landscape[groundMesh.endI]);
+                path.push(groundMesh.endX+xSpacing);
+                path.push(landscape[groundMesh.endI+1]);
+                path.push(groundMesh.endX+xSpacing);
+                path.push(innerHeight);
+                groundMesh.endX += xSpacing;
+                ++groundMesh.endI;
+                if(groundMesh.endI >= landscape.length-1) {
+                    groundMesh.endI = 0;
+                }
+                groundMesh.drawPolygon(path);
+            }
+        } else if(groundMesh.endX + groundMesh.x < innerWidth) {
+            // console.log("END")
+            var path = [groundMesh.endX,innerHeight,groundMesh.endX,landscape[groundMesh.endI]];
+            if(landscape[groundMesh.endI] === undefined) {
+                console.log("E:",landscape[groundMesh.endI]);
+            }
+            path.push(groundMesh.endX+xSpacing);
+            path.push(landscape[groundMesh.endI+1]);
+            path.push(groundMesh.endX+xSpacing);
+            path.push(innerHeight);
+            groundMesh.endX += xSpacing;
+            ++groundMesh.endI;
+            if(groundMesh.endI >= landscape.length) {
+                groundMesh.endI = 0;
+            }
+            groundMesh.drawPolygon(path);
+        }
+    }
+    function gameLoop(delta) {
+        state(delta)
+    }
+    var globalX = 0;
+    var globalY = 0;
+    function play(){
+        groundMesh.x = -globalX;
+        groundMesh.y = -globalY + innerHeight;
+        var direction = radDirection(100,plane.rotation + Math.PI/2);
+        globalX += direction.r;
+        globalY += -direction.u;
+        if(keys.ArrowRight) {
+            plane.rotation += 0.05;
+        }
+        if(keys.ArrowLeft) {
+            plane.rotation -= 0.05;
+        }
+        update();
+    }
+    function press(key){
+        if(keys[key]){
+            keys[key] = false;
+            return true;
+        }
+        return false;
+    }
+    addEventListener("mousedown",function(e){
+        if(e.button == 0) {
+            keys.mouse = true;
+        } else if(e.button == 2) {
+            keys.rightMouse = true;
+        }
+        mouseX = e.pageX;
+        mouseY = e.pageY;
+    });
+    addEventListener("mouseup",function(e){
+        if(e.button == 0) { 
+            keys.mouse = false;
+        } else if(e.button == 2) {
+            keys.rightMouse = true;
+        }
+    });
+    addEventListener("blur", function (){
+        keys = {};
+    });
+    addEventListener("mousemove",function(e){
+        mouseX = e.pageX;
+        mouseY = e.pageY;
+    });
+    addEventListener("keydown", function (e){
+        keys[e.key] = true;
+    });
+    addEventListener("keyup", function (e){
+        keys[e.key] = false;
+    });
+  </script>
+</body>
+</html>

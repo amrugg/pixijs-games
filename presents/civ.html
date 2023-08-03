@@ -1539,10 +1539,11 @@
                                     fighters.result = 0;
                                 } else if(fighters.unit1.health + Math.round(fighters.damage2) > fighters.unit2.health + Math.round(fighters.damage1)){
                                     fighters.unit1.health = 1;
-                                    fighters.result = -1    ;
+                                    fighters.result = -1;
                                 } else if(fighters.unit2.health + Math.round(fighters.damage1) > fighters.unit1.health + Math.round(fighters.damage2)){
                                     fighters.unit2.health = 1;
                                     fighters.result = 1;
+                                    addEffect(fighters.unit1,{name: "Mugged", duration: 5, effect: 0.1});
                                 }
                                 /// moving towards
                                 fighters.phase = 0;
@@ -2839,6 +2840,7 @@
                             fighters.unit1.y = fighters.unit2.y;
                             fighters.unit2.captive = fighters.unit1;
                             fighters.unit1.captor = fighters.unit2;
+                            addEffect(fighters.unit2, {name: "Mugged", duration: 3, effect: 0.5});
                             messageText.text = fighters.unit1.name + " was captured by the enemy! Rescue him or he will be devoured!";
                             setTimeout(function(){
                                 messageText.text = "";
@@ -2858,6 +2860,7 @@
                             fighters.unit1.y = fighters.unit2.y;
                             fighters.unit1.captive = fighters.unit2;
                             fighters.unit2.captor = fighters.unit1;
+                            addEffect(fighters.unit2,{name: "Mugged", duration: 3, effect: 0.5});
                             messageText.text = fighters.unit2.name + " was captured by the enemy! Rescue him or he will be devoured!";
                             setTimeout(function(){
                                 messageText.text = "";
