@@ -457,9 +457,14 @@
         if(e.key === "Enter" && !answersLocked) {
             console.log(numDiv.innerHTML, correctAnswer);
             if (numDiv.innerHTML === correctAnswer || (correctAnswer.split(".")[1] === numDiv.innerHTML) || numDiv.innerHTML.replace(" ",".") === correctAnswer || numDiv.innerHTML.replace(":",".") === correctAnswer) { 
-                energyBar.width += 40;
-                if(energyBar.width > 200) {
+                if(energyBar.width + 40 > 200) {
+                    healthBar.width += (energyBar.width + 40 - 200)/3;
                     energyBar.width = 200;
+                } else {
+                    energyBar.width += 40;
+                }
+                if(healthBar.width > 200) {
+                    healthBar.width = 200;
                 }
                 numDiv.innerHTML = "";
                 --questionsLeft;
