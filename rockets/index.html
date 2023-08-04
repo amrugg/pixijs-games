@@ -468,7 +468,7 @@
                     if(Date.now() - enemy.burstRate > enemy.burstFire) {
                         if(Date.now() - enemy.reloadTime > enemy.lastFire) {
                             enemy.bursts--;
-                            shootLaser("bad", {x:enemy.x - enemy.width / 3, y: enemy.y}, pointTowards(enemy.x - enemy.width/6,enemy.y,rocket.x,rocket.y * Math.PI/180)
+                            shootLaser("bad", {x:enemy.x - enemy.width / 3, y: enemy.y}, pointTowards(enemy.x - enemy.width/6,enemy.y,rocket.x,rocket.y) * Math.PI/180);
                             shootLaser("bad", {x:enemy.x + enemy.width / 3, y: enemy.y}, pointTowards(enemy.x + enemy.width/6,enemy.y,rocket.x,rocket.y) * Math.PI/180)
                             enemy.lastFire = Date.now();
                             if(enemy.bursts === 0) {
