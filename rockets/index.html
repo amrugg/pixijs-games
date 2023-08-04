@@ -534,6 +534,9 @@
                 spawnNewEnemy(level/3.5, "medium");
             } else if(level < 12) {
                 spawnNewEnemy(1, "boss2");
+            } else {
+                spawnNewEnemy(level/3.5, "medium");
+                spawnNewEnemy(level, "easy");
             }
         }
         for(var i = 0; i < explosions.length; i++) {
