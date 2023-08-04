@@ -159,6 +159,7 @@
     var lastFire = 0;
     var reloadTime = 500;
     var energyToFire = 5;
+    var healthToHit = 10;
     var emp;
     var enemyEMP;
     var laserGraphics = new PIXI.Graphics();
@@ -269,7 +270,7 @@
                     closestEnemy = enemy;
                 }
             }
-            launchMissile("good",  {x:rocket.x, y: rocket.y - rocket.height/2}, closestEnemy);
+            launchMissile("good",  {x:rocket.x, y: rocket.y - rocket.height/2}, closestEnemy, 10);
             keys.m = false;
             energyBar.width -= energyToFire*7;
         }
@@ -320,7 +321,8 @@
 
         for(var i = 0; i < missiles.length; i++) {
             var missile = missiles[i];
-            if(missile.target.health <= 0) {
+            --missile.health;
+            if(missile.target.health <= 0 || missile.health <= 0) {
                 explode(1,{x:missile.x,y:missile.y});
                 app.stage.removeChild(missile);
                 missiles.splice(i,1);
@@ -328,7 +330,7 @@
             }
             missile.rotation = pointTowards(missile.x,missile.y,missile.target.x,missile.target.y) * Math.PI/180;
             missile.rotation *= -1;
-            var missileDirection = radDirection(30, -missile.rotation + Math.PI);
+            var missileDirection = radDirection(missile.speed, -missile.rotation + Math.PI);
             missile.x += missileDirection.r;
             missile.y += missileDirection.u;
             if(missile.y < -10 || missile.y > innerHeight + 10 || missile.x < 10 || missile.x > innerWidth + 10) {
@@ -340,7 +342,7 @@
             var missileRect = {x: missile.x-missile.width/2, y: missile.y-missile.height/2,width:missile.width,height:missile.height};
             var rocketRect = {x: rocket.x - rocket.width/2, y: rocket.y - rocket.height/2, width: rocket.width, height: rocket.height};
             if(hitTestRectangle(missileRect, rocketRect) && !missile.good) {
-                healthBar.width -= 30;
+                healthBar.width -= healthToHit*3;
                 explode(20,{x:missile.x - missile.width, y:missile.y + missile.height});
                 app.stage.removeChild(missile);
                 missiles.splice(i,1);
@@ -385,7 +387,7 @@
             var laserRect = {x: laser.x-laser.width/2, y: laser.y-laser.height/2,width:laser.width,height:laser.height};
             var rocketRect = {x: rocket.x - rocket.width/2, y: rocket.y - rocket.height/2, width: rocket.width, height: rocket.height};
             if(hitTestRectangle(laserRect, rocketRect) && !laser.good) {
-                healthBar.width -= 10;
+                healthBar.width -= healthToHit;
                 explode(1,{x:laser.x - laser.width, y:laser.y + laser.height});
                 app.stage.removeChild(laser);
                 lasers.splice(i,1);
@@ -438,8 +440,8 @@
                         enemy.x -= 10 * difficulty;
                     } else if(Date.now() - enemy.reloadTime > enemy.lastFire) {
                         shootLaser("bad", {x:enemy.x, y: enemy.y}, pointTowards(enemy.x,enemy.y,rocket.x,rocket.y) * Math.PI/180)
-                        launchMissile("bad", {x:enemy.x + enemy.width/3, y: enemy.y}, rocket)
-                        launchMissile("bad", {x:enemy.x - enemy.width/3, y: enemy.y}, rocket);
+                        launchMissile("bad", {x:enemy.x + enemy.width/3, y: enemy.y}, rocket, 7.5)
+                        launchMissile("bad", {x:enemy.x - enemy.width/3, y: enemy.y}, rocket, 7.5);
                         enemy.lastFire = Date.now();
                     }
                 } else if(enemy.level === "medium") {
@@ -466,23 +468,11 @@
                     if(Date.now() - enemy.burstRate > enemy.burstFire) {
                         if(Date.now() - enemy.reloadTime > enemy.lastFire) {
                             enemy.bursts--;
-                            shootLaser("bad", {x:enemy.x - enemy.width / 3, y: enemy.y}, pointTowards(enemy.x - enemy.width/6,enemy.y,rocket.x,rocket.y) * Math.PI/180)
+                            shootLaser("bad", {x:enemy.x - enemy.width / 3, y: enemy.y}, pointTowards(enemy.x - enemy.width/6,enemy.y,rocket.x,rocket.y * Math.PI/180)
                             shootLaser("bad", {x:enemy.x + enemy.width / 3, y: enemy.y}, pointTowards(enemy.x + enemy.width/6,enemy.y,rocket.x,rocket.y) * Math.PI/180)
                             enemy.lastFire = Date.now();
                             if(enemy.bursts === 0) {
-                                enemy.bursts = 50;
-                                enemy.burstFire = Date.now();
-                            }
-                        }
-                    }
-                    if(Date.now() - enemy.burstRate > enemy.burstFire) {
-                        if(Date.now() - enemy.reloadTime > enemy.lastFire) {
-                            enemy.bursts--;
-                            shootLaser("bad", {x:enemy.x - enemy.width / 3, y: enemy.y}, pointTowards(enemy.x - enemy.width/6,enemy.y,rocket.x,rocket.y) * Math.PI/180)
-                            shootLaser("bad", {x:enemy.x + enemy.width / 3, y: enemy.y}, pointTowards(enemy.x + enemy.width/6,enemy.y,rocket.x,rocket.y) * Math.PI/180)
-                            enemy.lastFire = Date.now();
-                            if(enemy.bursts === 0) {
-                                enemy.bursts = 50;
+                                enemy.bursts = 25;
                                 enemy.burstFire = Date.now();
                             }
                         }
@@ -499,7 +489,7 @@
                         enemyEMP.scale.y += 0.1;
                         enemyEMP.rotation += 0.1;
                         if(getDistance(rocket.x,rocket.y,enemyEMP.x,enemyEMP.y) < enemyEMP.width/2) {
-                            healthBar.width -= 1;
+                            healthBar.width -= healthToHit/8;
                             explode(1,rocket);
                         }
                         if(enemy.energy === 0) {
@@ -514,6 +504,13 @@
                 if (enemy.alpha <= 0) {
                     if(enemy.level === "boss1") {
                         healthBar.width = 200;
+                        healthToHit -= 2;
+                        energyToFire--;
+                        energyBar.width = 200;
+                    }
+                    if(enemy.level === "boss2") {
+                        healthBar.width = 200;
+                        healthToHit -= 2;
                         energyToFire--;
                         energyBar.width = 200;
                     }
@@ -599,7 +596,7 @@
                 enemy.reloadTime = 100/difficulty;
                 enemy.empFire = Date.now();
                 enemy.empRate = 17500/difficulty;
-                enemy.bursts = 50;
+                enemy.bursts = 25;
                 enemy.energy = innerWidth/10;
             }
             enemy.level = type;
@@ -607,7 +604,7 @@
             y -= 150 + randInt(25,100);
         }
     }
-    function launchMissile(type, position, target) {
+    function launchMissile(type, position, target, speed) {
         if(type === "good") {
             var laser = new Sprite(resources["sprites/missile.png"].texture);
             laser.good = true;
@@ -616,9 +613,15 @@
             var laser = new Sprite(resources["sprites/missile.png"].texture);
             laser.good = false;
         }
+        laser.speed = speed;
         laser.x = position.x;
         laser.y = position.y;
         laser.anchor.set(0.5,0.5);
+        if(type === "good") {
+            laser.health = 300;
+        } else {
+            laser.health = 200;
+        }
         laser.target = target;
         missiles.push(laser);
         app.stage.addChild(laser);
@@ -690,7 +693,7 @@
                 --questionsLeft;
                 if(questionsLeft <= 0) {
                     var range = rangeDiv.innerHTML;
-                    if(range[0] === "1") {
+                    if(range.split("-")[0] === "1") {
                         var arr = range.split(/\-|\,/);
                         if(Number(arr[1]) + 3 < john16[chapter-1].length) {
                             range = (Number(arr[1])) + "-" + (Number(arr[1]) + 3);
