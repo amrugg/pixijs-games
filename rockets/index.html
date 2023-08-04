@@ -55,7 +55,7 @@
     app.renderer.autoResize = true;
     app.renderer.resize(window.innerWidth, window.innerHeight);
     document.body.appendChild(app.view);
-    loader.add(["sprites/exp1.png","sprites/exp2.png","sprites/exp3.png", "sprites/enemy.png", "sprites/rocket.png", "sprites/laser.png", "sprites/medium.png", "sprites/emp.png"]).load(setup);
+    loader.add(["sprites/exp1.png","sprites/exp2.png","sprites/exp3.png", "sprites/enemy.png", "sprites/rocket.png", "sprites/laser.png", "sprites/medium.png", "sprites/emp.png", "sprites/boss1.png", "sprites/missile.png"]).load(setup);
     var textDiv = document.createElement("div");
     textDiv.style.position = "relative";
     textDiv.innerHTML = "In the beginning was the Word."
@@ -125,6 +125,7 @@
     var chapter = Number(params.chapter) || randInt(1,6);
     var curVerse = randVerse();
     var correctAnswer = curVerse[0];
+    var missiles = [];
     curVerse = curVerse[1];
     textDiv.innerHTML = curVerse;
     var difficulty = 1;
@@ -207,25 +208,60 @@
             explosion.scale.set(3);
         }
     }
+    function bigExplosion(amount, position, magnitude) {
+        for(var i = 0; i < amount; i++) {
+            if(magnitude) {
+                var rand = magnitude/3-0.1;
+            } else {
+                var rand = Math.random();
+            }
+            if(rand < 0.33) {
+                var explosion = new Sprite(resources["sprites/exp1.png"].texture);
+            } else if(rand < 0.66) {
+                var explosion = new Sprite(resources["sprites/exp2.png"].texture);
+            } else {
+                var explosion = new Sprite(resources["sprites/exp3.png"].texture);
+            }
+            app.stage.addChild(explosion);
+            explosion.x = position.x + randInt(-150,150);
+            explosion.y = position.y + randInt(-150,150);
+            explosions.push(explosion);
+            explosion.scale.set(3);
+        }
+    }
     function play(){
         rocket.vx = 0;
         rocket.vy = 0;
-        if(keys.ArrowUp) {
+        if(keys.ArrowUp || keys.w) {
             rocket.vy += -10;
         }
-        if(keys.ArrowDown) {
+        if(keys.ArrowDown || keys.s) {
             rocket.vy += 10;
         }
-        if(keys.ArrowLeft) {
+        if(keys.ArrowLeft || keys.a) {
             rocket.vx += -10;
         }
-        if(keys.ArrowRight) {
+        if(keys.ArrowRight || keys.d) {
             rocket.vx += 10;
         }
         if(keys[" "] && Date.now() - reloadTime > lastFire && energyBar.width >= energyToFire) {
             shootLaser("good", {x:rocket.x, y: rocket.y - rocket.height/2}, 0);
             lastFire = Date.now();
             energyBar.width -= energyToFire;
+        }
+        if(keys.m && energyBar.width >= energyToFire*7 && enemies.length) {
+            var closestEnemy;
+            var closestDist = Infinity;
+            for(let i = 0; i < enemies.length; i++) {
+                var enemy = enemies[i];
+                if(getDistance(rocket.x,rocket.y,enemy.x,enemy.y) < closestDist) {
+                    closestDist = getDistance(rocket.x,rocket.y,enemy.x,enemy.y)
+                    closestEnemy = enemy;
+                }
+            }
+            launchMissile("good",  {x:rocket.x, y: rocket.y - rocket.height/2}, closestEnemy);
+            keys.m = false;
+            energyBar.width -= energyToFire*7;
         }
         if(keys.e && energyBar.width > 0) {
             if(!emp.visible) {
@@ -237,7 +273,7 @@
             emp.rotation += 0.1;
             emp.x = rocket.x;
             emp.y = rocket.y;
-            energyBar.width -= energyToFire/5;
+            // energyBar.width -= energyToFire/5;
             for(var i = 0; i < enemies.length; i++) {
                 var enemy = enemies[i];
                 if(getDistance(enemy.x,enemy.y,emp.x,emp.y) < Math.sqrt((emp.width/2)**2 + (emp.height/2)**2)) {
@@ -271,6 +307,61 @@
             laserGraphics.x = rocket.x;
             laserGraphics.y = rocket.y;
         }
+
+        for(var i = 0; i < missiles.length; i++) {
+            var missile = missiles[i];
+            if(missile.target.health <= 0) {
+                explode(1,{x:missile.x,y:missile.y});
+                app.stage.removeChild(missile);
+                missiles.splice(i,1);
+                --i;
+            }
+            missile.rotation = pointTowards(missile.x,missile.y,missile.target.x,missile.target.y) * Math.PI/180;
+            missile.rotation *= -1;
+            var missileDirection = radDirection(30, -missile.rotation + Math.PI);
+            missile.x += missileDirection.r;
+            missile.y += missileDirection.u;
+            if(missile.y < -10 || missile.y > innerHeight + 10 || missile.x < 10 || missile.x > innerWidth + 10) {
+                app.stage.removeChild(missile);
+                missiles.splice(i,1);
+                --i;
+                continue;
+            }
+            var missileRect = {x: missile.x-missile.width/2, y: missile.y-missile.height/2,width:missile.width,height:missile.height};
+            var rocketRect = {x: rocket.x - rocket.width/2, y: rocket.y - rocket.height/2, width: rocket.width, height: rocket.height};
+            console.log(missileRect,rocketRect);
+            if(hitTestRectangle(missileRect, rocketRect) && !missile.good) {
+                healthBar.width -= 30;
+                explode(20,{x:missile.x - missile.width, y:missile.y + missile.height});
+                app.stage.removeChild(missile);
+                missiles.splice(i,1);
+                --i;
+                continue;
+            }
+            for(var j = 0; j < enemies.length; j++) { 
+                var enemy = enemies[j];
+                var enemyRect = {x: enemy.x - enemy.width/2, y: enemy.y - enemy.height/2, width: enemy.width, height: enemy.height};
+                if(hitTestRectangle(missileRect, enemyRect) && missile.good) {
+                    enemy.health -= 3;
+                    explode(10,{x:missile.x - missile.width, y:missile.y - missile.height});
+                    if(enemy.health <= 0) {
+                        bigExplosion(100,{x:enemy.x,y:enemy.y});
+                    }
+                    enemies.forEach(function(enemy){
+                        if(getDistance(enemy.x,enemy.y,missile.x,missile.y) < 200) {
+                            explode(10,{x:enemy.x, y:enemy.y});
+                            enemy.health -= 2;
+                        }
+                    });
+                    app.stage.removeChild(missile);
+                    missiles.splice(i,1);
+                    --i;
+                    j = enemies.length;
+                    continue;
+                }   
+            }
+        }
+
         for(var i = 0; i < lasers.length; i++) {
             var laser = lasers[i];
             var laserDirection = radDirection(20,-laser.rotation + Math.PI);
@@ -298,7 +389,7 @@
                 var enemyRect = {x: enemy.x - enemy.width/2, y: enemy.y - enemy.height/2, width: enemy.width, height: enemy.height};
                 if(hitTestRectangle(laserRect, enemyRect) && laser.good) {
                     enemy.health--;
-                    explode(1,{x:laser.x - laser.width, y:laser.y - laser.height});
+                    explode(1,{x:laser.x - laser.width/2, y:laser.y - laser.height/2});
                     if(enemy.health <= 0) {
                         explode(20,{x:enemy.x,y:enemy.y});
                     }
@@ -327,11 +418,27 @@
                         shootLaser("bad", {x:enemy.x, y: enemy.y}, pointTowards(enemy.x,enemy.y,rocket.x,rocket.y) * Math.PI/180)
                         enemy.lastFire = Date.now();
                     }
+                } else if(enemy.level === "boss1") {
+                    if(enemy.y < innerHeight + 200) {
+                        enemy.y += 1.5 * difficulty;
+                    } else {
+                        enemy.y = -400;
+                    }
+                    if(enemy.x + 5 < rocket.x) {
+                        enemy.x += 10 * difficulty;
+                    } else if(enemy.x - 5 > rocket.x) {
+                        enemy.x -= 10 * difficulty;
+                    } else if(Date.now() - enemy.reloadTime > enemy.lastFire) {
+                        shootLaser("bad", {x:enemy.x, y: enemy.y}, pointTowards(enemy.x,enemy.y,rocket.x,rocket.y) * Math.PI/180)
+                        launchMissile("bad", {x:enemy.x + enemy.width/3, y: enemy.y}, rocket)
+                        launchMissile("bad", {x:enemy.x - enemy.width/3, y: enemy.y}, rocket);
+                        enemy.lastFire = Date.now();
+                    }
                 } else if(enemy.level === "medium") {
                     if(enemy.y < 100) {
                         enemy.y += 1.5 * difficulty;
                     }
-                    if(Math.abs(rocket.x - enemy.x) < 100) {
+                    if(Math.abs(rocket.x - enemy.x) < 300) {
                         if(rocket.x > enemy.x) {
                             enemy.x -= 3 * difficulty;
                         } else {
@@ -347,6 +454,11 @@
             } else {
                 enemy.alpha -= 0.05;
                 if (enemy.alpha <= 0) {
+                    if(enemy.level === "boss1") {
+                        healthBar.width = 200;
+                        energyToFire--;
+                        energyBar.width = 200;
+                    }
                     app.stage.removeChild(enemy);
                     enemies.splice(i,1);
                     --i;
@@ -358,7 +470,9 @@
             difficulty += 0.05;
             if(level < 6) {
                 spawnNewEnemy(level, "easy");
-            } else if (level < 10) {
+            } else if (level < 7) {
+                spawnNewEnemy(1, "boss1");
+            } else if(level < 11) {
                 spawnNewEnemy(level/3.5, "medium");
             }
         }
@@ -396,11 +510,38 @@
                 enemy.health = randInt(5,7) * difficulty;
                 enemy.lastFire = 0;
                 enemy.reloadTime = 5000/difficulty;
+            } else if(type === "boss1") {
+                var enemy = new Sprite(resources["sprites/boss1.png"].texture);
+                app.stage.addChild(enemy);
+                enemy.scale.set(3);
+                enemy.anchor.set(0.5,0.5);
+                enemy.x = randInt(100, innerWidth - 100);
+                enemy.y = y;
+                enemy.rotation = Math.PI;
+                enemy.health = randInt(15) * difficulty;
+                enemy.lastFire = 0;
+                enemy.reloadTime = 5000/difficulty;
             }
             enemy.level = type;
             enemies.push(enemy);
             y -= 150 + randInt(25,100);
         }
+    }
+    function launchMissile(type, position, target) {
+        if(type === "good") {
+            var laser = new Sprite(resources["sprites/missile.png"].texture);
+            laser.good = true;
+        } else {
+            /// TODO: Red
+            var laser = new Sprite(resources["sprites/missile.png"].texture);
+            laser.good = false;
+        }
+        laser.x = position.x;
+        laser.y = position.y;
+        laser.anchor.set(0.5,0.5);
+        laser.target = target;
+        missiles.push(laser);
+        app.stage.addChild(laser);
     }
     function shootLaser(type, position, dir) {
         if(type === "good") {
