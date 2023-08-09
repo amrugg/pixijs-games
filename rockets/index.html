@@ -165,8 +165,8 @@
     var lasers = [];
     var lastFire = 0;
     var reloadTime = 500;
-    var energyToFire = 3;
-    var healthToHit = 8;
+    var energyToFire = 5;
+    var healthToHit = 10;
     var emp;
     var enemyEMP;
     var laserGraphics = new PIXI.Graphics();
@@ -204,7 +204,7 @@
     function gameLoop(delta) {
       state(delta)
     }
-    var level = 14;
+    var level = 1;
     function explode(amount, position, magnitude) {
         for(var i = 0; i < amount; i++) {
             if(magnitude) {
