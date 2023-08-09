@@ -115,7 +115,7 @@
     healthBar.y = innerHeight - 100;
     app.stage.addChild(healthBar);
 
-    var music = new Howl({src: ["music/level1.mp3"], autoplay: true, loop: true, volume: 0.25});
+    var music = new Howl({src: ["music/level1.mp3"], autoplay: true, loop: true, volume: 0.5});
     /// TODO: Change intro to intro after we get intro and music to battle after the intro ends.
     var boss1 = new Howl({src: ["music/boss1.mp3"], autoplay: false, loop: true, volume: 0});
     var boss2 = new Howl({src: ["music/boss2.mp3"], autoplay: false, loop: true, volume: 0});
@@ -135,7 +135,7 @@
     var missiles = [];
     curVerse = curVerse[1];
     textDiv.innerHTML = curVerse;
-    var difficulty = 0.5;
+    var difficulty = 1;
     function randInt(min, max, not) {
         if(max === undefined) {
             max = min
@@ -166,7 +166,7 @@
     var lastFire = 0;
     var reloadTime = 500;
     var energyToFire = 3;
-    var healthToHit = 10;
+    var healthToHit = 8;
     var emp;
     var enemyEMP;
     var laserGraphics = new PIXI.Graphics();
@@ -204,7 +204,7 @@
     function gameLoop(delta) {
       state(delta)
     }
-    var level = 1;
+    var level = 14;
     function explode(amount, position, magnitude) {
         for(var i = 0; i < amount; i++) {
             if(magnitude) {
@@ -602,14 +602,14 @@
                         enemy.y += 5 * difficulty;
                     }
                     if(enemy.x + enemy.xOffset + 15 < rocket.x) {
-                        enemy.x += 5;
+                        enemy.x += 2.5;
                     } else if(enemy.x + enemy.xOffset - 15 > rocket.x) {
-                        enemy.x -= 5;
+                        enemy.x -= 2.5;
                     } else if(Date.now() - enemy.reloadTime > enemy.lastFire) {
                         shootLaser("bad", {x:enemy.x + 10, y: enemy.y}, 180 * Math.PI/180);
                         shootLaser("bad", {x:enemy.x - 10, y: enemy.y}, 180 * Math.PI/180);
-                        shootLaser("bad", {x:enemy.x + enemy.width/2, y: enemy.y}, 180 * Math.PI/180);
-                        shootLaser("bad", {x:enemy.x - enemy.width/2, y: enemy.y}, 180 * Math.PI/180);
+                        // shootLaser("bad", {x:enemy.x + enemy.width/2, y: enemy.y}, 180 * Math.PI/180);
+                        // shootLaser("bad", {x:enemy.x - enemy.width/2, y: enemy.y}, 180 * Math.PI/180);
                         enemy.lastFire = Date.now();
                     }
 
@@ -643,9 +643,9 @@
                         healthToHit -= 2;
                         energyToFire--;
                         energyBar.width = 200;
-                        boss1.fade(0.25,0, 3000);
+                        boss1.fade(0.5,0, 3000);
                         setTimeout(function() {
-                            music.fade(0, 0.25, 3000);
+                            music.fade(0, 0.5, 3000);
                         },3000);
                     }
                     if(enemy.level === "boss2") {
@@ -653,9 +653,9 @@
                         healthToHit -= 2;
                         energyToFire--;
                         energyBar.width = 200;
-                        boss2.fade(0.25,0, 3000);
+                        boss2.fade(0.5,0, 3000);
                         setTimeout(function() {
-                            music.fade(0, 0.25, 3000);
+                            music.fade(0, 0.5, 3000);
                         },3000);
                     } else if(enemy.level === "boss3") {
                         var foundEnemy1 = false;
@@ -676,9 +676,9 @@
                             healthToHit -= 2;
                             energyToFire--;
                             energyBar.width = 200;
-                            boss3.fade(0.25,0, 3000);
+                            boss3.fade(0.5,0, 3000);
                             setTimeout(function() {
-                                music.fade(0, 0.25, 3000);
+                                music.fade(0, 0.5, 3000);
                             },3000);
                         }
                     }
@@ -695,19 +695,19 @@
                 spawnNewEnemy(level, "easy");
             } else if (level < 6.1) {
                 spawnNewEnemy(1, "boss1");
-                music.fade(0.25,0,2000);
+                music.fade(0.5,0,2000);
                 setTimeout(function(){
                     boss1.play();
-                    boss1.fade(0,0.25,2000);
+                    boss1.fade(0,0.5,2000);
                 }, 2000);
             } else if(level < 11) {
                 spawnNewEnemy(level/3.5, "medium");
             } else if(level < 11.1) {
                 spawnNewEnemy(1, "boss2");
-                music.fade(0.25,0,2000);
+                music.fade(0.5,0,2000);
                 setTimeout(function(){
                     boss2.play();
-                    boss2.fade(0,0.25,2000);
+                    boss2.fade(0,0.5,2000);
                 }, 2000);
             } else if(level < 12) {
                 spawnNewFormation("drone", "V", 4);
@@ -721,10 +721,10 @@
                 spawnNewFormation("drone", "N", 5);
                 spawnNewFormation("drone", "V", 5);
             } else if(level < 16.1) {
-                music.fade(0.25,0,2000);
+                music.fade(0.5,0,2000);
                 setTimeout(function(){
                     boss3.play();
-                    boss3.fade(0,0.25,2000);
+                    boss3.fade(0,0.5,2000);
                 }, 2000);
                 spawnNewEnemy(1, "boss3")[0].xOffset = 200;
                 spawnNewEnemy(1, "boss3")[0].xOffset = -200;
@@ -866,7 +866,7 @@
                 enemy.rotation = Math.PI;
                 enemy.health = randNum(0.1,0.5) * difficulty;
                 enemy.lastFire = 0;
-                enemy.reloadTime = 2000/difficulty;
+                enemy.reloadTime = 3000/difficulty;
             } else if(type === "boss3") {
                 var enemy = new Sprite(resources["sprites/boss3.png"].texture);
                 app.stage.addChild(enemy);
