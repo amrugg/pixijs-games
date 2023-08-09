@@ -135,7 +135,7 @@
     var missiles = [];
     curVerse = curVerse[1];
     textDiv.innerHTML = curVerse;
-    var difficulty = 1;
+    var difficulty = 0.5;
     function randInt(min, max, not) {
         if(max === undefined) {
             max = min
@@ -689,7 +689,7 @@
             }
         }
         if(enemies.length === 0) {
-            ++level;
+            level += 0.15;
             difficulty += 0.05;
             if(level < 6) {
                 spawnNewEnemy(level, "easy");
@@ -970,7 +970,7 @@
         mouseX = e.pageX;
         mouseY = e.pageY;
     });
-    var learnSpeed = 1;
+    var learnSpeed = 2;
     var answersLocked = false;
     addEventListener("keydown", function (e){
         if(!answersLocked && ((Number(e.key) >= 0 && e.key !== " ") || e.key === "." || e.key === ":")) {
