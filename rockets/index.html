@@ -135,7 +135,7 @@
     var missiles = [];
     curVerse = curVerse[1];
     textDiv.innerHTML = curVerse;
-    var difficulty = 0.5;
+    var difficulty = 0.75;
     function randInt(min, max, not) {
         if(max === undefined) {
             max = min
@@ -689,8 +689,7 @@
             }
         }
         if(enemies.length === 0) {
-            level += 0.15;
-            difficulty += 0.05;
+            ++level;
             if(level < 6) {
                 spawnNewEnemy(level, "easy");
             } else if (level < 6.1) {
