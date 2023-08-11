@@ -9,6 +9,24 @@
     <script src="usefulFunctions.js"></script>
     <script src="howler.core.min.js"></script>
     <div id="central"></div>
+    <select style="position:absolute", id="chapter">
+        <option>John 1</option>
+        <option>John 2</option>
+        <option>John 3</option>
+        <option>John 4</option>
+        <option>John 5</option>
+        <option>John 6</option>
+    </select>
+    <select style="position:absolute; top: 20px", id="level">
+        <option>Invincible</option>
+        <option>Novice</option>
+        <option>Easy</option>
+        <option>Medium</option>
+        <option>Hard</option>
+        <option>Insane</option>
+    </select>
+    <input type="text" value="1-4" style="position:absolute; top: 40px", id="range">
+    <button id="start", style="position: absolute; top: 60px">&nbsp;Start&nbsp;</button>
 <body>
   <script type="text/javascript">
     "use strict";
@@ -40,7 +58,55 @@
         resolution: 1
       }
     );
-    
+    var chapterEl = document.getElementById("chapter");
+    var levelEl = document.getElementById("level");
+    var inputEl = document.getElementById("range");
+    var buttonStartEl = document.getElementById("start");
+    var invincible = false;
+    chapterEl.style.zIndex = "100";
+    levelEl.style.zIndex = "100";
+    inputEl.style.zIndex = "100";
+    buttonStartEl.style.zIndex = "100";
+    buttonStartEl.addEventListener("click", function() {
+        chapter = chapterEl.selectedIndex+1;
+
+        rangeDiv.innerHTML = inputEl.value;
+        params.min = inputEl.value.split("-")[0];
+        params.max = inputEl.value.split("-")[1];
+        questionsLeft = params.max;
+
+        if(levelEl.selectedIndex === 0) {
+            difficulty = 1;
+            invincible = true;
+        } else if(levelEl.selectedIndex === 1) {
+            difficulty = 0.25;
+        } else if(levelEl.selectedIndex === 2) {
+            difficulty = 0.5;
+        } else if(levelEl.selectedIndex === 3) {
+            difficulty = 0.75;
+        } else if(levelEl.selectedIndex === 4) {
+            difficulty = 1;
+        } else if(levelEl.selectedIndex === 5) {
+            difficulty = 1.25;
+        }
+        chapterEl.remove();
+        levelEl.remove();
+        inputEl.remove();
+        buttonStartEl.remove();
+
+        curVerse = randVerse();
+        correctAnswer = curVerse[0];
+        curVerse = curVerse[1];
+        textDiv.innerHTML = curVerse;
+
+        intro.fade(0.5,0, 3000);
+        setTimeout(function() {
+            music.play();
+            music.fade(0, 0.5, 3000);
+        },3000);
+        state = play;
+        app.ticker.add(delta => gameLoop(delta));
+    });
     var central = document.getElementById("central");
     central.style.position = "absolute";
     central.style.zIndex = "100";
@@ -59,7 +125,7 @@
     loader.add(["sprites/exp1.png","sprites/exp2.png","sprites/exp3.png", "sprites/enemy.png", "sprites/rocket.png", "sprites/laser.png", "sprites/medium.png", "sprites/emp.png", "sprites/enemyEMP.png", "sprites/boss1.png", "sprites/missile.png", "sprites/boss2.png", "sprites/drone.png", "sprites/boss3.png", "sprites/enemy-laser.png"]).load(setup);
     var textDiv = document.createElement("div");
     textDiv.style.position = "relative";
-    textDiv.innerHTML = "In the beginning was the Word."
+    // textDiv.innerHTML = "In the beginning was the Word."
     textDiv.style.fontSize = "30px";
     textDiv.style.color = "white";
     central.appendChild(textDiv);
@@ -71,7 +137,6 @@
     numDiv.style.color = "white";
     central.appendChild(numDiv);
 
-    var rangeDiv = document.createElement("div");
     var rangeDiv = document.createElement("div");
     rangeDiv.style.position = "absolute";
     rangeDiv.style.left = "-100px";
@@ -115,7 +180,8 @@
     healthBar.y = innerHeight - 100;
     app.stage.addChild(healthBar);
 
-    var music = new Howl({src: ["music/level1.mp3"], autoplay: true, loop: true, volume: 0.5});
+    var intro = new Howl({src: ["music/intro.mp3"], autoplay: true, loop: true, volume: 0.5});
+    var music = new Howl({src: ["music/level1.mp3"], autoplay: false, loop: true, volume: 0.5});
     /// TODO: Change intro to intro after we get intro and music to battle after the intro ends.
     var boss1 = new Howl({src: ["music/boss1.mp3"], autoplay: false, loop: true, volume: 0});
     var boss2 = new Howl({src: ["music/boss2.mp3"], autoplay: false, loop: true, volume: 0});
@@ -134,7 +200,7 @@
     var correctAnswer = curVerse[0];
     var missiles = [];
     curVerse = curVerse[1];
-    textDiv.innerHTML = curVerse;
+    // textDiv.innerHTML = curVerse;
     var difficulty = 0.75;
     function randInt(min, max, not) {
         if(max === undefined) {
@@ -197,9 +263,6 @@
         enemyEMP.y = 100;
         enemyEMP.visible = false;
         enemyEMP.zIndex = 10000;
-
-        state = play;
-        app.ticker.add(delta => gameLoop(delta));
     }
     function gameLoop(delta) {
       state(delta)
@@ -389,7 +452,9 @@
             var missileRect = {x: missile.x-missile.width/2, y: missile.y-missile.height/2,width:missile.width,height:missile.height};
             var rocketRect = {x: rocket.x - rocket.width/2, y: rocket.y - rocket.height/2, width: rocket.width, height: rocket.height};
             if(hitTestRectangle(missileRect, rocketRect) && !missile.good) {
-                healthBar.width -= healthToHit*3;
+                if(!invincible) {
+                    healthBar.width -= healthToHit*3;
+                }
                 explode(20,{x:missile.x - missile.width, y:missile.y + missile.height});
                 app.stage.removeChild(missile);
                 missiles.splice(i,1);
@@ -434,7 +499,9 @@
             var laserRect = {x: laser.x-laser.width/2, y: laser.y-laser.height/2,width:laser.width,height:laser.height};
             var rocketRect = {x: rocket.x - rocket.width/2, y: rocket.y - rocket.height/2, width: rocket.width, height: rocket.height};
             if(hitTestRectangle(laserRect, rocketRect) && !laser.good) {
-                healthBar.width -= healthToHit;
+                if(!invincible) {
+                    healthBar.width -= healthToHit;
+                }
                 explode(1,{x:laser.x - laser.width, y:laser.y + laser.height});
                 app.stage.removeChild(laser);
                 lasers.splice(i,1);
@@ -571,7 +638,9 @@
                         enemyEMP.scale.y += 0.1;
                         enemyEMP.rotation += 0.1;
                         if(getDistance(rocket.x,rocket.y,enemyEMP.x,enemyEMP.y) < enemyEMP.width/2) {
-                            healthBar.width -= healthToHit/8;
+                            if(!invincible) {
+                                healthBar.width -= healthToHit/8;
+                            }
                             explode(1,rocket);
                         }
                         if(enemy.energy === 0) {
@@ -626,7 +695,9 @@
                         var rocketRect = {x: rocket.x - rocket.width/2, y: rocket.y - rocket.height/2, width: rocket.width, height: rocket.height};
                         if(hitTestRectangle(laserRect,rocketRect)) {
                             explode(1,{x:rocket.x,y:rocket.y});
-                            healthBar.width -= 1;
+                            if(!invincible) {
+                                healthBar.width -= 1;
+                            }
                         }
                         if(enemy.energy <= 0) {
                             enemy.laser.visible = false;
@@ -690,6 +761,7 @@
         }
         if(enemies.length === 0) {
             ++level;
+            difficulty += 0.05;
             if(level < 6) {
                 spawnNewEnemy(level, "easy");
             } else if (level < 6.1) {
