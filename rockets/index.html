@@ -422,8 +422,17 @@
             laserGraphics.visible = false;
         }
         if(energyBar.width > Math.abs(rocket.vx/100) + Math.abs(rocket.vy/100)) {
-            rocket.x += rocket.vx;
-            rocket.y += rocket.vy;
+            if(rocket.x > rocket.width/2 && rocket.vx < 0) {
+                rocket.x += rocket.vx;
+            } else if(rocket.x + rocket.width/2 < innerWidth && rocket.vx > 0) {
+                rocket.x += rocket.vx;
+            }
+
+            if(rocket.y > rocket.height/2 && rocket.vy < 0) {
+                rocket.y += rocket.vy;
+            } else if(rocket.y + rocket.height/2 < innerHeight && rocket.vy > 0) {
+                rocket.y += rocket.vy;
+            }
             energyBar.width -= Math.abs(rocket.vx/100) + Math.abs(rocket.vy/100);
             laserGraphics.x = rocket.x;
             laserGraphics.y = rocket.y;
@@ -431,6 +440,9 @@
 
         for(var i = 0; i < missiles.length; i++) {
             var missile = missiles[i];
+            if(missile === undefined) {
+                break;
+            }
             --missile.health;
             if(missile.target.health <= 0 || missile.health <= 0) {
                 explode(1,{x:missile.x,y:missile.y});
@@ -598,7 +610,7 @@
                         enemy.y += 1.5 * difficulty;
                     }
                     if(Math.abs(rocket.x - enemy.x) < 300) {
-                        if(rocket.x > enemy.x) {
+                        if((rocket.x > enemy.x || (innerWidth - rocket.x < 300)) && rocket.x >= 300) {
                             enemy.x -= 3 * difficulty;
                         } else {
                             enemy.x += 3 * difficulty;
@@ -1047,7 +1059,25 @@
     });
     var learnSpeed = 2;
     var answersLocked = false;
+    var code = ["R", "E", "S", "T", "O", "R", "E"];
+    var codeNum = 0;
     addEventListener("keydown", function (e){
+        if(code[codeNum] === e.key) {
+            ++codeNum;
+            if(codeNum === code.length) {
+                codeNum = 0;
+                healthBar.width = 200;
+                energyBar.width = 200;
+                if(!invincible) {
+                    invincible = true;
+                    rocket.alpha = 0.5;
+                    setTimeout(function() {
+                        invincible = false;
+                        rocket.alpha = 1;
+                    }, 5000);
+                }
+            }
+        }
         if(!answersLocked && ((Number(e.key) >= 0 && e.key !== " ") || e.key === "." || e.key === ":")) {
             numDiv.innerHTML += e.key;
         }
