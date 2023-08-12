@@ -643,7 +643,7 @@
                             }
                             explode(1,rocket);
                         }
-                        if(enemy.energy === 0) {
+                        if(enemy.energy <= 0) {
                             enemy.energy = innerWidth/10;
                             enemyEMP.visible = false;
                             enemy.empFire = Date.now();
@@ -708,6 +708,7 @@
                 }
             } else {
                 enemy.alpha -= 0.05;
+                enemyEMP.visible = false;
                 if (enemy.alpha <= 0) {
                     if(enemy.level === "boss1") {
                         healthBar.width = 200;
@@ -728,7 +729,7 @@
                         setTimeout(function() {
                             music.fade(0, 0.5, 3000);
                         },3000);
-                    } else if(enemy.level === "boss3") {
+                    } else if(enemy.level === "boss3" && enemy.xOffset === 0) {
                         var foundEnemy1 = false;
                         var foundEnemy2 = false;
                         enemies.forEach(function(bad) {
@@ -752,6 +753,9 @@
                                 music.fade(0, 0.5, 3000);
                             },3000);
                         }
+                    }
+                    if(enemy.laser) {
+                        enemy.laser.visible = false;
                     }
                     app.stage.removeChild(enemy);
                     enemies.splice(i,1);
