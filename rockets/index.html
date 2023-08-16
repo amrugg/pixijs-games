@@ -813,8 +813,12 @@
                     boss1.play();
                     boss1.fade(0,0.5,2000);
                 }, 2000);
+            } else if(level < 8) {
+                spawnNewEnemy(2, "medium");
+            } else if(level < 10) {
+                spawnNewEnemy(3, "medium");
             } else if(level < 11) {
-                spawnNewEnemy(level/3.5, "medium");
+                spawnNewEnemy(4, "medium");
             } else if(level < 11.1) {
                 spawnNewEnemy(1, "boss2");
                 music.fade(0.5,0,2000);
@@ -866,7 +870,7 @@
                 --counter;
             }
             // i += 100;
-            for(i; i < innerWidth/2 + endSize*100 + endSize*100; i += 100) {
+            for(i; i < innerWidth/2 + endSize*100; i += 100) {
                 set.push(spawnNewEnemy(1, type, {x:i, y: counter*-100-200})[0])
                 ++counter;
             }
@@ -993,7 +997,7 @@
                     enemy.y = -600;
                 }
                 enemy.rotation = Math.PI;
-                enemy.health = 20 * difficulty;
+                enemy.health = 15 * difficulty;
                 enemy.lastFire = 0;
                 enemy.reloadTime = 5000/difficulty;
                 enemy.laserFire = Date.now();
