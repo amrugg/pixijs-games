@@ -125,7 +125,7 @@
     app.renderer.autoResize = true;
     app.renderer.resize(window.innerWidth, window.innerHeight);
     document.body.appendChild(app.view);
-    loader.add(["sprites/exp1.png","sprites/exp2.png","sprites/exp3.png", "sprites/enemy.png", "sprites/rocket.png", "sprites/laser.png", "sprites/medium.png", "sprites/emp.png", "sprites/enemyEMP.png", "sprites/boss1.png", "sprites/missile.png", "sprites/boss2.png", "sprites/drone.png", "sprites/boss3.png", "sprites/enemy-laser.png"]).load(setup);
+    loader.add(["sprites/exp1.png","sprites/exp2.png","sprites/exp3.png", "sprites/enemy.png", "sprites/rocket.png", "sprites/laser.png", "sprites/medium.png", "sprites/emp.png", "sprites/enemyEMP.png", "sprites/boss1.png", "sprites/missile.png", "sprites/boss2.png", "sprites/drone.png", "sprites/boss3.png", "sprites/enemy-laser.png", "sprites/mothership.png"]).load(setup);
     var textDiv = document.createElement("div");
     textDiv.style.position = "relative";
     // textDiv.innerHTML = "In the beginning was the Word."
@@ -189,6 +189,7 @@
     var boss1 = new Howl({src: ["music/boss1.mp3"], autoplay: false, loop: true, volume: 0});
     var boss2 = new Howl({src: ["music/boss2.mp3"], autoplay: false, loop: true, volume: 0});
     var boss3 = new Howl({src: ["music/boss3.mp3"], autoplay: false, loop: true, volume: 0});
+    var mothership = new Howl({src: ["music/mothership.mp3"], autoplay: false, loop: true, volume: 0});
 
 
     var rom18 = [["Paul, a servant of Jesus Christ, called to be an apostle, separated unto the gospel of God,", "(Which he had promised afore by his prophets in the holy scriptures,)", "Concerning his Son Jesus Christ our Lord, which was made of the seed of David according to the flesh;", "And declared to be the Son of God with power, according to the spirit of holiness, by the resurrection from the dead:", "By whom we have received grace and apostleship, for obedience to the faith among all nations, for his name:", "Among whom are ye also the called of Jesus Christ:", "To all that be in Rome, beloved of God, called to be saints: Grace to you and peace from God our Father, and the Lord Jesus Christ.", "First, I thank my God through Jesus Christ for you all, that your faith is spoken of throughout the whole world.", "For God is my witness, whom I serve with my spirit in the gospel of his Son, that without ceasing I make mention of you always in my prayers;", "Making request, if by any means now at length I might have a prosperous journey by the will of God to come unto you.", "For I long to see you, that I may impart unto you some spiritual gift, to the end ye may be established;", "That is, that I may be comforted together with you by the mutual faith both of you and me.", "Now I would not have you ignorant, brethren, that oftentimes I purposed to come unto you, (but was let hitherto,) that I might have some fruit among you also, even as among other Gentiles.", "I am debtor both to the Greeks, and to the Barbarians; both to the wise, and to the unwise.", "So, as much as in me is, I am ready to preach the gospel to you that are at Rome also.", "For I am not ashamed of the gospel of Christ: for it is the power of God unto salvation to every one that believeth; to the Jew first, and also to the Greek.", "For therein is the righteousness of God revealed from faith to faith: as it is written, The just shall live by faith.", "For the wrath of God is revealed from heaven against all ungodliness and unrighteousness of men, who hold the truth in unrighteousness;", "Because that which may be known of God is manifest in them; for God hath shewed it unto them.", "For the invisible things of him from the creation of the world are clearly seen, being understood by the things that are made, even his eternal power and Godhead; so that they are without excuse:", "Because that, when they knew God, they glorified him not as God, neither were thankful; but became vain in their imaginations, and their foolish heart was darkened.", "Professing themselves to be wise, they became fools,", "And changed the glory of the uncorruptible God into an image made like to corruptible man, and to birds, and fourfooted beasts, and creeping things.", "Wherefore God also gave them up to uncleanness through the lusts of their own hearts, to dishonour their own bodies between themselves:", "Who changed the truth of God into a lie, and worshipped and served the creature more than the Creator, who is blessed for ever. Amen.", "For this cause God gave them up unto vile affections: for even their women did change the natural use into that which is against nature:", "And likewise also the men, leaving the natural use of the woman, burned in their lust one toward another; men with men working that which is unseemly, and receiving in themselves that recompence of their error which was meet.", "And even as they did not like to retain God in their knowledge, God gave them over to a reprobate mind, to do those things which are not convenient;", "Being filled with all unrighteousness, fornication, wickedness, covetousness, maliciousness; full of envy, murder, debate, deceit, malignity; whisperers,", "Backbiters, haters of God, despiteful, proud, boasters, inventors of evil things, disobedient to parents,", "Without understanding, covenantbreakers, without natural affection, implacable, unmerciful:", "Who knowing the judgment of God, that they which commit such things are worthy of death, not only do the same, but have pleasure in them that do them."],
@@ -236,8 +237,8 @@
     var lasers = [];
     var lastFire = 0;
     var reloadTime = 500;
-    var energyToFire = 5;
-    var healthToHit = 10;
+    var energyToFire = 2;
+    var healthToHit = 4;
     var emp;
     var enemyEMP;
     var laserGraphics = new PIXI.Graphics();
@@ -438,7 +439,7 @@
             } else if(rocket.y + rocket.height/2 < innerHeight && rocket.vy > 0) {
                 rocket.y += rocket.vy;
             }
-            energyBar.width -= Math.abs(rocket.vx/100) + Math.abs(rocket.vy/100);
+            energyBar.width -= Math.abs(rocket.vx/100)*(energyToFire/5) + Math.abs(rocket.vy/100)*(energyToFire/5);
             laserGraphics.x = rocket.x;
             laserGraphics.y = rocket.y;
         }
@@ -743,7 +744,118 @@
                             enemy.laserFire = Date.now();
                         }
                     }
-                }
+                } else if(enemy.level === "mothership") {
+                    if(enemy.health < 10) {
+                        enemy.level = "nursing-mother";
+                        enemy.waitTime = Date.now();
+                        enemy.waitRate = 120000 * difficulty;
+                        enemy.backupRate = 20000;
+                        enemy.laserRate = 40000 * difficulty;
+                        enemy.health = Infinity;
+                    }
+                    if(enemy.y < 150) {
+                        enemy.y += 1;
+                    }
+                    if(enemy.x + 15 < rocket.x) {
+                        enemy.x += 5;
+                    } else if(enemy.x - 15 > rocket.x) {
+                        enemy.x -= 5;
+                    } else if(Date.now() - enemy.reloadTime > enemy.lastFire) {
+                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 190 * Math.PI/180);
+                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 195 * Math.PI/180);
+                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 185 * Math.PI/180);
+                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 200 * Math.PI/180);
+                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 170 * Math.PI/180);
+                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 160 * Math.PI/180);
+                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 180 * Math.PI/180);
+                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 175 * Math.PI/180);
+                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 165 * Math.PI/180);
+                        enemy.lastFire = Date.now();
+                    }
+
+                    if(Date.now() - enemy.laserRate > enemy.laserFire) {
+                        --enemy.energy;
+                        enemy.laser.visible = true;
+                        enemy.laser.x = enemy.x;
+                        enemy.laser.y = enemy.y;
+                        var laserRect = {x:enemy.laser.x-25,y:enemy.laser.y,width:50,height:innerHeight*2};
+                        var rocketRect = {x: rocket.x - rocket.width/2, y: rocket.y - rocket.height/2, width: rocket.width, height: rocket.height};
+                        if(hitTestRectangle(laserRect,rocketRect)) {
+                            explode(1,{x:rocket.x,y:rocket.y});
+                            if(!invincible) {
+                                healthBar.width -= 1;
+                            }
+                        }
+                        if(enemy.energy <= 0) {
+                            enemy.laser.visible = false;
+                            enemy.energy = 150;
+                            enemy.laserFire = Date.now();
+                        }
+                    }
+                } else if(enemy.level === "nursing-mother") {
+                    if(enemy.waitTime + enemy.waitRate < Date.now() && enemies.length === 1) {
+                        enemy.level = "mothership";
+                        enemy.health = 250*difficulty;
+                    }
+                    if(enemy.y > -350) {
+                        enemy.y -= 3;
+                    }
+                    if(enemy.x + 15 < rocket.x) {
+                        enemy.x += 2;
+                    } else if(enemy.x - 15 > rocket.x) {
+                        enemy.x -= 2;
+                    } else if(Date.now() - enemy.reloadTime > enemy.lastFire) {
+                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 190 * Math.PI/180);
+                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 195 * Math.PI/180);
+                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 185 * Math.PI/180);
+                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 200 * Math.PI/180);
+                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 170 * Math.PI/180);
+                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 160 * Math.PI/180);
+                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 180 * Math.PI/180);
+                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 175 * Math.PI/180);
+                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 165 * Math.PI/180);
+                        enemy.lastFire = Date.now();
+                    }
+                    if(Date.now() - enemy.backupRate > enemy.backupFire && (enemy.waitTime + enemy.waitRate > Date.now())) {
+                        var formationTypeToSummon = randInt(1,6);
+                        if(formationTypeToSummon < 2) {
+                            spawnNewFormation("drone", "V", 7);
+                        } else if(formationTypeToSummon < 3) {
+                            spawnNewFormation("drone", "N", 7);
+                        } else if(formationTypeToSummon < 4) {
+                            spawnNewEnemy(10, "easy");
+                        } else if(formationTypeToSummon < 5) {
+                            spawnNewEnemy(4, "medium");
+                        } else if(formationTypeToSummon < 6) {
+                            spawnNewEnemy(4, "medium");
+                            spawnNewEnemy(4, "easy");
+                        } else {
+                            spawnNewFormation("drone", "V", 5);
+                            spawnNewFormation("drone", "N", 5);
+                        }
+                        enemy.backupFire = Date.now();
+                    }
+                    if(Date.now() - enemy.laserRate > enemy.laserFire) {
+                        --enemy.energy;
+                        enemy.laser.visible = true;
+                        enemy.laser.x = enemy.x;
+                        enemy.laser.y = enemy.y;
+                        var laserRect = {x:enemy.laser.x-25,y:enemy.laser.y,width:50,height:innerHeight*2};
+                        var rocketRect = {x: rocket.x - rocket.width/2, y: rocket.y - rocket.height/2, width: rocket.width, height: rocket.height};
+                        if(hitTestRectangle(laserRect,rocketRect)) {
+                            explode(1,{x:rocket.x,y:rocket.y});
+                            if(!invincible) {
+                                healthBar.width -= 1;
+                            }
+                        }
+                        if(enemy.energy <= 0) {
+                            enemy.laser.visible = false;
+                            enemy.energy = 150;
+                            enemy.laserFire = Date.now();
+                        }
+                    }
+                    
+                } 
             } else {
                 enemy.alpha -= 0.05;
                 enemyEMP.visible = false;
@@ -805,7 +917,14 @@
             ++level;
             difficulty += 0.05;
             if(level < 6) {
-                spawnNewEnemy(level, "easy");
+                spawnNewEnemy(1, "mothership");
+
+                music.fade(0.5,0,2000);
+                setTimeout(function(){
+                    mothership.play();
+                    mothership.fade(0,0.5,2000);
+                }, 2000);
+                // spawnNewEnemy(level, "easy");
             } else if (level < 6.1) {
                 spawnNewEnemy(1, "boss1");
                 music.fade(0.5,0,2000);
@@ -1003,6 +1122,32 @@
                 enemy.laserFire = Date.now();
                 enemy.laserRate = 10000/difficulty;
                 enemy.energy = 150;
+                enemy.backupFire = Date.now() - randInt(0, 30000);
+                enemy.backupRate = 55000/difficulty;
+                enemy.laser = new PIXI.Graphics();
+                enemy.laser.beginFill(0xffaaaa);
+                enemy.laser.drawRect(-25,0,50, innerHeight * 2);
+                app.stage.addChild(enemy.laser);
+                enemy.laser.visible = false;
+            }  else if(type === "mothership") {
+                var enemy = new Sprite(resources["sprites/mothership.png"].texture);
+                app.stage.addChild(enemy);
+                enemy.scale.set(3);
+                enemy.anchor.set(0.5,0.5);
+                if(position) {
+                    enemy.x = position.x;
+                    enemy.y = position.y;
+                } else {
+                    enemy.x = randInt(100, innerWidth - 100);
+                    enemy.y = -600;
+                }
+                enemy.rotation = Math.PI;
+                enemy.health = 25 * difficulty;
+                enemy.lastFire = 0;
+                enemy.reloadTime = 2500/difficulty;
+                enemy.laserFire = Date.now();
+                enemy.laserRate = 5000/difficulty;
+                enemy.energy = 200;
                 enemy.backupFire = Date.now() - randInt(0, 30000);
                 enemy.backupRate = 55000/difficulty;
                 enemy.laser = new PIXI.Graphics();
