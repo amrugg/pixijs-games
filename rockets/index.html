@@ -207,6 +207,7 @@
     var missiles = [];
     curVerse = curVerse[1];
     // textDiv.innerHTML = curVerse;
+    var fullLevel = false;
     var difficulty = 0.75;
     function randInt(min, max, not) {
         if(max === undefined) {
@@ -237,8 +238,8 @@
     var lasers = [];
     var lastFire = 0;
     var reloadTime = 500;
-    var energyToFire = 2;
-    var healthToHit = 4;
+    var energyToFire = 5;
+    var healthToHit = 10;
     var emp;
     var enemyEMP;
     var laserGraphics = new PIXI.Graphics();
@@ -316,6 +317,36 @@
             explosion.scale.set(3);
         }
     }
+    function win() {
+        explode(1,{x:enemies[0].x,y:enemies[0].y});
+        for(var i = 0; i < explosions.length; i++) {
+            explosions[i].alpha -= 0.05;
+            if(explosions[i].alpha <= 0) {
+                app.stage.removeChild(explosions[i]);
+                explosions.splice(i,1);
+                --i;
+            }
+        }
+
+        for(var i = 0; i < lasers.length; i++) {
+            lasers[i].alpha -= 0.05;
+            if(lasers[i].alpha <= 0) {
+                app.stage.removeChild(lasers[i]);
+                lasers.splice(i,1);
+                --i;
+            }
+        }
+
+
+        for(var i = 0; i < missiles.length; i++) {
+            missiles[i].alpha -= 0.05;
+            if(missiles[i].alpha <= 0) {
+                app.stage.removeChild(missiles[i]);
+                missiles.splice(i,1);
+                --i;
+            }
+        }
+    }
     function die() {
         explode(1,{x:rocket.x,y:rocket.y});
         for(var i = 0; i < explosions.length; i++) {
@@ -382,7 +413,7 @@
             var closestDist = Infinity;
             for(let i = 0; i < enemies.length; i++) {
                 var enemy = enemies[i];
-                if(getDistance(rocket.x,rocket.y,enemy.x,enemy.y) < closestDist && enemy.alpha === 1) {
+                if(getDistance(rocket.x,rocket.y,enemy.x,enemy.y) < closestDist && enemy.alpha === 1 && enemy.level !== "nursing-mother" && enemy.level !== "bossattack") {
                     closestDist = getDistance(rocket.x,rocket.y,enemy.x,enemy.y)
                     closestEnemy = enemy;
                 }
@@ -404,7 +435,7 @@
             energyBar.width -= energyToFire/5;
             for(var i = 0; i < enemies.length; i++) {
                 var enemy = enemies[i];
-                if(getDistance(enemy.x,enemy.y,emp.x,emp.y) < emp.width/2) {
+                if(getDistance(enemy.x,enemy.y,emp.x,emp.y) < emp.width/2 && enemy.level !== "nursing-mother" && enemy.level !== "bossattack") {
                     explode(1,{x:enemy.x,y:enemy.y});
                     enemy.health -= 0.1;
                 }
@@ -418,7 +449,7 @@
                 var enemy = enemies[i];
                 var enemyRect = {x: enemy.x - enemy.width/2, y: enemy.y - enemy.height/2, width: enemy.width, height: enemy.height};
                 var laserRect = {x:laserGraphics.x-25,y:laserGraphics.y-innerHeight*2,width:50,height:innerHeight*2};
-                if(hitTestRectangle(laserRect,enemyRect)) {
+                if(hitTestRectangle(laserRect,enemyRect) && enemy.level !== "nursing-mother" && enemy.level !== "bossattack") {
                     explode(1,{x:enemy.x,y:enemy.y});
                     enemy.health -= 0.1;
                 }
@@ -450,7 +481,7 @@
                 break;
             }
             --missile.health;
-            if((missile.target ? missile.target.health <= 0 : true)) {
+            if((missile.target ? missile.target.health <= 0 : true) || missile.target.level === "nursing-mother" || missile.target.level === "bossattack") {
                 debugger;
                 var closestEnemy;
                 var closestDist = Infinity;
@@ -503,7 +534,7 @@
             for(var j = 0; j < enemies.length; j++) { 
                 var enemy = enemies[j];
                 var enemyRect = {x: enemy.x - enemy.width/2, y: enemy.y - enemy.height/2, width: enemy.width, height: enemy.height};
-                if(hitTestRectangle(missileRect, enemyRect) && missile.good) {
+                if(hitTestRectangle(missileRect, enemyRect) && missile.good && enemy.level !== "nursing-mother" && enemy.level !== "bossattack") {
                     enemy.health -= 3;
                     explode(10,{x:missile.x - missile.width, y:missile.y - missile.height});
                     if(enemy.health <= 0) {
@@ -550,7 +581,7 @@
             for(var j = 0; j < enemies.length; j++) { 
                 var enemy = enemies[j];
                 var enemyRect = {x: enemy.x - enemy.width/2, y: enemy.y - enemy.height/2, width: enemy.width, height: enemy.height};
-                if(hitTestRectangle(laserRect, enemyRect) && laser.good) {
+                if(hitTestRectangle(laserRect, enemyRect) && laser.good && enemy.level !== "nursing-mother" && enemy.level !== "bossattack") {
                     enemy.health--;
                     explode(1,{x:laser.x - laser.width/2, y:laser.y - laser.height/2});
                     if(enemy.health <= 0) {
@@ -745,11 +776,21 @@
                         }
                     }
                 } else if(enemy.level === "mothership") {
+                    if(enemy.alpha < 1) {
+                        enemy.alpha += 0.001;
+                    }
+                    if(enemy.scale.x < 3) {
+                        enemy.scale.x += 0.01;
+                        enemy.scale.y += 0.01;
+                    }
                     if(enemy.health < 10) {
+
                         enemy.level = "nursing-mother";
                         enemy.waitTime = Date.now();
-                        enemy.waitRate = 120000 * difficulty;
+                        enemy.waitRate = 40000 * difficulty;
                         enemy.backupRate = 20000;
+                        enemy.backupFire = Date.now() - 150000;
+                        enemy.laser.visible = false;
                         enemy.laserRate = 40000 * difficulty;
                         enemy.health = Infinity;
                     }
@@ -773,7 +814,7 @@
                         enemy.lastFire = Date.now();
                     }
 
-                    if(Date.now() - enemy.laserRate > enemy.laserFire) {
+                    if(Date.now() - enemy.laserRate > enemy.laserFire && enemy.level !== "nursing-mother") {
                         --enemy.energy;
                         enemy.laser.visible = true;
                         enemy.laser.x = enemy.x;
@@ -794,27 +835,35 @@
                     }
                 } else if(enemy.level === "nursing-mother") {
                     if(enemy.waitTime + enemy.waitRate < Date.now() && enemies.length === 1) {
-                        enemy.level = "mothership";
+                        enemy.level = "missileship";
                         enemy.health = 250*difficulty;
+                        enemy.lastFire = Date.now();
                     }
-                    if(enemy.y > -350) {
-                        enemy.y -= 3;
+                    if(enemy.alpha > 0.5) {
+                        enemy.alpha -= 0.001;
                     }
+                    if(enemy.scale.x > 1) {
+                        enemy.scale.x -= 0.01;
+                        enemy.scale.y -= 0.01;
+                    }
+                    // if(enemy.y > -350) {
+                        // enemy.y -= 3;
+                    // }
                     if(enemy.x + 15 < rocket.x) {
                         enemy.x += 2;
                     } else if(enemy.x - 15 > rocket.x) {
                         enemy.x -= 2;
                     } else if(Date.now() - enemy.reloadTime > enemy.lastFire) {
-                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 190 * Math.PI/180);
-                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 195 * Math.PI/180);
-                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 185 * Math.PI/180);
-                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 200 * Math.PI/180);
-                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 170 * Math.PI/180);
-                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 160 * Math.PI/180);
-                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 180 * Math.PI/180);
-                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 175 * Math.PI/180);
-                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 165 * Math.PI/180);
-                        enemy.lastFire = Date.now();
+                        // shootLaser("bad", {x:enemy.x, y: enemy.y}, 190 * Math.PI/180);
+                        // shootLaser("bad", {x:enemy.x, y: enemy.y}, 195 * Math.PI/180);
+                        // shootLaser("bad", {x:enemy.x, y: enemy.y}, 185 * Math.PI/180);
+                        // shootLaser("bad", {x:enemy.x, y: enemy.y}, 200 * Math.PI/180);
+                        // shootLaser("bad", {x:enemy.x, y: enemy.y}, 170 * Math.PI/180);
+                        // shootLaser("bad", {x:enemy.x, y: enemy.y}, 160 * Math.PI/180);
+                        // shootLaser("bad", {x:enemy.x, y: enemy.y}, 180 * Math.PI/180);
+                        // shootLaser("bad", {x:enemy.x, y: enemy.y}, 175 * Math.PI/180);
+                        // shootLaser("bad", {x:enemy.x, y: enemy.y}, 165 * Math.PI/180);
+                        // enemy.lastFire = Date.now();
                     }
                     if(Date.now() - enemy.backupRate > enemy.backupFire && (enemy.waitTime + enemy.waitRate > Date.now())) {
                         var formationTypeToSummon = randInt(1,6);
@@ -836,31 +885,264 @@
                         enemy.backupFire = Date.now();
                     }
                     if(Date.now() - enemy.laserRate > enemy.laserFire) {
-                        --enemy.energy;
-                        enemy.laser.visible = true;
-                        enemy.laser.x = enemy.x;
-                        enemy.laser.y = enemy.y;
-                        var laserRect = {x:enemy.laser.x-25,y:enemy.laser.y,width:50,height:innerHeight*2};
-                        var rocketRect = {x: rocket.x - rocket.width/2, y: rocket.y - rocket.height/2, width: rocket.width, height: rocket.height};
-                        if(hitTestRectangle(laserRect,rocketRect)) {
-                            explode(1,{x:rocket.x,y:rocket.y});
-                            if(!invincible) {
-                                healthBar.width -= 1;
-                            }
-                        }
-                        if(enemy.energy <= 0) {
-                            enemy.laser.visible = false;
-                            enemy.energy = 150;
-                            enemy.laserFire = Date.now();
-                        }
+                        // --enemy.energy;
+                        // enemy.laser.visible = true;
+                        // enemy.laser.x = enemy.x;
+                        // enemy.laser.y = enemy.y;
+                        // var laserRect = {x:enemy.laser.x-25,y:enemy.laser.y,width:50,height:innerHeight*2};
+                        // var rocketRect = {x: rocket.x - rocket.width/2, y: rocket.y - rocket.height/2, width: rocket.width, height: rocket.height};
+                        // if(hitTestRectangle(laserRect,rocketRect)) {
+                        //     explode(1,{x:rocket.x,y:rocket.y});
+                        //     if(!invincible) {
+                        //         healthBar.width -= 1;
+                        //     }
+                        // }
+                        // if(enemy.energy <= 0) {
+                        //     enemy.laser.visible = false;
+                        //     enemy.energy = 150;
+                        //     enemy.laserFire = Date.now();
+                        // }
                     }
                     
-                } 
+                } else if(enemy.level === "missileship") {
+                    if(enemy.alpha < 1) {
+                        enemy.alpha += 0.001;
+                    }
+                    if(enemy.scale.x < 3) {
+                        enemy.scale.x += 0.01;
+                        enemy.scale.y += 0.01;
+                    }
+                    if(enemy.health < 10) {
+                        
+                        enemy.level = "bossattack";
+                        enemy.waitTime = Date.now();
+                        enemy.waitRate = 40000 * difficulty;
+                        enemy.backupRate = 20000;
+                        enemy.backupFire = Date.now() - 150000;
+                        enemy.laser.visible = false;
+                        // enemy.laserRate = 40000 * difficulty;
+                        enemy.health = Infinity;
+                        enemy.bossesToSpawn = 3;
+
+                    }
+                    if(enemy.y < 150) {
+                        enemy.y += 1;
+                    }
+                    if(enemy.x + 15 < rocket.x) {
+                        enemy.x += 5;
+                    } else if(enemy.x - 15 > rocket.x) {
+                        enemy.x -= 5;
+                    } else if(Date.now() - enemy.reloadTime > enemy.lastFire) {
+                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 190 * Math.PI/180);
+                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 195 * Math.PI/180);
+                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 185 * Math.PI/180);
+                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 200 * Math.PI/180);
+                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 170 * Math.PI/180);
+                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 160 * Math.PI/180);
+                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 180 * Math.PI/180);
+                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 175 * Math.PI/180);
+                        shootLaser("bad", {x:enemy.x, y: enemy.y}, 165 * Math.PI/180);
+                        launchMissile("bad", {x: enemy.x - enemy.width/2, y: enemy.y - enemy.height / 2.1}, rocket, 5);
+                        launchMissile("bad", {x: enemy.x + enemy.width/2, y: enemy.y - enemy.height / 2.1}, rocket, 5);
+                        launchMissile("bad", {x: enemy.x, y: enemy.y + enemy.height / 2.1}, rocket, 5);
+                        enemy.lastFire = Date.now();
+                    }
+
+                    // if(Date.now() - enemy.laserRate > enemy.laserFire && enemy.level !== "nursing-mother") {
+                    //     --enemy.energy;
+                    //     enemy.laser.visible = true;
+                    //     enemy.laser.x = enemy.x;
+                    //     enemy.laser.y = enemy.y;
+                    //     var laserRect = {x:enemy.laser.x-25,y:enemy.laser.y,width:50,height:innerHeight*2};
+                    //     var rocketRect = {x: rocket.x - rocket.width/2, y: rocket.y - rocket.height/2, width: rocket.width, height: rocket.height};
+                    //     if(hitTestRectangle(laserRect,rocketRect)) {
+                    //         explode(1,{x:rocket.x,y:rocket.y});
+                    //         if(!invincible) {
+                    //             healthBar.width -= 1;
+                    //         }
+                    //     }
+                    //     if(enemy.energy <= 0) {
+                    //         enemy.laser.visible = false;
+                    //         enemy.energy = 150;
+                    //         enemy.laserFire = Date.now();
+                    //     }
+                    } else if(enemy.level === "bossattack") {
+                        if(enemy.alpha > 0.5) {
+                            enemy.alpha -= 0.001;
+                        }
+                        if(enemy.scale.x > 1) {
+                            enemy.scale.x -= 0.01;
+                            enemy.scale.y -= 0.01;
+                        }
+                        if(enemies.length === 1) {
+                            if(enemy.bossesToSpawn === 3) {
+                                --enemy.bossesToSpawn;
+                                spawnNewEnemy(1, "boss1");
+                            } else if(enemy.bossesToSpawn === 2) {
+                                spawnNewEnemy(1, "boss2");
+                                --enemy.bossesToSpawn;
+                            } else if(enemy.bossesToSpawn === 1) {
+                                spawnNewEnemy(1, "boss3")[0].xOffset = 200;
+                                spawnNewEnemy(1, "boss3")[0].xOffset = -200;
+                                spawnNewEnemy(1, "boss3")[0].xOffset = 0;
+                                --enemy.bossesToSpawn;
+                            } else {
+                                enemy.level = "maxxforce";
+                                enemy.health = 250*difficulty;
+                                enemy.lastFire = Date.now();
+                                enemy.empFire = Date.now();
+                                enemy.empRate = 17500/difficulty;
+                                enemy.EMPenergy = innerWidth / 10;
+                            }
+                        }
+                        if(enemy.alpha > 0.5) {
+                            enemy.alpha -= 0.001;
+                        }
+                        if(enemy.scale.x > 1) {
+                            enemy.scale.x -= 0.01;
+                            enemy.scale.y -= 0.01;
+                        }
+                        // if(enemy.y > -350) {
+                            // enemy.y -= 3;
+                        // }
+                        if(enemy.x + 15 < rocket.x) {
+                            enemy.x += 2;
+                        } else if(enemy.x - 15 > rocket.x) {
+                            enemy.x -= 2;
+                        } else if(Date.now() - enemy.reloadTime > enemy.lastFire) {
+                            // shootLaser("bad", {x:enemy.x, y: enemy.y}, 190 * Math.PI/180);
+                            // shootLaser("bad", {x:enemy.x, y: enemy.y}, 195 * Math.PI/180);
+                            // shootLaser("bad", {x:enemy.x, y: enemy.y}, 185 * Math.PI/180);
+                            // shootLaser("bad", {x:enemy.x, y: enemy.y}, 200 * Math.PI/180);
+                            // shootLaser("bad", {x:enemy.x, y: enemy.y}, 170 * Math.PI/180);
+                            // shootLaser("bad", {x:enemy.x, y: enemy.y}, 160 * Math.PI/180);
+                            // shootLaser("bad", {x:enemy.x, y: enemy.y}, 180 * Math.PI/180);
+                            // shootLaser("bad", {x:enemy.x, y: enemy.y}, 175 * Math.PI/180);
+                            // shootLaser("bad", {x:enemy.x, y: enemy.y}, 165 * Math.PI/180);
+                            // enemy.lastFire = Date.now();
+                        }
+                        // if(Date.now() - enemy.backupRate > enemy.backupFire && (enemy.waitTime + enemy.waitRate > Date.now())) {
+                        //     var formationTypeToSummon = randInt(1,6);
+                        //     if(formationTypeToSummon < 2) {
+                        //         spawnNewFormation("drone", "V", 7);
+                        //     } else if(formationTypeToSummon < 3) {
+                        //         spawnNewFormation("drone", "N", 7);
+                        //     } else if(formationTypeToSummon < 4) {
+                        //         spawnNewEnemy(10, "easy");
+                        //     } else if(formationTypeToSummon < 5) {
+                        //         spawnNewEnemy(4, "medium");
+                        //     } else if(formationTypeToSummon < 6) {
+                        //         spawnNewEnemy(4, "medium");
+                        //         spawnNewEnemy(4, "easy");
+                        //     } else {
+                        //         spawnNewFormation("drone", "V", 5);
+                        //         spawnNewFormation("drone", "N", 5);
+                        //     }
+                        //     enemy.backupFire = Date.now();
+                        // }
+                        if(Date.now() - enemy.laserRate > enemy.laserFire) {
+                            // --enemy.energy;
+                            // enemy.laser.visible = true;
+                            // enemy.laser.x = enemy.x;
+                            // enemy.laser.y = enemy.y;
+                            // var laserRect = {x:enemy.laser.x-25,y:enemy.laser.y,width:50,height:innerHeight*2};
+                            // var rocketRect = {x: rocket.x - rocket.width/2, y: rocket.y - rocket.height/2, width: rocket.width, height: rocket.height};
+                            // if(hitTestRectangle(laserRect,rocketRect)) {
+                            //     explode(1,{x:rocket.x,y:rocket.y});
+                            //     if(!invincible) {
+                            //         healthBar.width -= 1;
+                            //     }
+                            // }
+                            // if(enemy.energy <= 0) {
+                            //     enemy.laser.visible = false;
+                            //     enemy.energy = 150;
+                            //     enemy.laserFire = Date.now();
+                            // }
+                        }
+                    } else if(enemy.level === "maxxforce") {
+                        if(enemy.alpha < 1) {
+                            enemy.alpha += 0.001;
+                        }
+                        if(enemy.scale.x < 3) {
+                            enemy.scale.x += 0.01;
+                            enemy.scale.y += 0.01;
+                        }
+                        if(enemy.health < 5) {
+                            
+                            state = win;
+                            textDiv.innerHTML = "You win!";
+                        }
+                        if(enemy.y < 150) {
+                            enemy.y += 1;
+                        }
+                        if(enemy.x + 15 < rocket.x) {
+                            enemy.x += 5;
+                        } else if(enemy.x - 15 > rocket.x) {
+                            enemy.x -= 5;
+                        } else if(Date.now() - enemy.reloadTime > enemy.lastFire) {
+                            shootLaser("bad", {x:enemy.x, y: enemy.y}, 190 * Math.PI/180);
+                            shootLaser("bad", {x:enemy.x, y: enemy.y}, 195 * Math.PI/180);
+                            shootLaser("bad", {x:enemy.x, y: enemy.y}, 185 * Math.PI/180);
+                            shootLaser("bad", {x:enemy.x, y: enemy.y}, 200 * Math.PI/180);
+                            shootLaser("bad", {x:enemy.x, y: enemy.y}, 170 * Math.PI/180);
+                            shootLaser("bad", {x:enemy.x, y: enemy.y}, 160 * Math.PI/180);
+                            shootLaser("bad", {x:enemy.x, y: enemy.y}, 180 * Math.PI/180);
+                            shootLaser("bad", {x:enemy.x, y: enemy.y}, 175 * Math.PI/180);
+                            shootLaser("bad", {x:enemy.x, y: enemy.y}, 165 * Math.PI/180);
+                            launchMissile("bad", {x: enemy.x - enemy.width/2, y: enemy.y - enemy.height / 2.1}, rocket, 5);
+                            launchMissile("bad", {x: enemy.x + enemy.width/2, y: enemy.y - enemy.height / 2.1}, rocket, 5);
+                            launchMissile("bad", {x: enemy.x, y: enemy.y + enemy.height / 2.1}, rocket, 5);
+                            enemy.lastFire = Date.now();
+                        }
+
+                        if(Date.now() - enemy.empRate > enemy.empFire) {
+                            --enemy.EMPenergy;
+                            if(!enemyEMP.visible) {
+                                enemyEMP.scale.set(0.5);
+                            }
+                            enemyEMP.visible = true;
+                            enemyEMP.x = enemy.x;
+                            enemyEMP.y = enemy.y;
+                            enemyEMP.scale.x += 0.1;
+                            enemyEMP.scale.y += 0.1;
+                            enemyEMP.rotation += 0.1;
+                            if(getDistance(rocket.x,rocket.y,enemyEMP.x,enemyEMP.y) < enemyEMP.width/2) {
+                                if(!invincible) {
+                                    healthBar.width -= healthToHit/8;
+                                }
+                                explode(1,rocket);
+                            }
+                            if(enemy.EMPenergy <= 0) {
+                                enemy.EMPenergy = innerWidth/10;
+                                enemyEMP.visible = false;
+                                enemy.empFire = Date.now();
+                            }
+                        }
+                        if(Date.now() - enemy.laserRate > enemy.laserFire && enemy.level !== "nursing-mother") {
+                            --enemy.energy;
+                            enemy.laser.visible = true;
+                            enemy.laser.x = enemy.x;
+                            enemy.laser.y = enemy.y;
+                            var laserRect = {x:enemy.laser.x-25,y:enemy.laser.y,width:50,height:innerHeight*2};
+                            var rocketRect = {x: rocket.x - rocket.width/2, y: rocket.y - rocket.height/2, width: rocket.width, height: rocket.height};
+                            if(hitTestRectangle(laserRect,rocketRect)) {
+                                explode(1,{x:rocket.x,y:rocket.y});
+                                if(!invincible) {
+                                    healthBar.width -= 1;
+                                }
+                            }
+                            if(enemy.energy <= 0) {
+                                enemy.laser.visible = false;
+                                enemy.energy = 150;
+                                enemy.laserFire = Date.now();
+                            }
+                        }
+                    }
             } else {
                 enemy.alpha -= 0.05;
                 enemyEMP.visible = false;
                 if (enemy.alpha <= 0) {
-                    if(enemy.level === "boss1") {
+                    if(enemy.level === "boss1" && enemies[0].level !== "bossattack") {
                         healthBar.width = 200;
                         healthToHit -= 2;
                         energyToFire--;
@@ -870,7 +1152,7 @@
                             music.fade(0, 0.5, 3000);
                         },3000);
                     }
-                    if(enemy.level === "boss2") {
+                    if(enemy.level === "boss2" && enemies[0].level !== "bossattack") {
                         healthBar.width = 200;
                         healthToHit -= 2;
                         energyToFire--;
@@ -879,7 +1161,7 @@
                         setTimeout(function() {
                             music.fade(0, 0.5, 3000);
                         },3000);
-                    } else if(enemy.level === "boss3" && enemy.xOffset === 0) {
+                    } else if(enemy.level === "boss3" && enemy.xOffset === 0 && enemies[0].level !== "bossattack") {
                         var foundEnemy1 = false;
                         var foundEnemy2 = false;
                         enemies.forEach(function(bad) {
@@ -895,8 +1177,7 @@
                             foundEnemy2.xOffset = 0;
                         } else {
                             healthBar.width = 200;
-                            healthToHit -= 2;
-                            energyToFire--;
+                            reloadTime /= 2;
                             energyBar.width = 200;
                             boss3.fade(0.5,0, 3000);
                             setTimeout(function() {
@@ -917,14 +1198,7 @@
             ++level;
             difficulty += 0.05;
             if(level < 6) {
-                spawnNewEnemy(1, "mothership");
-
-                music.fade(0.5,0,2000);
-                setTimeout(function(){
-                    mothership.play();
-                    mothership.fade(0,0.5,2000);
-                }, 2000);
-                // spawnNewEnemy(level, "easy");
+                spawnNewEnemy(level, "easy");
             } else if (level < 6.1) {
                 spawnNewEnemy(1, "boss1");
                 music.fade(0.5,0,2000);
@@ -965,6 +1239,27 @@
                 spawnNewEnemy(1, "boss3")[0].xOffset = 200;
                 spawnNewEnemy(1, "boss3")[0].xOffset = -200;
                 spawnNewEnemy(1, "boss3")[0].xOffset = 0;
+            } else if(fullLevel) {
+                spawnNewEnemy(1, "mothership");
+                if(levelEl.selectedIndex === 0) {
+                    difficulty = 1;
+                    invincible = true;
+                } else if(levelEl.selectedIndex === 1) {
+                    difficulty = 0.25;
+                } else if(levelEl.selectedIndex === 2) {
+                    difficulty = 0.5;
+                } else if(levelEl.selectedIndex === 3) {
+                    difficulty = 0.75;
+                } else if(levelEl.selectedIndex === 4) {
+                    difficulty = 1;
+                } else if(levelEl.selectedIndex === 5) {
+                    difficulty = 1.25;
+                }
+                music.fade(0.5,0,2000);
+                setTimeout(function(){
+                    mothership.play();
+                    mothership.fade(0,0.5,2000);
+                }, 2000);
             } else {
                 spawnNewEnemy(level/3.5, "medium");
                 spawnNewEnemy(level/3.5, "easy");
@@ -1065,6 +1360,11 @@
                 enemy.health = 15 * difficulty;
                 enemy.lastFire = 0;
                 enemy.reloadTime = 5000/difficulty;
+                if(enemies[0]) {
+                    if(enemies[0].level === "bossattack") {
+                        enemy.health *= 3;
+                    }
+                }
             } else if(type === "boss2") {
                 var enemy = new Sprite(resources["sprites/boss2.png"].texture);
                 app.stage.addChild(enemy);
@@ -1087,6 +1387,11 @@
                 enemy.empRate = 17500/difficulty;
                 enemy.bursts = 25;
                 enemy.energy = innerWidth/10;
+                if(enemies[0]) {
+                    if(enemies[0].level === "bossattack") {
+                        enemy.health *= 3;
+                    }
+                }
             } else if(type === "drone") {
                 var enemy = new Sprite(resources["sprites/drone.png"].texture);
                 app.stage.addChild(enemy);
@@ -1129,7 +1434,12 @@
                 enemy.laser.drawRect(-25,0,50, innerHeight * 2);
                 app.stage.addChild(enemy.laser);
                 enemy.laser.visible = false;
-            }  else if(type === "mothership") {
+                if(enemies[0]) {
+                    if(enemies[0].level === "bossattack") {
+                        enemy.health *= 1.5;
+                    }
+                }
+            } else if(type === "mothership") {
                 var enemy = new Sprite(resources["sprites/mothership.png"].texture);
                 app.stage.addChild(enemy);
                 enemy.scale.set(3);
@@ -1142,7 +1452,7 @@
                     enemy.y = -600;
                 }
                 enemy.rotation = Math.PI;
-                enemy.health = 25 * difficulty;
+                enemy.health = 100 * difficulty;
                 enemy.lastFire = 0;
                 enemy.reloadTime = 2500/difficulty;
                 enemy.laserFire = Date.now();
@@ -1279,7 +1589,7 @@
                         } else if(Number(arr[1]) < rom18[chapter-1].length) {
                             range = arr[1] + "-" + rom18[chapter-1].length;
                         } else {
-                            range = "";
+                            fullLevel = true;
                         }
                         full = false;
                     } else {
