@@ -182,7 +182,9 @@
     healthBar.x = innerWidth - 225;
     healthBar.y = innerHeight - 100;
     app.stage.addChild(healthBar);
-
+    var canUseMissiles = false;
+    var canUseEMP = false;
+    var canUseLaser = false;
     var intro = new Howl({src: ["music/intro.mp3"], autoplay: true, loop: true, volume: 0.5});
     var music = new Howl({src: ["music/level1.mp3"], autoplay: false, loop: true, volume: 0.5});
     /// TODO: Change intro to intro after we get intro and music to battle after the intro ends.
@@ -409,7 +411,7 @@
             lastFire = Date.now();
             energyBar.width -= energyToFire;
         }
-        if(keys.m && energyBar.width >= energyToFire*7 && enemies.length) {
+        if(keys.m && energyBar.width >= energyToFire*7 && enemies.length && canUseMissiles) {
             var closestEnemy;
             var closestDist = Infinity;
             for(let i = 0; i < enemies.length; i++) {
@@ -423,7 +425,7 @@
             keys.m = false;
             energyBar.width -= energyToFire*7;
         }
-        if(keys.e && energyBar.width > 0) {
+        if(keys.e && energyBar.width > 0 && canUseEMP) {
             if(!emp.visible) {
                 emp.scale.set(0.5*scaleFactor);
             }
@@ -444,7 +446,7 @@
         } else {
             emp.visible = false;
         }
-        if(keys.l && energyBar.width > 0) {
+        if(keys.l && energyBar.width > 0 && canUseLaser) {
             laserGraphics.visible = true;
             for(var i = 0; i < enemies.length; i++) {
                 var enemy = enemies[i];
@@ -1152,6 +1154,7 @@
                         setTimeout(function() {
                             music.fade(0, 0.5, 3000);
                         },3000);
+                        canUseMissiles = true;
                     }
                     if(enemy.level === "boss2" && enemies[0].level !== "bossattack") {
                         healthBar.width = 200;
@@ -1162,6 +1165,7 @@
                         setTimeout(function() {
                             music.fade(0, 0.5, 3000);
                         },3000);
+                        canUseEMP = true;
                     } else if(enemy.level === "boss3" && enemy.xOffset === 0 && enemies[0].level !== "bossattack") {
                         var foundEnemy1 = false;
                         var foundEnemy2 = false;
@@ -1185,6 +1189,7 @@
                                 music.fade(0, 0.5, 3000);
                             },3000);
                         }
+                        canUseLaser = true;
                     }
                     if(enemy.laser) {
                         enemy.laser.visible = false;
