@@ -1,0 +1,432 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Direction ship</title>
+</head>
+    <style>* {padding: 0; margin: 0}</style>
+    <script src="pixi/pixi.min.js"></script>
+    <script src="usefulFunctions.js"></script>
+<body>
+  <script type="text/javascript">
+    "use strict";
+    
+    var params = getParams();
+    function getParams() {
+      var params = {};
+      location.search.substr(1).split("&").forEach(function(el) {
+        var data = el.replace(/\+/g, " ").split("=");
+        params[decodeURIComponent(data[0])] = data[1] ? decodeURIComponent(data[1]) : true;
+      });
+      return params;
+    }
+    PIXI.utils.skipHello();
+    PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
+    let Application = PIXI.Application,
+        Container = PIXI.Container,
+        loader = PIXI.loader,
+        resources = PIXI.loader.resources,
+        TextureCache = PIXI.utils.TextureCache,
+        Sprite = PIXI.Sprite,
+        Rectangle = PIXI.Rectangle,
+        Graphics = PIXI.Graphics;
+    let app = new Application({ 
+        width: 800,
+        height: 800,              
+        antialias: true,
+        transparent: true,
+        resolution: 1
+      }
+    );
+    app.renderer.backgroundColor = 0x55DD55;
+    /// Fill the screen 
+    app.renderer.view.style.position = "absolute";
+    app.renderer.view.style.display = "block";
+    app.renderer.autoResize = true;
+    app.renderer.resize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(app.view);
+    loader.add(["sprites/landscape/grass.png", "sprites/cuddle/cuddle.png", "sprites/thorn/thorn1.png", "sprites/ui/Health.png", "sprites/ui/Magic.png", "sprites/ui/goldenframe.png", "sprites/weapon/fist.png"]).load(setup);
+    var state;
+    var keys = {};
+    var mouseX,mouseY;
+    var landscape;
+    var landscapeTiles;
+    var robot;
+    var animations = [];
+    var enemies = [];
+    var shockWaveGraphics;
+    var healthBar;
+    var energyBar;
+    // app.stage.sortableChildren = true;
+    /// Health Width: 186
+    /// Energy Width: 186
+    function setup() {
+        landscapeTiles = {
+            0: resources["sprites/landscape/grass.png"].texture
+        }
+        landscape = new Container();
+        createNewMap([[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]])
+        app.stage.addChild(landscape);
+
+        var frame1 = new Sprite(resources["sprites/ui/goldenframe.png"].texture);
+        frame1.y = innerHeight - 50;
+        frame1.x = 50;
+        frame1.scale.set(2)
+        frame1.zIndex = 1000;
+        var frame2 = new Sprite(resources["sprites/ui/goldenframe.png"].texture);
+        frame2.y = innerHeight - 50;
+        frame2.x = innerWidth - frame2.width*2 - 50;
+        frame2.scale.set(2);
+        frame2.zIndex = 1000;
+        app.stage.addChild(frame1);
+        app.stage.addChild(frame2);
+        healthBar = new Sprite(resources["sprites/ui/Health.png"].texture);
+        healthBar.x = frame1.x + 12;
+        healthBar.y = innerHeight - 40;
+
+        energyBar = new Sprite(resources["sprites/ui/Magic.png"].texture);
+        energyBar.x = frame2.x + 12;
+        energyBar.y = innerHeight - 40;
+        app.stage.addChild(healthBar);
+        app.stage.addChild(energyBar);
+        healthBar.scale.set(2);
+        energyBar.scale.set(2);
+
+        shockWaveGraphics = new PIXI.Graphics();
+        shockWaveGraphics.beginFill(0x5555FF);
+        shockWaveGraphics.drawCircle(0,0,30);
+        shockWaveGraphics.endFill();
+        shockWaveGraphics.visible = false;
+        shockWaveGraphics.alpha = 0.75;
+        app.stage.addChild(shockWaveGraphics);
+
+        var robotTexture = TextureCache["sprites/cuddle/cuddle.png"];
+        var robotRectangle = new Rectangle(0,0,64,64);
+        robotTexture.frame = robotRectangle;
+        robot = new Sprite(robotTexture);
+        app.stage.addChild(robot);
+        robot.anchor.set(0.5,0.95);
+        robot.scale.set(2);
+        robot.x = innerWidth/2 - 64;
+        robot.y = innerHeight/2 - 64;
+        robot.state = "free";
+        robot.colRect = {x:0, y:0, width: 32, height: 48}
+
+        robot.weapon = new Sprite(resources["sprites/weapon/fist.png"].texture);
+        robot.weapon.scale.set(2);
+        robot.weapon.visible = false;
+        robot.weapon.anchor.set(0.5,0.5);
+        app.stage.addChild(robot.weapon);
+        robot.level = 1;
+        robot.attack = 3;
+        robot.defense = 2;
+        robot.specialAttack = 3;
+        robot.health = 20;
+        robot.maxHealth = 20;
+        robot.energy = 20;
+        robot.maxEnergy = 20;
+        robot.specialCost = 1;
+
+        robot.animation = {y: 0, x: 0, length: 4, speed: 7, frameCount: 0, texture: robotTexture, rectangle: robotRectangle, size: 64, beginX: 1};
+        animations.push(robot.animation);
+
+        spawnNewThorn(0,1000);
+        spawnNewThorn(100,900);
+        spawnNewThorn(200,800);
+        spawnNewThorn(300,700);
+        spawnNewThorn(400,600);
+        spawnNewThorn(500,500);
+        spawnNewThorn(600,400);
+        spawnNewThorn(700,300);
+        spawnNewThorn(800,200);
+        spawnNewThorn(900,100);
+        spawnNewThorn(1000,0);
+
+        state = play;
+        app.ticker.add(delta => gameLoop(delta));
+    }
+    function spawnNewThorn(x,y) {
+        var thornTexture = TextureCache["sprites/thorn/thorn1.png"];
+        var thornRectangle = new Rectangle(0,0,64,64);
+        thornTexture.frame = thornRectangle;
+        var thorn = new Sprite(thornTexture);
+        app.stage.addChild(thorn);
+        thorn.scale.set(2);
+        thorn.x = x;
+        thorn.y = x;
+        thorn.myX = x;
+        thorn.myY = y;
+        thorn.anchor.set(0.5,0.85);
+        thorn.colRect = {x:0, y:0, width: 16, height: 48};
+        thorn.state = "free";
+        thorn.animation = {y: 0, x: 0, length: 13, speed: 4, frameCount: 0, texture: thornTexture, rectangle: thornRectangle, size: 64, beginX: 0};
+        enemies.push(thorn);
+        animations.push(thorn.animation);
+
+        thorn.level = 1;
+        thorn.attack = 2;
+        thorn.defense = 1;
+        thorn.health = 10;
+    }
+    function gameLoop(delta) {
+      state(delta)
+    }
+    function createNewMap(map) {
+        for(var i = 0; i < map.length; i++) {
+            var curRow = map[i];
+            for(var j = 0; j < curRow.length; j++) {
+                var tile = new Sprite(landscapeTiles[curRow[j]]);
+                tile.scale.set(2)
+                tile.x = j * 128;
+                tile.y = i * 128;
+                landscape.addChild(tile);
+            }
+        }
+    }
+    var globalX = 0;
+    var globalY = 0;
+    function play(){
+        robot.colRect.x = robot.x;
+        robot.colRect.y = robot.y;
+        enemies.forEach(function(enemy,i) {
+            enemy.x = enemy.myX - globalX;
+            enemy.y = enemy.myY - globalY;
+            enemy.colRect.x = enemy.x;
+            enemy.colRect.y = enemy.y;
+
+            if(robot.state === "shock") {
+                if(getDistance(enemy.x,enemy.y, robot.x, robot.y) < shockWaveGraphics.scale.x * 30 && !enemy.IsBouncingBack) {
+                    enemy.IsBouncingBack = true;
+                    enemy.health -= robot.specialAttack;
+                    console.log(enemy.IsBouncingBack);
+                    if(enemy.animation.x <= 5 || enemy.animation.x >= 13) {
+                        enemy.animation.x = 6;
+                    }
+                }
+            }
+            if(hitTestRectangle(enemy.colRect, robot.weapon)) {
+                enemy.health -= robot.attack/enemy.defense;
+            }
+            if(enemy.animation.x > 5 && enemy.animation.x < 13) {
+                console.log(enemy.animation.x);
+                var xDiff = robot.x - enemy.x;
+                var yDiff = robot.y - enemy.y;
+                var scalar = Math.sqrt(xDiff**2 + yDiff**2);
+                var scaledXDiff = xDiff/scalar;
+                var scaledYDiff = yDiff/scalar;
+                if(enemy.IsBouncingBack) {
+                    enemy.myX -= scaledXDiff*3;
+                    enemy.myY -= scaledYDiff*3;
+                } else if(hitTestRectangle(enemy.colRect, robot.colRect)) {
+                    enemy.IsBouncingBack = true;
+                    robot.health -= enemy.attack/robot.defense;
+                    healthBar.width = 186 * (robot.health/robot.maxHealth);
+                    enemy.myX -= scaledXDiff*3;
+                    enemy.myY -= scaledYDiff*3;
+                } else {
+                    enemy.myX += scaledXDiff*3;
+                    enemy.myY += scaledYDiff*3;
+                }
+            } else {
+                enemy.IsBouncingBack = false;
+            }
+
+            if(enemy.health <= 0) {
+                enemy.visible = false;
+                app.stage.removeChild(enemy);
+                enemy.animation.rip = true;
+                enemies.splice(i,1);
+            }
+        });
+        var vx = 0;
+        var vy = 0;
+        if(robot.state === "free") {
+            if(keys.s && robot.energy >= robot.specialCost) {
+                robot.energy -= robot.specialCost;
+                energyBar.width = 186 * (robot.energy/robot.maxEnergy);
+                robot.state = "shock";
+                robot.animation.y = 8;
+                robot.animation.x = 1;
+                robot.animation.speed = 4;
+                robot.animation.paused = false;
+                shockWaveGraphics.visible = true;
+                shockWaveGraphics.scale.set(1);
+                shockWaveGraphics.x = robot.x;
+                shockWaveGraphics.y = robot.y;
+            } else if(keys[" "]) {
+                robot.animation.paused = false;
+                robot.animation.x = 1;
+                robot.state = "attack";
+                robot.animation.y += 4;
+                robot.animation.destructive = function() {
+                    robot.state = "free";
+                    robot.animation.y -= 4;
+                    robot.animation.paused = true;
+                    robot.animation.x = 0;
+                    robot.animation.destructive = false;
+                    robot.weapon.visible = false;
+                    robot.animation.speed = 7;
+                }
+                robot.weapon.visible = true;
+                robot.weapon.x = robot.x;
+                robot.weapon.y = robot.y - robot.height/1.75;
+                robot.animation.speed = 4;
+            } else if(keys.ArrowUp) {
+                vy = -5;
+                robot.animation.y = 1;
+                robot.animation.paused = false;
+            } else if(keys.ArrowDown) {
+                vy = 5;
+                robot.animation.y = 0;
+                robot.animation.paused = false;
+            } else if(keys.ArrowLeft) {
+                vx = -5;
+                robot.animation.y = 2;
+                robot.animation.paused = false;
+            } else if(keys.ArrowRight) {
+                vx = 5;
+                robot.animation.y = 3;
+                robot.animation.paused = false;
+            } else {
+                robot.animation.x = 0;
+                robot.animation.paused = true;
+            }
+        } else if(robot.state === "shock") {
+            shockWaveGraphics.scale.x += 0.1;
+            shockWaveGraphics.scale.y += 0.1;
+            if(shockWaveGraphics.scale.x > 5) {
+                robot.state = "free";
+                robot.animation.y = 0;
+                robot.animation.paused = true;
+                robot.animation.x = 0;
+                shockWaveGraphics.scale.set(1);
+                shockWaveGraphics.visible = false;
+                robot.animation.speed = 7;
+            }
+        } else if(robot.state === "attack") {
+            if(robot.animation.y === 5) {
+                robot.weapon.y -= 5;
+                robot.weapon.rotation = Math.PI/2;
+            } else if(robot.animation.y === 6) {
+                robot.weapon.rotation = 0;
+                robot.weapon.x -= 5;
+            } else if(robot.animation.y === 7) {
+                robot.weapon.x += 5;
+                robot.weapon.rotation = Math.PI;
+            } else if(robot.animation.y === 4) {
+                robot.weapon.y += 5;
+                robot.weapon.rotation = -Math.PI/2;
+            }
+        }
+        animations.forEach(function(animation){
+            if(animation.paused) {
+                animation.rectangle.x = animation.x * animation.size;
+                animation.rectangle.y = animation.y * animation.size;
+                animation.rectangle.width = animation.size;
+                animation.rectangle.height = animation.size;
+                animation.texture.frame = animation.rectangle;
+                return;
+            }
+            if(animation.frameCount%animation.speed === 0) {
+                if(animation.x >= animation.length) {
+                    if(animation.destructive) {
+                        animation.destructive();
+                        return;
+                    } else {
+                        animation.x = animation.beginX;
+                    }
+                }
+                animation.rectangle.x = animation.x * animation.size;
+                animation.rectangle.y = animation.y * animation.size;
+                animation.rectangle.width = animation.size;
+                animation.rectangle.height = animation.size;
+                animation.texture.frame = animation.rectangle;
+                ++animation.x;
+            }
+            ++animation.frameCount;
+        });
+        if(vx < 0) {
+            if(landscape.x < 0 && robot.x <= innerWidth/2) {
+                landscape.x -= vx;
+                if(landscape.x > 0) {
+                    landscape.x = 0;
+                }
+                globalX += vx;
+            } else {
+                robot.x += vx;
+            }
+        } else if(vx > 0) {
+            if(landscape.width > innerWidth - landscape.x && robot.x >= innerWidth/2) {
+                landscape.x -= vx;
+                globalX += vx;
+            } else {
+                robot.x += vx;
+            }
+        }
+        if(vy < 0) {
+            if(landscape.y < 0 && robot.y <= innerHeight/2) {
+                landscape.y -= vy;
+                globalY += vy;
+                if(landscape.y > 0) {
+                    landscape.y = 0;
+                }
+            } else {
+                robot.y += vy;
+            }
+        } else if(vy > 0) {
+            if(landscape.height > innerHeight - landscape.y && robot.y >= innerHeight/2) {
+                landscape.y -= vy;
+                globalY += vy;
+            } else {
+                robot.y += vy;
+            }
+        }
+    }
+    function press(key){
+        if(keys[key]){
+            keys[key] = false;
+            return true;
+        }
+        return false;
+    }
+    addEventListener("mousedown",function(e){
+        if(e.button == 0) {
+            keys.mouse = true;
+        } else if(e.button == 2) {
+            keys.rightMouse = true;
+        }
+        mouseX = e.pageX;
+        mouseY = e.pageY;
+    });
+    addEventListener("mouseup",function(e){
+        if(e.button == 0) { 
+            keys.mouse = false;
+        } else if(e.button == 2) {
+            keys.rightMouse = true;
+        }
+    });
+    addEventListener("blur", function (){
+        keys = {};
+    });
+    addEventListener("mousemove",function(e){
+        mouseX = e.pageX;
+        mouseY = e.pageY;
+    });
+    addEventListener("keydown", function (e){
+        keys[e.key] = true;
+    });
+    addEventListener("keyup", function (e){
+        keys[e.key] = false;
+    });
+  </script>
+</body>
+</html>
