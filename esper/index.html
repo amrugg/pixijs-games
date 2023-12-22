@@ -45,7 +45,7 @@
     app.renderer.autoResize = true;
     app.renderer.resize(window.innerWidth, window.innerHeight);
     document.body.appendChild(app.view);
-    loader.add(["sprites/landscape/grass.png", "sprites/cuddle/cuddle.png", "sprites/thorn/thorn1.png", "sprites/ui/Health.png", "sprites/ui/Magic.png", "sprites/ui/goldenframe.png", "sprites/weapon/fist.png"]).load(setup);
+    loader.add(["sprites/landscape/grass.png", "sprites/cuddle/cuddle.png", "sprites/thorn/thorn1.png", "sprites/ui/Health.png", "sprites/ui/Magic.png", "sprites/ui/goldenframe.png", "sprites/weapon/laser.png"]).load(setup);
     var state;
     var keys = {};
     var mouseX,mouseY;
@@ -57,6 +57,7 @@
     var shockWaveGraphics;
     var healthBar;
     var energyBar;
+    var projectiles = [];
     // app.stage.sortableChildren = true;
     /// Health Width: 186
     /// Energy Width: 186
@@ -119,13 +120,10 @@
         robot.x = innerWidth/2 - 64;
         robot.y = innerHeight/2 - 64;
         robot.state = "free";
-        robot.colRect = {x:0, y:0, width: 32, height: 48}
+        robot.colRect = {x:0, y:0, width: 32, height: 48};
 
-        robot.weapon = new Sprite(resources["sprites/weapon/fist.png"].texture);
-        robot.weapon.scale.set(2);
-        robot.weapon.visible = false;
-        robot.weapon.anchor.set(0.5,0.5);
-        app.stage.addChild(robot.weapon);
+        robot.lastFire = 0;
+        robot.cooldown = 100;
         robot.level = 1;
         robot.attack = 3;
         robot.defense = 2;
@@ -140,16 +138,40 @@
         animations.push(robot.animation);
 
         spawnNewThorn(0,1000);
-        spawnNewThorn(100,900);
-        spawnNewThorn(200,800);
-        spawnNewThorn(300,700);
-        spawnNewThorn(400,600);
-        spawnNewThorn(500,500);
-        spawnNewThorn(600,400);
-        spawnNewThorn(700,300);
-        spawnNewThorn(800,200);
-        spawnNewThorn(900,100);
-        spawnNewThorn(1000,0);
+        // spawnNewThorn(100,900);
+        // spawnNewThorn(200,800);
+        // spawnNewThorn(300,700);
+        // spawnNewThorn(400,600);
+        // spawnNewThorn(500,500);
+        // spawnNewThorn(600,400);
+        // spawnNewThorn(700,300);
+        // spawnNewThorn(800,200);
+        // spawnNewThorn(900,100);
+        // spawnNewThorn(1000,0);
+
+        // spawnNewThorn(1000,1000);
+        // spawnNewThorn(1100,900);
+        // spawnNewThorn(1200,800);
+        // spawnNewThorn(1300,700);
+        // spawnNewThorn(1400,600);
+        // spawnNewThorn(1500,500);
+        // spawnNewThorn(1600,400);
+        // spawnNewThorn(1700,300);
+        // spawnNewThorn(1800,200);
+        // spawnNewThorn(1900,100);
+        // spawnNewThorn(2000,0);
+
+        // spawnNewThorn(0,0);
+        // spawnNewThorn(100,100);
+        // spawnNewThorn(200,200);
+        // spawnNewThorn(300,300);
+        // spawnNewThorn(400,400);
+        // spawnNewThorn(500,500);
+        // spawnNewThorn(600,600);
+        spawnNewThorn(900,900);
+        // spawnNewThorn(1000,1000);
+        // spawnNewThorn(1100,1100);
+        // spawnNewThorn(1200,1200);
 
         state = play;
         app.ticker.add(delta => gameLoop(delta));
@@ -166,7 +188,7 @@
         thorn.myX = x;
         thorn.myY = y;
         thorn.anchor.set(0.5,0.85);
-        thorn.colRect = {x:0, y:0, width: 16, height: 48};
+        thorn.colRect = {x:0, y:0, width: 48, height: 48};
         thorn.state = "free";
         thorn.animation = {y: 0, x: 0, length: 13, speed: 4, frameCount: 0, texture: thornTexture, rectangle: thornRectangle, size: 64, beginX: 0};
         enemies.push(thorn);
@@ -174,8 +196,8 @@
 
         thorn.level = 1;
         thorn.attack = 2;
-        thorn.defense = 1;
-        thorn.health = 10;
+        thorn.defense = 122;
+        thorn.health = 2;
     }
     function gameLoop(delta) {
       state(delta)
@@ -195,29 +217,26 @@
     var globalX = 0;
     var globalY = 0;
     function play(){
+        handleProjectiles();
         robot.colRect.x = robot.x;
         robot.colRect.y = robot.y;
         enemies.forEach(function(enemy,i) {
             enemy.x = enemy.myX - globalX;
             enemy.y = enemy.myY - globalY;
             enemy.colRect.x = enemy.x;
-            enemy.colRect.y = enemy.y;
+            enemy.colRect.y = enemy.y - 60;
 
             if(robot.state === "shock") {
                 if(getDistance(enemy.x,enemy.y, robot.x, robot.y) < shockWaveGraphics.scale.x * 30 && !enemy.IsBouncingBack) {
                     enemy.IsBouncingBack = true;
                     enemy.health -= robot.specialAttack;
-                    console.log(enemy.IsBouncingBack);
                     if(enemy.animation.x <= 5 || enemy.animation.x >= 13) {
                         enemy.animation.x = 6;
                     }
                 }
             }
-            if(hitTestRectangle(enemy.colRect, robot.weapon)) {
-                enemy.health -= robot.attack/enemy.defense;
-            }
             if(enemy.animation.x > 5 && enemy.animation.x < 13) {
-                console.log(enemy.animation.x);
+                console.log(enemy.animation.x, enemy.animation.rectangle.x);
                 var xDiff = robot.x - enemy.x;
                 var yDiff = robot.y - enemy.y;
                 var scalar = Math.sqrt(xDiff**2 + yDiff**2);
@@ -262,23 +281,49 @@
                 shockWaveGraphics.scale.set(1);
                 shockWaveGraphics.x = robot.x;
                 shockWaveGraphics.y = robot.y;
-            } else if(keys[" "]) {
+            } else if(keys[" "] && Date.now() - robot.cooldown > robot.lastFire) {
                 robot.animation.paused = false;
                 robot.animation.x = 1;
                 robot.state = "attack";
-                robot.animation.y += 4;
+                robot.animation.y += 9;
                 robot.animation.destructive = function() {
                     robot.state = "free";
-                    robot.animation.y -= 4;
+                    robot.animation.y -= 9;
                     robot.animation.paused = true;
                     robot.animation.x = 0;
                     robot.animation.destructive = false;
-                    robot.weapon.visible = false;
                     robot.animation.speed = 7;
+
+                    var laser = new Sprite(resources["sprites/weapon/laser.png"].texture);
+                    laser.scale.set(2);
+                    laser.anchor.set(0.5,0.5);
+                    laser.myX = robot.x + globalX;
+                    laser.myY = robot.y - robot.height * 0.95*0.5 + globalY;
+                    laser.vx = 0;
+                    laser.vy = 0;
+
+                    laser.damage = robot.attack;
+                    laser.type = "good";
+                    laser.colType = "rect";
+                    if(robot.animation.y === 0) {
+                        laser.vy = 20;
+                        laser.myY += 50;
+                    } else if(robot.animation.y === 1) {
+                        laser.vy = -20;
+                        laser.myY -= 50;
+                    } else if(robot.animation.y === 2) {
+                        laser.vx = -20;
+                        laser.myX -= 50;
+                        laser.rotation = Math.PI/2;
+                    } else if(robot.animation.y === 3) {
+                        laser.vx = 20;
+                        laser.myX += 50;
+                        laser.rotation = Math.PI/2;
+                    }
+                    app.stage.addChild(laser);
+                    projectiles.push(laser);
+                    robot.lastFire = Date.now();
                 }
-                robot.weapon.visible = true;
-                robot.weapon.x = robot.x;
-                robot.weapon.y = robot.y - robot.height/1.75;
                 robot.animation.speed = 4;
             } else if(keys.ArrowUp) {
                 vy = -5;
@@ -313,19 +358,6 @@
                 robot.animation.speed = 7;
             }
         } else if(robot.state === "attack") {
-            if(robot.animation.y === 5) {
-                robot.weapon.y -= 5;
-                robot.weapon.rotation = Math.PI/2;
-            } else if(robot.animation.y === 6) {
-                robot.weapon.rotation = 0;
-                robot.weapon.x -= 5;
-            } else if(robot.animation.y === 7) {
-                robot.weapon.x += 5;
-                robot.weapon.rotation = Math.PI;
-            } else if(robot.animation.y === 4) {
-                robot.weapon.y += 5;
-                robot.weapon.rotation = -Math.PI/2;
-            }
         }
         animations.forEach(function(animation){
             if(animation.paused) {
@@ -337,6 +369,7 @@
                 return;
             }
             if(animation.frameCount%animation.speed === 0) {
+                ++animation.x;
                 if(animation.x >= animation.length) {
                     if(animation.destructive) {
                         animation.destructive();
@@ -350,7 +383,6 @@
                 animation.rectangle.width = animation.size;
                 animation.rectangle.height = animation.size;
                 animation.texture.frame = animation.rectangle;
-                ++animation.x;
             }
             ++animation.frameCount;
         });
@@ -390,6 +422,47 @@
                 robot.y += vy;
             }
         }
+    }
+
+    function handleProjectiles() {
+        projectiles.forEach(function(particle,i) {
+            particle.myX += particle.vx;
+            particle.myY += particle.vy;
+
+            particle.x = particle.myX - globalX;
+            particle.y = particle.myY - globalY;
+
+            if(particle.type === "good") {
+                if(particle.colType === "rect") {
+                    var colRect = {x: particle.x, y: particle.y, width:particle.width, height:particle.height};
+                    if(particle.rotation === Math.PI/2) {
+                        colRect.height = particle.width;
+                        colRect.width = particle.height;
+                    }
+                    enemies.forEach(function(enemy) {
+                        if(hitTestRectangle(enemy.colRect, colRect)) {
+                            
+
+                            enemy.IsBouncingBack = true;
+                            enemy.health -= robot.attack/enemy.defense;
+                            if(enemy.animation.x <= 5 || enemy.animation.x >= 13) {
+                                enemy.animation.x = 6;
+                            }
+
+                            app.stage.removeChild(particle);
+                            projectiles.splice(i,1);
+                            return;
+                        }
+                    });
+                }
+            }
+            if(particle.x < -1000 || particle.x > innerWidth + 1000 || particle.y > innerHeight + 1000 || particle.y < -1000) {
+
+                app.stage.removeChild(particle);
+                projectiles.splice(i,1);
+                return;
+            }
+        });
     }
     function press(key){
         if(keys[key]){
