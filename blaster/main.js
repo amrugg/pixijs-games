@@ -46,7 +46,8 @@ var player;
 var enemies = [];
 var explosions = [];
 var globalFrameCount = 0;
-
+var healthBar;
+var healthHolder;
 /// Scale the sprites for different screens
 var scalar = innerHeight/800;
 
@@ -73,11 +74,37 @@ function setup() {
     player.vx = 0;
     player.vy = 0;
     player.speed = 5 * scalar;
+    player.health = 10;
+    player.maxHealth = 10;
+    player.colRect = {
+        x: player.x,
+        y: player.y,
+        width: player.width * 0.75,
+        height: player.height * 0.9,
+    }
     player.plasma = {
         cooldown: 30,
         lastTime: -1000,
         damage: 1,
     }
+
+
+    healthHolder = new PIXI.Graphics();
+    healthHolder.lineStyle(5, 0xFF0000,10);
+    healthHolder.beginFill(0x000015);
+    healthHolder.drawRect(0,0,200*scalar,25*scalar)
+    app.stage.addChild(healthHolder);
+    healthHolder.x = canvasLength - 225*scalar;
+    healthHolder.y = canvasLength - 100*scalar;
+    healthBar = new PIXI.Graphics();
+    healthBar.lineStyle(5, 0xFF0000,10);
+    healthBar.beginFill(0xFF0000, 10);
+    healthBar.drawRect(0,0,200*scalar,25*scalar);
+    healthBar.x = canvasLength - 225*scalar;
+    healthBar.y = canvasLength - 100*scalar;
+    healthBar.maxWidth = 200*scalar;
+    app.stage.addChild(healthBar);
+
 
     prepareLevel(level1);
     state = play;
@@ -112,6 +139,7 @@ function spawnNewEnemy(type, level, positions) {
         enemy.rotation = pointInDirection(properties.direction)
         
         enemy.health = randInt(properties.healthRange.min, properties.healthRange.max);
+        enemy.damage = properties.damage;
         enemy.combo = {
             active: properties.combo.active,
             curTicks: properties.combo.curTicks,
@@ -212,10 +240,26 @@ function handleLasers() {
                     --i;
                     --len;
                     explode(1,{x: laser.x, y: laser.y-10},20);
-                    console.log(laser.damage);
                     enemy.health -= laser.damage;
                 }
             });
+        } else {
+            var playerRect = {
+                x: player.x,
+                y: player.y,
+                width: player.colRect.width,
+                height: player.colRect.height
+            }
+            if(hitTestRectangle(laser,playerRect)) {
+                app.stage.removeChild(laser);
+                lasers.splice(i,1);
+                --i;
+                --len;
+                debugger;
+                explode(1,{x: laser.x, y: laser.y-10},20);
+                player.health -= laser.damage;
+                healthBar.width = (player.health * healthBar.maxWidth) / player.maxHealth;
+            }
         }
     }
 }
