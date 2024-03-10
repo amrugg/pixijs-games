@@ -111,7 +111,7 @@ function spawnNewEnemy(type, level, positions) {
         enemy.y = enemy.myY;
         enemy.rotation = pointInDirection(properties.direction)
         
-        enemy.health = properties.health;
+        enemy.health = randInt(properties.healthRange.min, properties.healthRange.max);
         enemy.combo = {
             active: properties.combo.active,
             curTicks: properties.combo.curTicks,
@@ -157,7 +157,7 @@ function play(){
 
     if(userInput.fire) {
         if(player.plasma.lastTime + player.plasma.cooldown < globalFrameCount) {
-            fireLaser(player.x, player.y - player.height/2, 0, 10, "blue");
+            fireLaser(player.x, player.y - player.height/2, 0, 10, "blue", player.plasma.damage);
             player.plasma.lastTime = globalFrameCount;
         }
     }
@@ -212,6 +212,8 @@ function handleLasers() {
                     --i;
                     --len;
                     explode(1,{x: laser.x, y: laser.y-10},20);
+                    console.log(laser.damage);
+                    enemy.health -= laser.damage;
                 }
             });
         }
@@ -222,10 +224,15 @@ function handleEnemies() {
     var len = enemies.length;
     for(i = 0; i < len; i++) {
         var curEnemy = enemies[i];
-        handleEnemyBehaviors[curEnemy.type](curEnemy);
+        var cut = handleEnemyBehaviors[curEnemy.type](curEnemy);
+        if(cut) {
+            enemies.splice(i,1);
+            --i;
+            --len;
+        }
     }
 }
-function fireLaser(x, y, direction, speed, type) {
+function fireLaser(x, y, direction, speed, type, damage) {
     var laser = new Sprite(keysOfSprites[type + "_plasma"]);
     laser.scale.set(2 * scalar);
     laser.good = type === "blue";
@@ -235,6 +242,7 @@ function fireLaser(x, y, direction, speed, type) {
     laser.rotation = pointInDirection(direction);
     laser.speed = speed * scalar;
     laser.direction = direction;
+    laser.damage = damage;
     app.stage.addChild(laser);
     lasers.push(laser);
     return laser;

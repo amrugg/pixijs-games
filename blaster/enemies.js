@@ -1,9 +1,15 @@
 var handleEnemyBehaviors = {
     "enemy-1-1": function(enemy) {
         enemy.y = enemy.myY - globalY;
+        if(enemy.health <= 0) {
+            explode(20,enemy, 50);
+            app.stage.removeChild(enemy);
+            /// Return true; the ship was destroyed and should be removed from the array
+            return true;
+        }
         if(enemy.combo.active) {
             if(enemy.combo.lastFire + enemy.combo.fireCooldown < globalFrameCount) {
-                fireLaser(enemy.x, enemy.y + enemy.height/2 - 10 * scalar, 180, 10, "red");
+                fireLaser(enemy.x, enemy.y + enemy.height/2 - 10 * scalar, 180, 10, "red", enemy.damage);
                 enemy.combo.lastFire = globalFrameCount;
                 if(--enemy.combo.curTicks < 1) {
                     enemy.combo.active = false;
@@ -16,13 +22,17 @@ var handleEnemyBehaviors = {
                 enemy.combo.curTicks = enemy.combo.maxTicks;
             }
         }
+
+        /// Return false; the ship should not be removed from the array
+        return false;
     }
 }
 var enemyProperties = {
     "enemy-1-1": {
-        health: 5,
+        healthRange: {min: 1, max: 3},
         scale: 2,
         direction: 180,
+        damage: 1,
         combo: {
             active: false,
             curTicks: 0,
