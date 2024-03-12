@@ -31,9 +31,9 @@ let app = new Application({
 app.renderer.view.style.left = (innerWidth - innerHeight)/2 + "px";
 app.renderer.view.style.position = "absolute";
 app.renderer.view.style.display = "block";
-app.renderer.backgroundColor = 0;
+app.renderer.backgroundColor = 0x111111;
 document.body.appendChild(app.view);
-
+///
 /// Defining variables
 var spritesToLoad = ["sprites/rocket.png", "sprites/laser.png", "sprites/enemy-laser.png", "sprites/lvl1/enemy1.png", "sprites/exp1.png", "sprites/exp2.png", "sprites/exp3.png"];
 var spriteNames = ["player", "blue_plasma", "red_plasma", "enemy-1-1", "exp_1", "exp_2", "exp_3"];
@@ -59,6 +59,29 @@ var keyMappings = {up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "
 
 /// Define globalY
 var globalY = 0;
+
+/// Access the sidebar section for the verses
+var sidebar = document.getElementById("sidebar");
+sidebar.style.position = "absolute";
+sidebar.style.zIndex = "100";
+sidebar.style.width = ((innerWidth - canvasLength)/2 - 5*scalar) + "px";
+sidebar.style.left = ((innerWidth - canvasLength)/2 + canvasLength + 2.5*scalar) + "px";
+
+/// Make the verse text
+var textDiv = document.createElement("div");
+textDiv.style.position = "relative";
+textDiv.innerHTML = "God, who at sundry times and in diverse manners spake in time past unto the fathers by the prophets,"
+textDiv.style.fontSize = "30px";
+textDiv.style.color = "white";
+sidebar.appendChild(textDiv);
+
+/// Make the input number text
+var numDiv = document.createElement("div");
+numDiv.style.position = "absolute";
+numDiv.style.top = (innerHeight - 50) + "px";
+numDiv.style.fontSize = "30px";
+numDiv.style.color = "white";
+sidebar.appendChild(numDiv);
 
 /// Load sprites and setup stage
 loader.add(spritesToLoad).load(setup);
@@ -92,17 +115,17 @@ function setup() {
     healthHolder = new PIXI.Graphics();
     healthHolder.lineStyle(5, 0xFF0000,10);
     healthHolder.beginFill(0x000015);
-    healthHolder.drawRect(0,0,200*scalar,25*scalar)
+    healthHolder.drawRect(0,0,150*scalar,15*scalar)
     app.stage.addChild(healthHolder);
-    healthHolder.x = canvasLength - 225*scalar;
-    healthHolder.y = canvasLength - 100*scalar;
+    healthHolder.x = canvasLength - 175*scalar;
+    healthHolder.y = canvasLength - 80*scalar;
     healthBar = new PIXI.Graphics();
     healthBar.lineStyle(5, 0xFF0000,10);
     healthBar.beginFill(0xFF0000, 10);
-    healthBar.drawRect(0,0,200*scalar,25*scalar);
-    healthBar.x = canvasLength - 225*scalar;
-    healthBar.y = canvasLength - 100*scalar;
-    healthBar.maxWidth = 200*scalar;
+    healthBar.drawRect(0,0,150*scalar,15*scalar);
+    healthBar.x = canvasLength - 175*scalar;
+    healthBar.y = canvasLength - 80*scalar;
+    healthBar.maxWidth = 150*scalar;
     app.stage.addChild(healthBar);
 
 
@@ -195,7 +218,7 @@ function play(){
     player.y += vector.y;
     player.x = constrain(player.width/2, player.x, canvasLength - player.width/2);
     player.y = constrain(player.height/2, player.y, canvasLength - player.height/2);
-    --globalY;
+    globalY -= 3;
     handleLasers();
     handleEnemies();
     handleExplosions();
@@ -255,7 +278,6 @@ function handleLasers() {
                 lasers.splice(i,1);
                 --i;
                 --len;
-                debugger;
                 explode(1,{x: laser.x, y: laser.y-10},20);
                 player.health -= laser.damage;
                 healthBar.width = (player.health * healthBar.maxWidth) / player.maxHealth;
@@ -323,7 +345,6 @@ function press(key){
 }
 function explode(amount, position, distance) {
     distance = distance || 0;
-    debugger;
     for(var i = 0; i < amount; i++) {
         var rand = Math.random();
         if(rand < 0.33) {
@@ -373,7 +394,26 @@ addEventListener("mousemove",function(e){
     mouseY = e.pageY;
 });
 addEventListener("keydown", function (e){
+    console.log(e.code)
     keys[e.key] = true;
+    if(e.code.substring(0,5) === "Digit") {
+        if(numDiv.innerHTML.length < 7) {
+            numDiv.innerHTML += e.code[5]
+        }
+    }
+    if(e.code.substring(0,6) === "Numpad" && e.code !== "NumpadDecimal") {
+        if(numDiv.innerHTML.length < 7) {
+            numDiv.innerHTML += e.code[6]
+        }
+    }
+    if(e.code === "Semicolon" || e.code === "Period" || e.code === "NumpadDecimal") {
+        if(numDiv.innerHTML.length < 7 && !(/\./).test(numDiv.innerHTML) && numDiv.innerHTML.length) {
+            numDiv.innerHTML += "."
+        }
+    }
+    if(e.code === "Backspace" && numDiv.innerHTML.length) {
+        numDiv.innerHTML = numDiv.innerHTML.substring(0,numDiv.innerHTML.length-1);
+    }
 });
 addEventListener("keyup", function (e){
     keys[e.key] = false;
