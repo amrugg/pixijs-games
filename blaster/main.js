@@ -33,7 +33,7 @@ app.renderer.view.style.position = "absolute";
 app.renderer.view.style.display = "block";
 app.renderer.backgroundColor = 0x111111;
 document.body.appendChild(app.view);
-///
+
 /// Defining variables
 var spritesToLoad = ["sprites/rocket.png", "sprites/laser.png", "sprites/enemy-laser.png", "sprites/lvl1/enemy1.png", "sprites/exp1.png", "sprites/exp2.png", "sprites/exp3.png"];
 var spriteNames = ["player", "blue_plasma", "red_plasma", "enemy-1-1", "exp_1", "exp_2", "exp_3"];
@@ -401,7 +401,7 @@ addEventListener("keydown", function (e){
             numDiv.innerHTML += e.code[5]
         }
     }
-    if(e.code.substring(0,6) === "Numpad" && e.code !== "NumpadDecimal") {
+    if(e.code.substring(0,6) === "Numpad" && (/\d/).test(e.code[6])) {
         if(numDiv.innerHTML.length < 7) {
             numDiv.innerHTML += e.code[6]
         }
