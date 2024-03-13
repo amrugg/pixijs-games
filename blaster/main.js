@@ -48,6 +48,8 @@ var explosions = [];
 var globalFrameCount = 0;
 var healthBar;
 var healthHolder;
+var energyBar;
+var energyHolder;
 /// Scale the sprites for different screens
 var scalar = innerHeight/800;
 
@@ -99,6 +101,10 @@ function setup() {
     player.speed = 5 * scalar;
     player.health = 10;
     player.maxHealth = 10;
+
+    player.energy = 100;
+    player.maxEnergy = 100;
+    player.efficiencyScore = 90;
     player.colRect = {
         x: player.x,
         y: player.y,
@@ -109,8 +115,11 @@ function setup() {
         cooldown: 30,
         lastTime: -1000,
         damage: 1,
+        efficiencyScore: 1
     }
-
+    player.generator = {
+        energyPerQuestion: 10
+    }
 
     healthHolder = new PIXI.Graphics();
     healthHolder.lineStyle(5, 0xFF0000,10);
@@ -118,15 +127,32 @@ function setup() {
     healthHolder.drawRect(0,0,150*scalar,15*scalar)
     app.stage.addChild(healthHolder);
     healthHolder.x = canvasLength - 175*scalar;
-    healthHolder.y = canvasLength - 80*scalar;
+    healthHolder.y = canvasLength - 50*scalar;
     healthBar = new PIXI.Graphics();
     healthBar.lineStyle(5, 0xFF0000,10);
     healthBar.beginFill(0xFF0000, 10);
     healthBar.drawRect(0,0,150*scalar,15*scalar);
     healthBar.x = canvasLength - 175*scalar;
-    healthBar.y = canvasLength - 80*scalar;
+    healthBar.y = canvasLength - 50*scalar;
     healthBar.maxWidth = 150*scalar;
     app.stage.addChild(healthBar);
+
+
+    energyHolder = new PIXI.Graphics();
+    energyHolder.lineStyle(5, 0x00AAAA,10);
+    energyHolder.beginFill(0x000015);
+    energyHolder.drawRect(0,0,150*scalar,15*scalar)
+    app.stage.addChild(energyHolder);
+    energyHolder.x = canvasLength - 175*scalar;
+    energyHolder.y = canvasLength - 25*scalar;
+    energyBar = new PIXI.Graphics();
+    energyBar.lineStyle(5, 0x00AAAA,10);
+    energyBar.beginFill(0x00AAAA, 10);
+    energyBar.drawRect(0,0,150*scalar,15*scalar);
+    energyBar.x = canvasLength - 175*scalar;
+    energyBar.y = canvasLength - 25*scalar;
+    energyBar.maxWidth = 150*scalar;
+    app.stage.addChild(energyBar);
 
 
     prepareLevel(level1);
@@ -207,18 +233,25 @@ function play(){
     }
 
     if(userInput.fire) {
-        if(player.plasma.lastTime + player.plasma.cooldown < globalFrameCount) {
+        if(player.plasma.lastTime + player.plasma.cooldown < globalFrameCount && player.energy > player.plasma.damage * 5 / player.plasma.efficiencyScore) {
             fireLaser(player.x, player.y - player.height/2, 0, 10, "blue", player.plasma.damage);
             player.plasma.lastTime = globalFrameCount;
+            player.energy -= player.plasma.damage * 5 / player.plasma.efficiencyScore
+            updateEnergyBar();
         }
     }
 
     var vector = normalize(player.vx, player.vy, player.speed)
-    player.x += vector.x;
-    player.y += vector.y;
+    var energyToSpend = (Math.abs(vector.x) + Math.abs(vector.y))/player.efficiencyScore;
+    if(player.energy > energyToSpend) {
+        player.x += vector.x;
+        player.y += vector.y;
+        player.energy -= energyToSpend;
+        updateEnergyBar();
+    }
     player.x = constrain(player.width/2, player.x, canvasLength - player.width/2);
     player.y = constrain(player.height/2, player.y, canvasLength - player.height/2);
-    globalY -= 3;
+    globalY -= 2;
     handleLasers();
     handleEnemies();
     handleExplosions();
@@ -287,6 +320,9 @@ function handleLasers() {
 }
 function updateHealthBar() {
     healthBar.width = (player.health * healthBar.maxWidth) / player.maxHealth;
+}
+function updateEnergyBar() {
+    energyBar.width = (player.energy * energyBar.maxWidth) / player.maxEnergy;
 }
 function handleEnemies() {
     var i;
@@ -419,13 +455,21 @@ addEventListener("keydown", function (e){
     }
     if(e.code === "Enter" || e.code === "NumpadEnter") { 
         if(questionSet.verifyAnswer(numDiv.innerHTML)) {
-            player.health++;
-            updateHealthBar();
+            player.energy += player.generator.energyPerQuestion;
+            updateEnergyBar();
             textDiv.innerHTML = questionSet.chooseNewVerse();
             numDiv.innerHTML = "";
         } else {
-            textDiv.innerHTML = questionSet.chooseNewVerse();
-            numDiv.innerHTML = "";
+            numDiv.style.color = "red";
+            setTimeout(function() {
+                numDiv.style.color = "green";
+                numDiv.innerHTML = questionSet.returnCorrectAnswer();
+                setTimeout(function() {
+                    textDiv.innerHTML = questionSet.chooseNewVerse();
+                    numDiv.style.color = "white";
+                    numDiv.innerHTML = "";
+                },1000);
+            },1000);
         }
     }
 });
