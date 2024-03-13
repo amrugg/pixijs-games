@@ -280,10 +280,13 @@ function handleLasers() {
                 --len;
                 explode(1,{x: laser.x, y: laser.y-10},20);
                 player.health -= laser.damage;
-                healthBar.width = (player.health * healthBar.maxWidth) / player.maxHealth;
+                updateHealthBar();
             }
         }
     }
+}
+function updateHealthBar() {
+    healthBar.width = (player.health * healthBar.maxWidth) / player.maxHealth;
 }
 function handleEnemies() {
     var i;
@@ -413,6 +416,17 @@ addEventListener("keydown", function (e){
     }
     if(e.code === "Backspace" && numDiv.innerHTML.length) {
         numDiv.innerHTML = numDiv.innerHTML.substring(0,numDiv.innerHTML.length-1);
+    }
+    if(e.code === "Enter" || e.code === "NumpadEnter") { 
+        if(questionSet.verifyAnswer(numDiv.innerHTML)) {
+            player.health++;
+            updateHealthBar();
+            textDiv.innerHTML = questionSet.chooseNewVerse();
+            numDiv.innerHTML = "";
+        } else {
+            textDiv.innerHTML = questionSet.chooseNewVerse();
+            numDiv.innerHTML = "";
+        }
     }
 });
 addEventListener("keyup", function (e){
