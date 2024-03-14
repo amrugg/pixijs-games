@@ -165,10 +165,10 @@ function prepareLevel(level) {
     var len = level.enemies.length;
     for(i = 0; i < len; i++) {
         var curEnemies = level.enemies[i];
-        spawnNewEnemy(curEnemies.type, curEnemies.level, curEnemies.positions);
+        spawnNewEnemy(curEnemies.type, curEnemies.level, curEnemies.positions, level1.randInt);
     }
 }
-function spawnNewEnemy(type, level, positions) {
+function spawnNewEnemy(type, level, positions, seededRandInt) {
     for(var i = 0; i < positions.length; i++) {
         var enemy = new Sprite(keysOfSprites[type]);
         var curPos = positions[i];
@@ -179,7 +179,7 @@ function spawnNewEnemy(type, level, positions) {
         enemy.type = type;
         enemy.level = level;
         if(curPos.x === "random") {
-            curPos.x = randInt(0,canvasLength);
+            curPos.x = seededRandInt(0,canvasLength);
         }
         enemy.x = curPos.x * scalar;
         enemy.x = constrain(enemy.width/2,enemy.x, canvasLength - enemy.width/2);
@@ -187,7 +187,7 @@ function spawnNewEnemy(type, level, positions) {
         enemy.y = enemy.myY;
         enemy.rotation = pointInDirection(properties.direction)
         
-        enemy.health = randInt(properties.healthRange.min, properties.healthRange.max);
+        enemy.health = seededRandInt(properties.healthRange.min, properties.healthRange.max);
         enemy.damage = properties.damage;
         enemy.combo = {
             active: properties.combo.active,
@@ -435,43 +435,47 @@ addEventListener("mousemove",function(e){
 addEventListener("keydown", function (e){
     console.log(e.code)
     keys[e.key] = true;
-    if(e.code.substring(0,5) === "Digit") {
-        if(numDiv.innerHTML.length < 7) {
-            numDiv.innerHTML += e.code[5]
+    if(!questionSet.answersLocked) {
+        if(e.code.substring(0,5) === "Digit") {
+            if(numDiv.innerHTML.length < 7) {
+                numDiv.innerHTML += e.code[5]
+            }
         }
-    }
-    if(e.code.substring(0,6) === "Numpad" && (/\d/).test(e.code[6])) {
-        if(numDiv.innerHTML.length < 7) {
-            numDiv.innerHTML += e.code[6]
+        if(e.code.substring(0,6) === "Numpad" && (/\d/).test(e.code[6])) {
+            if(numDiv.innerHTML.length < 7) {
+                numDiv.innerHTML += e.code[6]
+            }
         }
-    }
-    if(e.code === "Semicolon" || e.code === "Period" || e.code === "NumpadDecimal") {
-        if(numDiv.innerHTML.length < 7 && !(/\./).test(numDiv.innerHTML) && numDiv.innerHTML.length) {
-            numDiv.innerHTML += "."
+        if(e.code === "Semicolon" || e.code === "Period" || e.code === "NumpadDecimal") {
+            if(numDiv.innerHTML.length < 7 && !(/\./).test(numDiv.innerHTML) && numDiv.innerHTML.length) {
+                numDiv.innerHTML += "."
+            }
         }
-    }
-    if(e.code === "Backspace" && numDiv.innerHTML.length) {
-        numDiv.innerHTML = numDiv.innerHTML.substring(0,numDiv.innerHTML.length-1);
-    }
-    if(e.code === "Enter" || e.code === "NumpadEnter") { 
-        if(questionSet.verifyAnswer(numDiv.innerHTML)) {
-            player.energy += player.generator.energyPerQuestion;
-            updateEnergyBar();
-            textDiv.innerHTML = questionSet.chooseNewVerse();
-            numDiv.innerHTML = "";
-        } else {
-            numDiv.style.color = "red";
-            setTimeout(function() {
-                numDiv.style.color = "green";
-                numDiv.innerHTML = questionSet.returnCorrectAnswer();
+        if(e.code === "Backspace" && numDiv.innerHTML.length) {
+            numDiv.innerHTML = numDiv.innerHTML.substring(0,numDiv.innerHTML.length-1);
+        }
+        if(e.code === "Enter" || e.code === "NumpadEnter") { 
+            if(questionSet.verifyAnswer(numDiv.innerHTML)) {
+                player.energy += player.generator.energyPerQuestion;
+                updateEnergyBar();
+                textDiv.innerHTML = questionSet.chooseNewVerse();
+                numDiv.innerHTML = "";
+            } else {
+                numDiv.style.color = "red";
+                questionSet.answersLocked = true;
                 setTimeout(function() {
-                    textDiv.innerHTML = questionSet.chooseNewVerse();
-                    numDiv.style.color = "white";
-                    numDiv.innerHTML = "";
+                    numDiv.style.color = "green";
+                    numDiv.innerHTML = questionSet.returnCorrectAnswer();
+                    setTimeout(function() {
+                        textDiv.innerHTML = questionSet.chooseNewVerse();
+                        numDiv.style.color = "white";
+                        numDiv.innerHTML = "";
+                        questionSet.answersLocked = false;
+                    },1000);
                 },1000);
-            },1000);
+            }
         }
-    }
+}
 });
 addEventListener("keyup", function (e){
     keys[e.key] = false;

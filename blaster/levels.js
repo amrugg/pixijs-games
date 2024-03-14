@@ -1,6 +1,11 @@
 var level1 = {
     endY: -2000,
-    seed: {seed1: 2312312, seed2: 789613, seed3: 135239132},
+    seed: 37164,
+    randInt: function(min, max) {
+        var x = Math.sin(level1.seed++) * 100000;
+        x = x - Math.floor(x);
+        return Math.floor(x * (max - min + 1)) + min;
+    },
     enemies: [
         {
             type: "enemy-1-1",
