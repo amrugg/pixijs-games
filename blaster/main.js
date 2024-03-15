@@ -31,7 +31,7 @@ let app = new Application({
 app.renderer.view.style.left = (innerWidth - innerHeight)/2 + "px";
 app.renderer.view.style.position = "absolute";
 app.renderer.view.style.display = "block";
-app.renderer.backgroundColor = 0x111111;
+app.renderer.backgroundColor = 0x050520;
 document.body.appendChild(app.view);
 
 /// Defining variables
@@ -51,6 +51,8 @@ var healthHolder;
 var energyBar;
 var energyHolder;
 var starfield;
+var curLevel;
+
 /// Scale the sprites for different screens
 var scalar = innerHeight/800;
 
@@ -166,16 +168,17 @@ function setup() {
 }
 
 function prepareLevel(level) {
+    curLevel = level;
     var i;
     var len = level.enemies.length;
     for(i = 0; i < len; i++) {
         var curEnemies = level.enemies[i];
-        spawnNewEnemy(curEnemies.type, curEnemies.level, curEnemies.positions, level1.randInt);
+        spawnNewEnemy(curEnemies.type, curEnemies.level, curEnemies.positions, level.randInt);
     }
     starfield.clear();
     for(i = 0; i < 100; i++) {
         starfield.beginFill(0xFFFFFF);
-        starfield.drawRect(level1.randInt(0, canvasLength), level1.randInt(level.endY/2, canvasLength), 3*scalar, 3*scalar);
+        starfield.drawRect(level.randInt(0, canvasLength), level.randInt(level.endY/2, canvasLength), 3*scalar, 3*scalar);
     }
     app.stage.addChild(starfield);
 }
@@ -262,8 +265,20 @@ function play(){
     }
     player.x = constrain(player.width/2, player.x, canvasLength - player.width/2);
     player.y = constrain(player.height/2, player.y, canvasLength - player.height/2);
-    globalY -= 2;
-    starfield.y += 0.25;
+    globalY -= curLevel.speed * scalar;
+    if(globalY < curLevel.endY * scalar) {
+        state = finish;
+    }
+    starfield.y += curLevel.speed * 0.25 * scalar;
+    handleLasers();
+    handleEnemies();
+    handleExplosions();
+}
+function finish() {
+    if(player.y < -100) {
+        state = restart;
+    }
+    player.y -= 5;
     handleLasers();
     handleEnemies();
     handleExplosions();
@@ -287,7 +302,8 @@ function handleLasers() {
         var laser = lasers[i];
         var vector = direction(laser.speed, laser.direction);
         laser.x += vector.x;
-        laser.y += vector.y;
+        laser.myY += vector.y;
+        laser.y =  laser.myY    - globalY;
         if(laser.y < -100 * scalar || laser.y > canvasLength + 100 * scalar || laser.x < -100 * scalar || laser.x > canvasLength + 100 * scalar) {
             app.stage.removeChild(laser);
             lasers.splice(i,1);
@@ -355,6 +371,7 @@ function fireLaser(x, y, direction, speed, type, damage) {
     laser.good = type === "blue";
     laser.x = x;
     laser.y = y;
+    laser.myY = y + globalY;
     laser.anchor.set(0.5,0.5);
     laser.rotation = pointInDirection(direction);
     laser.speed = speed * scalar;

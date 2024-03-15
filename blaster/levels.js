@@ -1,5 +1,6 @@
 var level1 = {
-    endY: -2000,
+    endY: -2700,
+    speed: 2,
     seed: 37164,
     randInt: function(min, max) {
         var x = Math.sin(level1.seed++) * 100000;
