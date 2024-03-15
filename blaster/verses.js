@@ -42,7 +42,10 @@ var questionSet = {
         if(chapterRange.length === 2) {
             questionSet.curChapter = randInt(Number(chapterRange[0]), Number(chapterRange[1]));
         }
-        questionSet.curVerse = randInt(Number(verseRange[0]), Number(verseRange[1]));
+        var lastVerse = questionSet.curVerse;
+        do {
+            questionSet.curVerse = randInt(Number(verseRange[0]), Number(verseRange[1]));
+        } while (lastVerse === questionSet.curVerse);
         questionSet.curVerseText = questionSet.chapters[questionSet.curChapter-1][questionSet.curVerse-1];
         return questionSet.curVerseText;
     },

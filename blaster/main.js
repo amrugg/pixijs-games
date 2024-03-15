@@ -50,6 +50,7 @@ var healthBar;
 var healthHolder;
 var energyBar;
 var energyHolder;
+var starfield;
 /// Scale the sprites for different screens
 var scalar = innerHeight/800;
 
@@ -88,6 +89,7 @@ sidebar.appendChild(numDiv);
 /// Load sprites and setup stage
 loader.add(spritesToLoad).load(setup);
 function setup() {
+    starfield = new PIXI.Graphics();
 
     keysOfSprites = keySpritesTo(spriteNames, spritesToLoad);
     player = new Sprite(keysOfSprites.player);
@@ -121,6 +123,9 @@ function setup() {
         energyPerQuestion: 10
     }
 
+    /// Initialize starfield
+
+    /// Build health bar
     healthHolder = new PIXI.Graphics();
     healthHolder.lineStyle(5, 0xFF0000,10);
     healthHolder.beginFill(0x000015);
@@ -137,7 +142,7 @@ function setup() {
     healthBar.maxWidth = 150*scalar;
     app.stage.addChild(healthBar);
 
-
+    /// Build energy bar
     energyHolder = new PIXI.Graphics();
     energyHolder.lineStyle(5, 0x00AAAA,10);
     energyHolder.beginFill(0x000015);
@@ -167,6 +172,12 @@ function prepareLevel(level) {
         var curEnemies = level.enemies[i];
         spawnNewEnemy(curEnemies.type, curEnemies.level, curEnemies.positions, level1.randInt);
     }
+    starfield.clear();
+    for(i = 0; i < 100; i++) {
+        starfield.beginFill(0xFFFFFF);
+        starfield.drawRect(level1.randInt(0, canvasLength), level1.randInt(level.endY/2, canvasLength), 3*scalar, 3*scalar);
+    }
+    app.stage.addChild(starfield);
 }
 function spawnNewEnemy(type, level, positions, seededRandInt) {
     for(var i = 0; i < positions.length; i++) {
@@ -252,6 +263,7 @@ function play(){
     player.x = constrain(player.width/2, player.x, canvasLength - player.width/2);
     player.y = constrain(player.height/2, player.y, canvasLength - player.height/2);
     globalY -= 2;
+    starfield.y += 0.25;
     handleLasers();
     handleEnemies();
     handleExplosions();
