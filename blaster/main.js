@@ -95,6 +95,7 @@ function setup() {
 
     keysOfSprites = keySpritesTo(spriteNames, spritesToLoad);
     player = new Sprite(keysOfSprites.player);
+    player.visible = false;
     app.stage.addChild(player);
     player.scale.set(1.75 * scalar);
     player.anchor.set(0.5,0.5);
@@ -162,25 +163,57 @@ function setup() {
     app.stage.addChild(energyBar);
 
 
-    prepareLevel(level1);
-    state = play;
+    energyBar.visible = false;
+    energyHolder.visible = false;
+    healthBar.visible = false;
+    healthHolder.visible = false;
+    state = overworld;
     app.ticker.add(delta => gameLoop(delta));
 }
 
+
+/// Overly simplified
+function overworld() {
+    if(keys["1"]) {
+        prepareLevel(level1);
+        state = play;
+    }
+}
+/// Testing only
+function TEST() {
+
+}
 function prepareLevel(level) {
+    /// Define global level
     curLevel = level;
+
+    /// Reset player and progress
+    player.x = canvasLength/2;
+    player.y = innerHeight - player.height/2 - 30;
+    globalY = 0;
+    healthBar.visible = true;
+    healthHolder.visible = true;
+    energyBar.visible = true;
+    energyHolder.visible = true;
+
+    console.log(level.seed, level.startingSeed);
+    level.seed = level.startingSeed;
+    console.log(level.seed, level.startingSeed);
     var i;
     var len = level.enemies.length;
     for(i = 0; i < len; i++) {
         var curEnemies = level.enemies[i];
         spawnNewEnemy(curEnemies.type, curEnemies.level, curEnemies.positions, level.randInt);
     }
+    console.log(level.seed);
+    starfield.y = 0;
     starfield.clear();
     for(i = 0; i < 100; i++) {
         starfield.beginFill(0xFFFFFF);
         starfield.drawRect(level.randInt(0, canvasLength), level.randInt(level.endY/2, canvasLength), 3*scalar, 3*scalar);
     }
     app.stage.addChild(starfield);
+    player.visible = true;
 }
 function spawnNewEnemy(type, level, positions, seededRandInt) {
     for(var i = 0; i < positions.length; i++) {
@@ -282,6 +315,26 @@ function finish() {
     handleLasers();
     handleEnemies();
     handleExplosions();
+}
+function restart() {
+    enemies.forEach(function(enemy) {
+        app.stage.removeChild(enemy);
+    });
+    lasers.forEach(function(laser) {
+        app.stage.removeChild(laser);
+    });
+    explosions.forEach(function(exp) {
+        app.stage.removeChild(exp);
+    });
+    enemies = [];
+    lasers = [];
+    explosions = [];
+    energyBar.visible = false;
+    energyHolder.visible = false;
+    healthBar.visible = false;
+    healthHolder.visible = false;
+    starfield.clear();
+    state = overworld;
 }
 function handleExplosions() {
     var len = explosions.length;
