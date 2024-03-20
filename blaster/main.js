@@ -92,7 +92,7 @@ sidebar.appendChild(numDiv);
 loader.add(spritesToLoad).load(setup);
 function setup() {
     starfield = new PIXI.Graphics();
-
+    app.stage.addChild(starfield);
     keysOfSprites = keySpritesTo(spriteNames, spritesToLoad);
     player = new Sprite(keysOfSprites.player);
     player.visible = false;
@@ -212,7 +212,6 @@ function prepareLevel(level) {
         starfield.beginFill(0xFFFFFF);
         starfield.drawRect(level.randInt(0, canvasLength), level.randInt(level.endY/2, canvasLength), 3*scalar, 3*scalar);
     }
-    app.stage.addChild(starfield);
     player.visible = true;
 }
 function spawnNewEnemy(type, level, positions, seededRandInt) {
