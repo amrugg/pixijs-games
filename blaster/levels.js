@@ -34,6 +34,13 @@ var level1 = {
                 {x: 600, y: -1500},
                 {x: "random", y: -1700},
             ]
+        },
+        {
+            type: "enemy-1-2",
+            level: 1,
+            positions: [
+                {x: "random", y: -200},
+            ]
         }
     ]
 };

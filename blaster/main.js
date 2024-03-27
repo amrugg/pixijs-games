@@ -35,8 +35,8 @@ app.renderer.backgroundColor = 0x050520;
 document.body.appendChild(app.view);
 
 /// Defining variables
-var spritesToLoad = ["sprites/rocket.png", "sprites/laser.png", "sprites/enemy-laser.png", "sprites/lvl1/enemy1.png", "sprites/exp1.png", "sprites/exp2.png", "sprites/exp3.png"];
-var spriteNames = ["player", "blue_plasma", "red_plasma", "enemy-1-1", "exp_1", "exp_2", "exp_3"];
+var spritesToLoad = ["sprites/rocket.png", "sprites/laser.png", "sprites/enemy-laser.png", "sprites/lvl1/enemy1.png", "sprites/lvl1/enemy2.png", "sprites/exp1.png", "sprites/exp2.png", "sprites/exp3.png"];
+var spriteNames = ["player", "blue_plasma", "red_plasma", "enemy-1-1", "enemy-1-2", "exp_1", "exp_2", "exp_3"];
 var keysOfSprites;
 var state;
 var keys = {};
@@ -235,15 +235,20 @@ function spawnNewEnemy(type, level, positions, seededRandInt) {
         
         enemy.health = seededRandInt(properties.healthRange.min, properties.healthRange.max);
         enemy.damage = properties.damage;
-        enemy.combo = {
-            active: properties.combo.active,
-            curTicks: properties.combo.curTicks,
-            maxTicks: properties.combo.maxTicks,
-            fireCooldown: properties.combo.fireCooldown,
-            lastFire: properties.combo.lastFire,
-            comboCooldown: properties.combo.comboCooldown,
-            lastCombo: properties.combo.lastCombo
-        };
+        if(properties.combo) {
+            enemy.combo = {
+                active: properties.combo.active,
+                curTicks: properties.combo.curTicks,
+                maxTicks: properties.combo.maxTicks,
+                fireCooldown: properties.combo.fireCooldown,
+                lastFire: properties.combo.lastFire,
+                comboCooldown: properties.combo.comboCooldown,
+                lastCombo: properties.combo.lastCombo
+            };
+        } else {
+            enemy.cooldown = properties.cooldown;
+            enemy.lastFire = properties.lastFire;
+        }
 
         enemy.colRect = {
             x: enemy.x,
@@ -425,7 +430,7 @@ function fireLaser(x, y, direction, speed, type, damage) {
     laser.y = y;
     laser.myY = y + globalY;
     laser.anchor.set(0.5,0.5);
-    laser.rotation = pointInDirection(direction);
+    laser.rotation = pointInDirection(180 - direction);
     laser.speed = speed * scalar;
     laser.direction = direction;
     laser.damage = damage;
