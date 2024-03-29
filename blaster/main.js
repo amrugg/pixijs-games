@@ -13,8 +13,8 @@ PIXI.utils.skipHello();
 PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
 let Application = PIXI.Application,
     Container = PIXI.Container,
-    loader = PIXI.loader,
-    resources = PIXI.loader.resources,
+    loader = PIXI.Loader.shared,
+    resources = PIXI.Loader.shared.resources,
     TextureCache = PIXI.utils.TextureCache,
     Sprite = PIXI.Sprite,
     Rectangle = PIXI.Rectangle,
@@ -35,8 +35,8 @@ app.renderer.backgroundColor = 0x050520;
 document.body.appendChild(app.view);
 
 /// Defining variables
-var spritesToLoad = ["sprites/rocket.png", "sprites/laser.png", "sprites/enemy-laser.png", "sprites/lvl1/enemy1.png", "sprites/lvl1/enemy2.png", "sprites/exp1.png", "sprites/exp2.png", "sprites/exp3.png"];
-var spriteNames = ["player", "blue_plasma", "red_plasma", "enemy-1-1", "enemy-1-2", "exp_1", "exp_2", "exp_3"];
+var spritesToLoad = ["sprites/rocket.png", "sprites/laser.png", "sprites/enemy-laser.png", "sprites/lvl1/enemy1.png", "sprites/lvl1/enemy2.png", "sprites/exp1.png", "sprites/exp2.png", "sprites/exp3.png", "sprites/ball.png"];
+var spriteNames = ["player", "blue_plasma", "red_plasma", "enemy-1-1", "enemy-1-2", "exp_1", "exp_2", "exp_3", "upgrade_ball"];
 var keysOfSprites;
 var state;
 var keys = {};
@@ -45,9 +45,13 @@ var mouseY;
 var player;
 var enemies = [];
 var explosions = [];
+var lasers = [];
+var powerups = [];
 var globalFrameCount = 0;
 var healthBar;
 var healthHolder;
+var powerupBar;
+var powerupHolder;
 var energyBar;
 var energyHolder;
 var starfield;
@@ -117,7 +121,7 @@ function setup() {
         height: player.height * 0.9,
     }
     player.plasma = {
-        cooldown: 30,
+        cooldown: 10,
         lastTime: -1000,
         damage: 1,
         efficiencyScore: 1
@@ -137,8 +141,8 @@ function setup() {
     healthHolder.x = canvasLength - 175*scalar;
     healthHolder.y = canvasLength - 50*scalar;
     healthBar = new PIXI.Graphics();
-    healthBar.lineStyle(5, 0xFF0000,10);
-    healthBar.beginFill(0xFF0000, 10);
+    healthBar.lineStyle(5, 0xFF33333,10);
+    healthBar.beginFill(0xFF3333, 10);
     healthBar.drawRect(0,0,150*scalar,15*scalar);
     healthBar.x = canvasLength - 175*scalar;
     healthBar.y = canvasLength - 50*scalar;
@@ -147,15 +151,15 @@ function setup() {
 
     /// Build energy bar
     energyHolder = new PIXI.Graphics();
-    energyHolder.lineStyle(5, 0x00AAAA,10);
+    energyHolder.lineStyle(5, 0x00FFFF,10);
     energyHolder.beginFill(0x000015);
     energyHolder.drawRect(0,0,150*scalar,15*scalar)
     app.stage.addChild(energyHolder);
     energyHolder.x = canvasLength - 175*scalar;
     energyHolder.y = canvasLength - 25*scalar;
     energyBar = new PIXI.Graphics();
-    energyBar.lineStyle(5, 0x00AAAA,10);
-    energyBar.beginFill(0x00AAAA, 10);
+    energyBar.lineStyle(5, 0x00FFFF,10);
+    energyBar.beginFill(0x00FFFF, 10);
     energyBar.drawRect(0,0,150*scalar,15*scalar);
     energyBar.x = canvasLength - 175*scalar;
     energyBar.y = canvasLength - 25*scalar;
@@ -163,6 +167,13 @@ function setup() {
     app.stage.addChild(energyBar);
 
 
+    /// Prepare powerup bar
+    powerupHolder = new PIXI.Graphics();
+    app.stage.addChild(powerupHolder);
+    powerupBar = new PIXI.Graphics();
+    app.stage.addChild(powerupBar);
+    powerupHolder.visible = false;
+    powerupBar.visible = false;
     energyBar.visible = false;
     energyHolder.visible = false;
     healthBar.visible = false;
@@ -196,16 +207,13 @@ function prepareLevel(level) {
     energyBar.visible = true;
     energyHolder.visible = true;
 
-    console.log(level.seed, level.startingSeed);
     level.seed = level.startingSeed;
-    console.log(level.seed, level.startingSeed);
     var i;
     var len = level.enemies.length;
     for(i = 0; i < len; i++) {
         var curEnemies = level.enemies[i];
         spawnNewEnemy(curEnemies.type, curEnemies.level, curEnemies.positions, level.randInt);
     }
-    console.log(level.seed);
     starfield.y = 0;
     starfield.clear();
     for(i = 0; i < 100; i++) {
@@ -257,11 +265,12 @@ function spawnNewEnemy(type, level, positions, seededRandInt) {
             height: enemy.height * properties.colYPercent,
 
         }
+        enemy.dropChances = properties.dropChances;
+        enemy.possibleDrops = properties.possibleDrops;
         app.stage.addChild(enemy);
         enemies.push(enemy);
     }
 }
-var lasers = [];
 function gameLoop(delta) {
   state(delta)
 }
@@ -285,10 +294,20 @@ function play(){
 
     if(userInput.fire) {
         if(player.plasma.lastTime + player.plasma.cooldown < globalFrameCount && player.energy > player.plasma.damage * 5 / player.plasma.efficiencyScore) {
-            fireLaser(player.x, player.y - player.height/2, 0, 10, "blue", player.plasma.damage);
-            player.plasma.lastTime = globalFrameCount;
-            player.energy -= player.plasma.damage * 5 / player.plasma.efficiencyScore
-            updateEnergyBar();
+            if(player.activePowerup === "orange") {
+                fireLaser(player.x - 10 * scalar, player.y - player.height/2, 0, 10, "blue", player.plasma.damage);
+                fireLaser(player.x + 10 * scalar, player.y - player.height/2, 0, 10, "blue", player.plasma.damage);
+                player.plasma.lastTime = globalFrameCount;
+                player.energy -= player.plasma.damage * 5 / player.plasma.efficiencyScore;
+                player.powerupEnergy -= 1;
+                updateEnergyBar();
+                updatePowerupBar();
+            } else {
+                fireLaser(player.x, player.y - player.height/2, 0, 10, "blue", player.plasma.damage);
+                player.plasma.lastTime = globalFrameCount;
+                player.energy -= player.plasma.damage * 5 / player.plasma.efficiencyScore;
+                updateEnergyBar();
+            }
         }
     }
 
@@ -310,6 +329,7 @@ function play(){
     handleLasers();
     handleEnemies();
     handleExplosions();
+    handlePowerups();
 }
 function finish() {
     if(player.y < -100) {
@@ -319,6 +339,7 @@ function finish() {
     handleLasers();
     handleEnemies();
     handleExplosions();
+    handlePowerups();
 }
 function restart() {
     enemies.forEach(function(enemy) {
@@ -352,6 +373,37 @@ function handleExplosions() {
         }
     }
 }
+function handlePowerups() {
+    var i = 0;
+    var len = powerups.length;
+    for(i = 0; i < len; i++) {
+        var cur = powerups[i];
+        cur.y = cur.myY - globalY;
+        if(hitTestRectangle(cur,player)) {
+            app.stage.removeChild(cur);
+            powerups.splice(i,1);
+            --i;
+            --len;
+            player.tint = cur.tint;
+            player.activePowerup = cur.type;
+            player.powerupEnergy = cur.energy;
+            player.maxPowerupEnergy = cur.maxEnergy;
+            powerupHolder.lineStyle(5, cur.tint,10);
+            powerupHolder.beginFill(0x000015);
+            powerupHolder.drawRect(0,0,150*scalar,15*scalar)
+            powerupHolder.x = canvasLength - 175*scalar;
+            powerupHolder.y = canvasLength - 75*scalar;
+            powerupBar.lineStyle(5, cur.tint,10);
+            powerupBar.beginFill(cur.tint, 10);
+            powerupBar.drawRect(0,0,150*scalar,15*scalar);
+            powerupBar.x = canvasLength - 175*scalar;
+            powerupBar.y = canvasLength - 75*scalar;
+            powerupBar.maxWidth = 150*scalar;
+            powerupBar.visible = true;
+            powerupHolder.visible = true;
+        }
+    }
+}
 function handleLasers() {
     var i = 0;
     var len = lasers.length;
@@ -360,7 +412,7 @@ function handleLasers() {
         var vector = direction(laser.speed, laser.direction);
         laser.x += vector.x;
         laser.myY += vector.y;
-        laser.y =  laser.myY    - globalY;
+        laser.y = laser.myY - globalY;
         if(laser.y < -100 * scalar || laser.y > canvasLength + 100 * scalar || laser.x < -100 * scalar || laser.x > canvasLength + 100 * scalar) {
             app.stage.removeChild(laser);
             lasers.splice(i,1);
@@ -409,6 +461,15 @@ function updateHealthBar() {
 function updateEnergyBar() {
     energyBar.width = (player.energy * energyBar.maxWidth) / player.maxEnergy;
 }
+function updatePowerupBar() {
+    powerupBar.width = (player.powerupEnergy * powerupBar.maxWidth) / player.maxPowerupEnergy;
+    if(player.powerupEnergy <= 0) {
+        powerupBar.visible = false;
+        powerupHolder.visible = false;
+        player.tint = 0xFFFFFF;
+        player.activePowerup = "";
+    }
+}
 function handleEnemies() {
     var i;
     var len = enemies.length;
@@ -419,7 +480,36 @@ function handleEnemies() {
             enemies.splice(i,1);
             --i;
             --len;
+            handleDrop(curEnemy);
         }
+    }
+}
+function handleDrop(enemy) {
+    var len = enemy.dropChances.length;
+    var random = curLevel.randInt(1,100);
+    var i;
+    for(i = 0; i < len; i++) {
+        if(enemy.dropChances[i] >= random) {
+            spawnDrop(enemy.possibleDrops[i], enemy.x, enemy.y);
+            break;
+        }
+    }
+}
+function spawnDrop(type, x, y) {
+    if(type === "orange") {
+        var powerup = new Sprite(keysOfSprites.upgrade_ball);
+        powerup.anchor.set(0.5,0.5);
+        powerup.scale.set(2);
+        powerup.tint = 0xFF7700;
+        powerup.trueColor = 0xAA1100;
+        app.stage.addChild(powerup);
+        powerup.x = x;
+        powerup.y = y;
+        powerup.myY = y + globalY;
+        powerup.type = type;
+        powerup.energy = 15;
+        powerup.maxEnergy = 15;
+        powerups.push(powerup);
     }
 }
 function fireLaser(x, y, direction, speed, type, damage) {
@@ -430,7 +520,7 @@ function fireLaser(x, y, direction, speed, type, damage) {
     laser.y = y;
     laser.myY = y + globalY;
     laser.anchor.set(0.5,0.5);
-    laser.rotation = pointInDirection(180 - direction);
+    laser.rotation = pointInDirection(-direction);
     laser.speed = speed * scalar;
     laser.direction = direction;
     laser.damage = damage;
@@ -519,7 +609,6 @@ addEventListener("mousemove",function(e){
     mouseY = e.pageY;
 });
 addEventListener("keydown", function (e){
-    console.log(e.code)
     keys[e.key] = true;
     if(!questionSet.answersLocked) {
         if(e.code.substring(0,5) === "Digit") {
