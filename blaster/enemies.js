@@ -70,7 +70,7 @@ var enemyProperties = {
         },
         colXPercent: 0.75,
         colYPercent: 0.9,
-        dropChances: {}
+        dropChances: []
     },
     "enemy-1-2": {
         healthRange: {min: 3, max: 5},
@@ -82,6 +82,6 @@ var enemyProperties = {
         colXPercent: 0.75,
         colYPercent: 0.9,
         dropChances: [100],
-        possibleDrops: ["orange"]
+        possibleDrops: ["green"]
     }
 }

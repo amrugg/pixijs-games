@@ -126,6 +126,7 @@ function setup() {
         damage: 1,
         efficiencyScore: 1
     }
+    player.activePowerup = {};
     player.generator = {
         energyPerQuestion: 10
     }
@@ -271,6 +272,9 @@ function spawnNewEnemy(type, level, positions, seededRandInt) {
         enemies.push(enemy);
     }
 }
+function disableUserInput(input) {
+    keys[keyMappings[input]] = false;
+}
 function gameLoop(delta) {
   state(delta)
 }
@@ -294,12 +298,8 @@ function play(){
 
     if(userInput.fire) {
         if(player.plasma.lastTime + player.plasma.cooldown < globalFrameCount && player.energy > player.plasma.damage * 5 / player.plasma.efficiencyScore) {
-            if(player.activePowerup === "orange") {
-                fireLaser(player.x - 10 * scalar, player.y - player.height/2, 0, 10, "blue", player.plasma.damage);
-                fireLaser(player.x + 10 * scalar, player.y - player.height/2, 0, 10, "blue", player.plasma.damage);
-                player.plasma.lastTime = globalFrameCount;
-                player.energy -= player.plasma.damage * 5 / player.plasma.efficiencyScore;
-                player.powerupEnergy -= 1;
+            if(player.activePowerup.type) {
+                powerupData[player.activePowerup.type].onFireHandle();
                 updateEnergyBar();
                 updatePowerupBar();
             } else {
@@ -385,7 +385,7 @@ function handlePowerups() {
             --i;
             --len;
             player.tint = cur.tint;
-            player.activePowerup = cur.type;
+            player.activePowerup.type = cur.type;
             player.powerupEnergy = cur.energy;
             player.maxPowerupEnergy = cur.maxEnergy;
             powerupHolder.lineStyle(5, cur.tint,10);
@@ -409,6 +409,16 @@ function handleLasers() {
     var len = lasers.length;
     for(i = 0; i < len; i++) {
         var laser = lasers[i];
+        if(laser.kill) {
+            app.stage.removeChild(laser);
+            lasers.splice(i,1);
+            --i;
+            --len;
+            if(laser === player.activePowerup.loadedBullet) {
+                player.activePowerup.loadedBullet = false;
+            }
+            continue;
+        }
         var vector = direction(laser.speed, laser.direction);
         laser.x += vector.x;
         laser.myY += vector.y;
@@ -418,6 +428,11 @@ function handleLasers() {
             lasers.splice(i,1);
             --i;
             --len;
+
+            if(laser === player.activePowerup.loadedBullet) {
+                player.activePowerup.loadedBullet = false;
+            }
+            continue;
         }
         if(laser.good) {
             enemies.forEach(function(enemy){
@@ -432,6 +447,10 @@ function handleLasers() {
                     lasers.splice(i,1);
                     --i;
                     --len;
+
+                    if(laser === player.activePowerup.loadedBullet) {
+                        player.activePowerup.loadedBullet = false;
+                    }
                     explode(1,{x: laser.x, y: laser.y-10},20);
                     enemy.health -= laser.damage;
                 }
@@ -467,7 +486,7 @@ function updatePowerupBar() {
         powerupBar.visible = false;
         powerupHolder.visible = false;
         player.tint = 0xFFFFFF;
-        player.activePowerup = "";
+        player.activePowerup.type = false;
     }
 }
 function handleEnemies() {
@@ -496,26 +515,24 @@ function handleDrop(enemy) {
     }
 }
 function spawnDrop(type, x, y) {
-    if(type === "orange") {
-        var powerup = new Sprite(keysOfSprites.upgrade_ball);
-        powerup.anchor.set(0.5,0.5);
-        powerup.scale.set(2);
-        powerup.tint = 0xFF7700;
-        powerup.trueColor = 0xAA1100;
-        app.stage.addChild(powerup);
-        powerup.x = x;
-        powerup.y = y;
-        powerup.myY = y + globalY;
-        powerup.type = type;
-        powerup.energy = 15;
-        powerup.maxEnergy = 15;
-        powerups.push(powerup);
-    }
+    var powerup = new Sprite(keysOfSprites.upgrade_ball);
+    powerup.anchor.set(0.5,0.5);
+    powerup.scale.set(2);
+    powerup.tint = powerupData[type].tint;
+    powerup.trueColor = 0xAA1100;
+    app.stage.addChild(powerup);
+    powerup.x = x;
+    powerup.y = y;
+    powerup.myY = y + globalY;
+    powerup.type = type;
+    powerup.energy = powerupData[type].maxEnergy;
+    powerup.maxEnergy = powerupData[type].maxEnergy;
+    powerups.push(powerup);
 }
 function fireLaser(x, y, direction, speed, type, damage) {
     var laser = new Sprite(keysOfSprites[type + "_plasma"]);
     laser.scale.set(2 * scalar);
-    laser.good = type === "blue";
+    laser.good = type !== "red";
     laser.x = x;
     laser.y = y;
     laser.myY = y + globalY;
