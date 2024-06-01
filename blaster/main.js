@@ -121,7 +121,7 @@ function setup() {
         height: player.height * 0.9,
     }
     player.plasma = {
-        cooldown: 10,
+        cooldown: 30,
         lastTime: -1000,
         damage: 1,
         efficiencyScore: 1
@@ -649,6 +649,7 @@ addEventListener("keydown", function (e){
         if(e.code === "Enter" || e.code === "NumpadEnter") { 
             if(questionSet.verifyAnswer(numDiv.innerHTML)) {
                 player.energy += player.generator.energyPerQuestion;
+                player.energy = Math.min(player.energy, player.maxEnergy);
                 updateEnergyBar();
                 textDiv.innerHTML = questionSet.chooseNewVerse();
                 numDiv.innerHTML = "";

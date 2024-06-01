@@ -28,7 +28,6 @@ var handleEnemyBehaviors = {
     },
     "enemy-1-2": function(enemy) {
         enemy.y = enemy.myY - globalY;
-        enemy.myY -= 1;
         if(enemy.health <= 0) {
             explode(20,enemy, 50);
             app.stage.removeChild(enemy);
