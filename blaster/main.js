@@ -117,7 +117,7 @@ function setup() {
     player.colRect = {
         x: player.x,
         y: player.y,
-        width: player.width * 0.75,
+        width: player.width * 0.9,
         height: player.height * 0.9,
     }
     player.plasma = {
@@ -321,11 +321,11 @@ function play(){
     }
     player.x = constrain(player.width/2, player.x, canvasLength - player.width/2);
     player.y = constrain(player.height/2, player.y, canvasLength - player.height/2);
-    globalY -= curLevel.speed * scalar;
+    globalY -= curLevel.speed * scalar * 0.25;
     if(globalY < curLevel.endY * scalar) {
         state = finish;
     }
-    starfield.y += curLevel.speed * 0.25 * scalar;
+    starfield.y += curLevel.speed * 0.25 * scalar * 0.25;
     handleLasers();
     handleEnemies();
     handleExplosions();
@@ -458,7 +458,7 @@ function handleLasers() {
         } else {
             var playerRect = {
                 x: player.x,
-                y: player.y,
+                y: player.y+ Math.abs(laser.x-player.x),
                 width: player.colRect.width,
                 height: player.colRect.height
             }

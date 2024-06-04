@@ -55,7 +55,7 @@ var handleEnemyBehaviors = {
 var enemyProperties = {
     "enemy-1-1": {
         healthRange: {min: 1, max: 3},
-        scale: 2,
+        scale: 1.75,
         direction: 180,
         damage: 1,
         combo: {
@@ -67,13 +67,13 @@ var enemyProperties = {
             comboCooldown: 120,
             lastCombo: -Infinity
         },
-        colXPercent: 0.75,
+        colXPercent: 0.5,
         colYPercent: 0.9,
         dropChances: []
     },
     "enemy-1-2": {
         healthRange: {min: 3, max: 5},
-        scale: 2,
+        scale: 1.75,
         direction: 180,
         damage: 1,
         cooldown: 120,
