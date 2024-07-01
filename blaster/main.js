@@ -79,9 +79,10 @@ sidebar.style.left = ((innerWidth - canvasLength)/2 + canvasLength + 2.5*scalar)
 /// Make the verse text
 var textDiv = document.createElement("div");
 textDiv.style.position = "relative";
-textDiv.innerHTML = "God, who at sundry times and in diverse manners spake in time past unto the fathers by the prophets,"
+textDiv.innerHTML = "";
 textDiv.style.fontSize = "30px";
 textDiv.style.color = "white";
+textDiv.innerHTML = questionSet.chooseNewVerse();
 sidebar.appendChild(textDiv);
 
 /// Make the input number text
@@ -259,13 +260,16 @@ function spawnNewEnemy(type, level, positions, seededRandInt) {
             enemy.lastFire = properties.lastFire;
         }
 
-        enemy.colRect = {
-            x: enemy.x,
-            y: enemy.y,
-            width: enemy.width * properties.colXPercent,
-            height: enemy.height * properties.colYPercent,
-
-        }
+        enemy.colRects = []
+        properties.colRects.forEach(function(rect) {
+            enemy.colRects.push({
+                x: enemy.x,
+                y: enemy.y,
+                width: enemy.width * rect.colXPercent,
+                height: enemy.height * rect.colYPercent,
+                dmgMult: rect.dmgMult,
+            })
+        });
         enemy.dropChances = properties.dropChances;
         enemy.possibleDrops = properties.possibleDrops;
         app.stage.addChild(enemy);
@@ -436,23 +440,12 @@ function handleLasers() {
         }
         if(laser.good) {
             enemies.forEach(function(enemy){
-                var enemyRect = {
-                    x: enemy.x,
-                    y: enemy.y,
-                    width: enemy.colRect.width,
-                    height: enemy.colRect.height
-                }
-                if(hitTestRectangle(laser,enemyRect)) {
+                var col = handleLaserCol(laser,enemy);
+                if(col) {
                     app.stage.removeChild(laser);
                     lasers.splice(i,1);
                     --i;
                     --len;
-
-                    if(laser === player.activePowerup.loadedBullet) {
-                        player.activePowerup.loadedBullet = false;
-                    }
-                    explode(1,{x: laser.x, y: laser.y-10},20);
-                    enemy.health -= laser.damage;
                 }
             });
         } else {
@@ -471,6 +464,26 @@ function handleLasers() {
                 player.health -= laser.damage;
                 updateHealthBar();
             }
+        }
+    }
+}
+function handleLaserCol(laser, enemy) {
+    var i;
+    var len = enemy.colRects.length;
+    for(i = 0; i < len; i++) {
+        var enemyRect = {
+            x: enemy.x,
+            y: enemy.y,
+            width: enemy.colRects[i].width,
+            height: enemy.colRects[i].height
+        }
+        if(hitTestRectangle(laser,enemyRect)) {
+            if(laser === player.activePowerup.loadedBullet) {
+                player.activePowerup.loadedBullet = false;
+            }
+            explode(1,{x: laser.x, y: laser.y-10},20);
+            enemy.health -= laser.damage * enemy.colRects[i].dmgMult;
+            return true;
         }
     }
 }

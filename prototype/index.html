@@ -1,0 +1,567 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>TD Prototype</title>
+</head>
+    <style>* {padding: 0; margin: 0}</style>
+    <style> .answer {
+        position: absolute; z-index: 1; font-size: 30px; width: 150px; height:150px; background-color: grey; text-align: center; vertical-align: middle; line-height: 150px; border-radius: 10%; bottom:10px;
+    }
+    .incorrect {
+        position: absolute; z-index: 1; font-size: 30px; width: 150px; height:150px; background-color: red; text-align: center; vertical-align: middle; line-height: 150px; border-radius: 10%; bottom:10px
+    }
+    .correct {
+        position: absolute; z-index: 1; font-size: 30px; width: 150px; height:150px; background-color: green; text-align: center; vertical-align: middle; line-height: 150px; border-radius: 10%; bottom:10px
+    }
+    </style>
+    <script src="pixi/pixi.min.js"></script>
+    <script src="usefulFunctions.js"></script>
+    <div id="question" style="position: absolute; z-index: 1; font-size: 30px; width: 1000px; text-align: center; top:10px">Ye call me Master and Lord; and ye say well; for so I am.</div>
+    <div id="answer1" class="answer">John 13:13</div>
+    <div id="answer2" class="answer">John 13:14</div>
+    <div id="answer3" class="answer">John 13:15</div>
+    <div id="answer4" class="answer">John 13:16</div>
+<body>
+  <script type="text/javascript">
+    "use strict";
+    
+    var params = getParams();
+    function getParams() {
+      var params = {};
+      location.search.substr(1).split("&").forEach(function(el) {
+        var data = el.replace(/\+/g, " ").split("=");
+        params[decodeURIComponent(data[0])] = data[1] ? decodeURIComponent(data[1]) : true;
+      });
+      return params;
+    }
+    PIXI.utils.skipHello();
+    PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
+    let Application = PIXI.Application,
+        Container = PIXI.Container,
+        loader = PIXI.loader,
+        resources = PIXI.loader.resources,
+        TextureCache = PIXI.utils.TextureCache,
+        Sprite = PIXI.Sprite,
+        Rectangle = PIXI.Rectangle,
+        Graphics = PIXI.Graphics;
+    let app = new Application({ 
+        width: 800,
+        height: 800,              
+        antialias: true,
+        transparent: false,
+        resolution: 1
+      }
+    );
+    app.renderer.backgroundColor = 0x55DD55;
+    /// Fill the screen 
+    app.renderer.view.style.position = "absolute";
+    app.renderer.view.style.display = "block";
+    app.renderer.autoResize = true;
+    app.renderer.resize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(app.view);
+    loader.add(["sprites/arrow.png","sprites/ballista.png", "sprites/button.png", "sprites/base.png","sprites/coin.png", "sprites/enemy.png","sprites/hammer.png", "sprites/player.png", "sprites/question.png", "sprites/rock.png","sprites/tower1.png","sprites/tower2.png","sprites/tower3.png","sprites/wall.png",]).load(setup);
+    var state;
+    var keys = {};
+    var mouseX,mouseY;
+    var player;
+    var buildMenu = [];
+    var buildingTextures = ["sprites/wall.png", "sprites/tower1.png", "sprites/tower2.png", "sprites/tower3.png", "sprites/base.png"];
+    var buildingData = [{dmg:0, fireRate:0, hp:5, range:0},{dmg:5, fireRate: 1000, hp:15, range:300},{dmg:20, fireRate: 3000, hp:15, range:600},{dmg: 2, fireRate: 250, hp:15, range:150},{dmg: 5, fireRate: 1000, hp:50, range:400},]
+    var buildingDesc = ["A cheap palisade wall for slowing down enemies. 1 gold.", "A quick-firing arrow tower for quick attacks. 5 gold.", "A heavy ballista tower for dealing heavy damage. 10 gold.", "A murder-hole tower for attacking many enemies at once. 10 gold."];
+    var buildingCost = [1, 5, 10, 10]
+    var indicator;
+    var buildMode = {active:false, building: 0};
+    var buildings = [];
+    var enemies = [];
+    var arrows = [];
+    var base;
+    var toolMenu = [];
+    var gold = 0;
+    var goldText;
+    var lastWave = Date.now() + 10000;
+    var waveCleared = true;
+    var mode = "build";
+    var verses = ["Now before the feast of the passover, when Jesus knew that his hour was come that he should depart out of this world unto the Father, having loved his own which were in the world, he loved them unto the end.", "And supper being ended, the devil having now put into the heart of Judas Iscariot, Simon's son, to betray him;", "Jesus knowing that the Father had given all things into his hands, and that he was come from God, and went to God;", "He riseth from supper, and laid aside his garments; and took a towel, and girded himself.", "After that he poureth water into a bason, and began to wash the disciples' feet, and to wipe them with the towel wherewith he was girded.", "Then cometh he to Simon Peter: and Peter saith unto him, Lord, dost thou wash my feet?", "Jesus answered and said unto him, What I do thou knowest not now; but thou shalt know hereafter.", "Peter saith unto him, Thou shalt never wash my feet. Jesus answered him, If I wash thee not, thou hast no part with me.", "Simon Peter saith unto him, Lord, not my feet only, but also my hands and my head.", "Jesus saith to him, He that is washed needeth not save to wash his feet, but is clean every whit: and ye are clean, but not all.", "For he knew who should betray him; therefore said he, Ye are not all clean.", "So after he had washed their feet, and had taken his garments, and was set down again, he said unto them, Know ye what I have done to you?", "Ye call me Master and Lord: and ye say well; for so I am.", "If I then, your Lord and Master, have washed your feet; ye also ought to wash one another's feet.", "For I have given you an example, that ye should do as I have done to you.", "Verily, verily, I say unto you, The servant is not greater than his lord; neither he that is sent greater than he that sent him.", "If ye know these things, happy are ye if ye do them.", "I speak not of you all: I know whom I have chosen: but that the scripture may be fulfilled, He that eateth bread with me hath lifted up his heel against me.", "Now I tell you before it come, that, when it is come to pass, ye may believe that I am he.", "Verily, verily, I say unto you, He that receiveth whomsoever I send receiveth me; and he that receiveth me receiveth him that sent me.", "When Jesus had thus said, he was troubled in spirit, and testified, and said, Verily, verily, I say unto you, that one of you shall betray me.", "Then the disciples looked one on another, doubting of whom he spake.", "Now there was leaning on Jesus' bosom one of his disciples, whom Jesus loved.", "Simon Peter therefore beckoned to him, that he should ask who it should be of whom he spake.", "He then lying on Jesus' breast saith unto him, Lord, who is it?", "Jesus answered, He it is, to whom I shall give a sop, when I have dipped it. And when he had dipped the sop, he gave it to Judas Iscariot, the son of Simon.", "And after the sop Satan entered into him. Then said Jesus unto him, That thou doest, do quickly.", "Now no man at the table knew for what intent he spake this unto him.", "For some of them thought, because Judas had the bag, that Jesus had said unto him, Buy those things that we have need of against the feast; or, that he should give something to the poor.", "He then having received the sop went immediately out: and it was night.", "Therefore, when he was gone out, Jesus said, Now is the Son of man glorified, and God is glorified in him.", "If God be glorified in him, God shall also glorify him in himself, and shall straightway glorify him.", "Little children, yet a little while I am with you. Ye shall seek me: and as I said unto the Jews, Whither I go, ye cannot come; so now I say to you.", "A new commandment I give unto you, That ye love one another; as I have loved you, that ye also love one another.", "By this shall all men know that ye are my disciples, if ye have love one to another.", "Simon Peter said unto him, Lord, whither goest thou? Jesus answered him, Whither I go, thou canst not follow me now; but thou shalt follow me afterwards.", "Peter said unto him, Lord, why cannot I follow thee now? I will lay down my life for thy sake.", "Jesus answered him, Wilt thou lay down thy life for my sake? Verily, verily, I say unto thee, The cock shall not crow, till thou hast denied me thrice."];
+    var questionMenu = {questionDiv: document.getElementById("question"), answers: document.getElementsByClassName("answer"), delay: 1000, lastAnswer: 0, answerQuestion: function(answerEl){
+        if(questionMenu.lastAnswer + questionMenu.delay > Date.now() || buildMode.active) {
+            return;
+        }
+        if(answerEl.innerHTML === questionMenu.rightAnswer) {
+            gold++;
+            answerEl.className = "correct";
+            questionMenu.delay = 250;
+            setTimeout(function() {
+                answerEl.className = "answer";
+                goldText.text = gold.toString();
+                questionMenu.newQuestion();
+            }, 250);
+        } else {
+            answerEl.className = "incorrect";
+            questionMenu.corAnsEl.className = "correct";
+            questionMenu.delay = 1000;
+            setTimeout(function() {
+                answerEl.className = "answer";
+                questionMenu.corAnsEl.className = "answer";
+                questionMenu.newQuestion();
+            }, 1000);
+        }
+        questionMenu.lastAnswer = Date.now();
+    }, newQuestion: function() {
+        var rand = randInt(0, verses.length-1);
+        questionMenu.rightAnswer = "John 13:" + (rand+1).toString();
+        questionMenu.verseNum = rand;
+        questionMenu.questionDiv.innerHTML = verses[rand];
+        var corAns = randInt(0, 3);
+        var taken = [rand];
+        for(i = 0; i < questionMenu.answers.length; i++) {
+            if(i === corAns) {
+                questionMenu.answers[i].innerHTML = questionMenu.rightAnswer;
+                questionMenu.corAnsEl = questionMenu.answers[i];
+            } else {
+                var newRand = randInt(0, verses.length-1);
+                while(taken.includes(newRand)) {
+                    newRand = randInt(0, verses.length-1);
+                }
+                questionMenu.answers[i].innerHTML = "John 13:" + (newRand+1).toString();
+            }
+        }
+    }};
+    questionMenu.questionDiv.style.left = (innerWidth/2-500) + "px";
+    var i;
+    var lvl = 0;
+    for(i = 0; i < questionMenu.answers.length; i++) {
+        questionMenu.answers[i].style.left = (innerWidth/2-400 + (200*i)) + "px";
+        let me = questionMenu.answers[i];
+        questionMenu.answers[i].addEventListener("click", function() {
+            questionMenu.answerQuestion(me);
+        });
+    }
+    questionMenu.newQuestion();
+    function setup() {
+        player = new Sprite(resources["sprites/player.png"].texture);
+        app.stage.addChild(player);
+        player.x = innerWidth/2;
+        player.y = innerHeight/2 - 64;
+        player.speed = 3;
+        var wallIcon = new Sprite(resources["sprites/wall.png"].texture);
+        var tower1Icon = new Sprite(resources["sprites/tower1.png"].texture);
+        var tower2Icon = new Sprite(resources["sprites/tower2.png"].texture);
+        var tower3Icon = new Sprite(resources["sprites/tower3.png"].texture);
+        wallIcon.y = innerHeight - 100;
+        wallIcon.x = innerWidth/2 - 150;
+        tower1Icon.y = innerHeight - 100;
+        tower1Icon.x = innerWidth/2 - 50;
+        tower2Icon.y = innerHeight - 100;
+        tower2Icon.x = innerWidth/2 + 50;
+        tower3Icon.y = innerHeight - 100;
+        tower3Icon.x = innerWidth/2 + 150;
+        buildMenu.push(wallIcon);
+        buildMenu.push(tower1Icon);
+        buildMenu.push(tower2Icon);
+        buildMenu.push(tower3Icon);
+        app.stage.addChild(wallIcon);
+        app.stage.addChild(tower1Icon);
+        app.stage.addChild(tower2Icon);
+        app.stage.addChild(tower3Icon);
+        buildMenu.forEach(function(tower) {
+            tower.visible = false;
+        })
+        var hammerIcon = new Sprite(resources["sprites/hammer.png"].texture);
+        hammerIcon.x = 25;
+        hammerIcon.y = innerHeight - 100;
+        hammerIcon.alpha = 0.5;
+        app.stage.addChild(hammerIcon);
+
+        var questionIcon = new Sprite(resources["sprites/question.png"].texture);
+        questionIcon.x = 75;
+        questionIcon.y = innerHeight - 105;
+        app.stage.addChild(questionIcon);
+        
+        var goldIcon = new Sprite(resources["sprites/coin.png"].texture);
+        goldIcon.x = innerWidth - 100;
+        goldIcon.y = innerHeight - 105;
+        app.stage.addChild(goldIcon);
+
+        goldText = new PIXI.Text("0", new PIXI.TextStyle({fontSize: 50}));
+        goldText.anchor.set(1,0.5)
+        goldText.x = innerWidth - 100;
+        goldText.y = innerHeight - 75;
+        app.stage.addChild(goldText);
+
+        toolMenu.push(hammerIcon, questionIcon, goldIcon, goldText);
+
+        
+        indicator = new Sprite(resources["sprites/wall.png"].texture);
+        indicator.visible = false;
+        indicator.alpha = 0.75;
+        indicator.anchor.set(0.5,0.5);
+        player.anchor.set(0.5,0.5);
+        base = build(4,15,8);
+        // spawnEnemy(0,750, 2, 1);
+        // spawnEnemy(0,0, 10, 1);
+        // spawnEnemy(0,750, 5, 1);
+        // spawnEnemy(0,850, 5, 1);
+        // spawnEnemy(0,950, 5, 1);
+        // spawnEnemy(0,650, 5, 1);
+        // spawnEnemy(0,550, 5, 1);
+        // spawnEnemy(innerWidth,750, 5, 1);
+        // spawnEnemy(innerWidth,850, 5, 1);
+        // spawnEnemy(innerWidth,950, 5, 1);
+        // spawnEnemy(innerWidth,650, 5, 1);
+        // spawnEnemy(innerWidth,550, 5, 1);
+        // spawnEnemy(innerWidth/2,1000, 5, 1);
+        // spawnEnemy(innerWidth/2,-200, 5, 1);
+        app.stage.addChild(indicator);
+        state = play;
+        app.ticker.add(delta => gameLoop(delta));
+    }
+    function spawnEnemy(x,y, hp, dmg) {
+        var enemy = new Sprite(resources["sprites/enemy.png"].texture);
+        app.stage.addChild(enemy);
+        enemy.x = x;
+        enemy.y = y;
+        enemy.hp = hp;
+        enemy.dmg = dmg;
+        enemy.lastAtk = 0;
+        enemy.atkSpeed = 1000;
+        enemy.anchor.set(0.5, 0.5);
+        enemy.anim = {active: false, step: 0};
+        enemies.push(enemy);
+    }
+    function gameLoop(delta) {
+      state(delta)
+    }
+    function play(){
+        player.vx = 0;
+        player.vy = 0;
+        if(keys.e) {
+            spawnEnemy(Math.random()*innerWidth, Math.random() * -100, 5, 2);
+        }
+        if(keys.ArrowUp) {
+            player.vy -= player.speed;
+        }
+        if(keys.ArrowDown) {
+            player.vy += player.speed;
+        }
+        if(keys.ArrowLeft) {
+            player.vx -= player.speed;
+        }
+        if(keys.ArrowRight) {
+            player.vx += player.speed;
+        }
+        if(!checkCol(player.x+player.vx, player.y + player.vy)) {
+            player.x += player.vx;
+            player.y += player.vy;
+        } else if(!checkCol(player.x, player.y + player.vy)) {
+            player.y += player.vy;
+        } else if(!checkCol(player.x + player.vx, player.y)) {
+            player.x += player.vx;
+        }
+        if(press(" ")) {
+            if(mode === "build") {
+                buildMode.active = !buildMode.active;
+                if(buildMode.active) {
+                    indicator.visible = true;
+                    questionMenu.questionDiv.innerHTML = buildingDesc[buildMode.building];
+                    questionMenu.hide();
+                    toolMenu[0].alpha = 1;
+                    toolMenu[1].alpha = 0.5;
+                } else {
+                    indicator.visible = false;
+                    questionMenu.questionDiv.innerHTML = verses[questionMenu.verseNum];
+                    questionMenu.show();
+                    toolMenu[0].alpha = 0.5;
+                    toolMenu[1].alpha = 1;
+                }
+            }
+        }
+        if(buildMode.active) {
+            indicator.x = Math.round((mouseX)/64)*64;
+            indicator.y = Math.round((mouseY)/64)*64;
+            updateBuildMode();
+            if(press("q")) {
+                buildMode.building = 0;
+            } else if(press("w")) {
+                buildMode.building = 1;
+            } else if(press("e")) {
+                buildMode.building = 2;
+            } else if(press("r")) {
+                buildMode.building = 3;
+            }
+            if(keys.mouse) {
+                if(noBuildingAt(Math.round((mouseX)/64),Math.round((mouseY)/64)) && gold >= buildingCost[buildMode.building]) {
+                    build(buildMode.building, Math.round((mouseX)/64), Math.round((mouseY)/64))
+                    gold -= buildingCost[buildMode.building];
+                    goldText.text = gold.toString();
+                }
+            }
+        }
+        if(!enemies.length && Date.now() > lastWave) {
+            if(waveCleared) {
+                spawnWave(++lvl);
+                waveCleared = false;
+                mode = "fight";
+                questionMenu.questionDiv.innerHTML = "Attacking!";
+                questionMenu.hide();
+            } else {
+                waveCleared = true;
+                lastWave = Date.now() + 10000;
+                mode = "biuld";
+                questionMenu.show();
+            }
+        }
+        handleEnemies();
+        handleBuildings();
+        
+        handleArrows();
+    }
+    function spawnWave(level) {
+        for(var i = 0; i < level*10; i++) {
+            spawnEnemy(Math.random()*innerWidth, Math.random() * -100, 5, 2);
+        }
+    }
+    function handleArrows() {
+        var i;
+        var len = arrows.length;
+        for(i = 0; i < len; i++) {
+            var arrow = arrows[i];
+            arrow.x += arrow.velocity.x;
+            arrow.y += arrow.velocity.y;
+            var spearhead = normalize(arrow.velocity.x,arrow.velocity.y,arrow.height/2);
+            spearhead.x += arrow.x;
+            spearhead.y += arrow.y;
+            var enemyHit = hitEnemy(spearhead);
+            if(enemyHit) {
+                enemyHit.hp -= arrow.dmg;
+                app.stage.removeChild(arrow);
+                arrows.splice(i,1);
+                --i;
+                --len;
+            }
+            if(arrow.x > innerWidth+100 || arrow.x < -100 || arrow.y > innerHeight + 100 || arrow.y < -100) {
+                app.stage.removeChild(arrow);
+                arrows.splice(i,1);
+                --i;
+                --len;
+            }
+        }
+    }
+    function hitEnemy(point) {
+        var i;
+        var len = enemies.length;
+        for(i = 0; i < len; i++) {
+            if(getDistance(point.x,point.y, enemies[i].x, enemies[i].y) <32) {
+                return enemies[i];
+            }
+        }
+    }
+    function handleBuildings() {
+
+        var i;
+        var len = buildings.length;
+        for(i = 0; i < len; i++) {
+            var building = buildings[i];
+            if(building.hp < 1) {
+                app.stage.removeChild(building);
+                buildings.splice(i,1);
+                --i;
+                --len;
+                continue;
+            }
+            if((building.type === 1 || building.type === 4) && building.lastAtk + building.fireRate < Date.now()) {
+                var target = getClosestEnemy(building.x,building.y);
+                if(target) {
+                    if(getDistance(target.x,target.y,building.x,building.y) < building.range) {
+                        shootArrow(normalize(target.x-building.x,target.y-building.y,10), building.x, building.y,pointTowards(building.x,building.y,target.x,target.y),building.dmg);
+                        building.lastAtk = Date.now();
+                    }
+                }
+            }
+        }
+    }
+    function pointTowards(x1,y1,x2,y2) {
+        /// Mine
+        var xDiff = x1 - x2;
+        var yDiff = y1 - y2;
+        var ans = Math.atan(yDiff/xDiff);
+        if(ans < 0) {
+            ans += Math.PI;
+        }
+        return ans;
+    }
+    function shootArrow(vector, x,y,dir,dmg) {
+        var arrow = new Sprite(resources["sprites/arrow.png"].texture);
+        arrow.scale.set(2)
+        app.stage.addChild(arrow);
+        arrow.anchor.set(0.5,0.5);
+        arrow.x = x;
+        arrow.y = y;
+        arrow.velocity = vector;
+        arrow.rotation = dir - Math.PI/2;
+        arrow.dmg = dmg;
+        arrows.push(arrow);
+    }
+    function getClosestEnemy(x,y) {
+        if(!enemies.length) {
+            return false;
+        }
+        var i;
+        var len = enemies.length;
+        var bestDist = Infinity;
+        var match;
+        for(i = 0; i < len; i++) {
+            var dist = getDistance(x,y,enemies[i].x,enemies[i].y);
+            if(dist < bestDist) {
+                bestDist = dist;
+                match = enemies[i];
+            }
+        } 
+        return match;
+    }
+    function handleEnemies() {
+        var i;
+        var len = enemies.length;
+        for(i = 0; i < len; i++) {
+            var enemy = enemies[i];
+            if(enemy.hp < 1) {
+                app.stage.removeChild(enemy);
+                enemies.splice(i,1);
+                --i;
+                --len;
+                continue;
+            }
+            if(enemy.anim.active) {
+                if(enemy.anim.step < 20) {
+                    enemy.scale.x += 0.005;
+                    enemy.scale.y += 0.005;
+                } else if(enemy.anim.step < 40) {
+                    enemy.scale.x -= 0.005;
+                    enemy.scale.y -= 0.005;
+                } else {
+                    enemy.anim.active = false;
+                }
+                ++enemy.anim.step;
+            } else {
+                var baseVector = normalize(base.x-enemy.x,base.y-enemy.y,2);
+                if(!checkCol(enemy.x+baseVector.x, enemy.y + baseVector.y)) {
+                    enemy.x += baseVector.x;
+                    enemy.y += baseVector.y;
+                } else if(enemy.lastAtk + enemy.atkSpeed < Date.now()) {
+                    var target = checkCol(enemy.x+baseVector.x, enemy.y + baseVector.y);
+                    target.hp -= enemy.dmg;
+                    enemy.anim.active = true;
+                    enemy.anim.step = 0;
+                    enemy.lastAtk = Date.now();
+                }
+            }
+        } 
+    }
+    function noBuildingAt(x,y) {
+        for(var i = 0; i < buildings.length; i++) {
+            if(buildings[i].boardX === x && buildings[i].boardY === y) {
+                return false;
+            }
+        }
+        return true;
+    }
+    function build(type,x,y) {
+        var building = new Sprite(resources[buildingTextures[type]].texture);
+        building.x = x*64;
+        building.y = y*64;
+        building.boardX = x;
+        building.boardY = y;
+        building.type = type;
+        building.dmg = buildingData[type].dmg;
+        building.fireRate = buildingData[type].fireRate;
+        console.log(building.fireRate);
+        building.hp = buildingData[type].hp;
+        building.range = buildingData[type].range;
+        app.stage.addChild(building);
+        buildings.push(building);
+        keys.mouse = false;
+        building.lastAtk = 0;
+        building.anchor.set(0.5,0.5);
+        return building;
+    }
+    function updateBuildMode() {
+        if(press("q") || press("1")) {
+            buildMode.building = 0;
+            indicator.texture = resources["sprites/wall.png"].texture;
+            questionMenu.questionDiv.innerHTML = buildingDesc[buildMode.building];
+        } else if(press("w") || press("2")) {
+            buildMode.building = 1;
+            indicator.texture = resources["sprites/tower1.png"].texture;
+            questionMenu.questionDiv.innerHTML = buildingDesc[buildMode.building];
+        } else if(press("e") || press("3")) {
+            buildMode.building = 2;
+            indicator.texture = resources["sprites/tower2.png"].texture;
+            questionMenu.questionDiv.innerHTML = buildingDesc[buildMode.building];
+        } else if(press("r") || press("4")) {
+            buildMode.building = 3;
+            indicator.texture = resources["sprites/tower3.png"].texture;
+            questionMenu.questionDiv.innerHTML = buildingDesc[buildMode.building];
+
+        }
+    }
+    questionMenu.hide = function () {
+        for(var i = 0; i < questionMenu.answers.length; i++) {
+            questionMenu.answers[i].style.visibility = "hidden";
+        }
+    }
+    questionMenu.show = function () {
+        for(var i = 0; i < questionMenu.answers.length; i++) {
+            questionMenu.answers[i].style.visibility = "visible";
+        }
+    }
+    function checkCol(x,y){
+        
+        for(var i = 0; i < buildings.length; i++) {
+            var curBuilding = buildings[i];
+            if((curBuilding.boardX*64+64 < x || curBuilding.boardX*64-64 > x) || (curBuilding.boardY*64+64 < y || curBuilding.boardY*64-64 > y)) {
+
+            } else {
+                return curBuilding;
+            }
+        }
+        return false;
+    }
+    function press(key){
+        if(keys[key]){
+            keys[key] = false;
+            return true;
+        }
+        return false;
+    }
+    addEventListener("mousedown",function(e){
+        if(e.button == 0) {
+            keys.mouse = true;
+        } else if(e.button == 2) {
+            keys.rightMouse = true;
+        }
+        mouseX = e.pageX;
+        mouseY = e.pageY;
+    });
+    addEventListener("mouseup",function(e){
+        if(e.button == 0) { 
+            keys.mouse = false;
+        } else if(e.button == 2) {
+            keys.rightMouse = true;
+        }
+    });
+    addEventListener("blur", function (){
+        keys = {};
+    });
+    addEventListener("mousemove",function(e){
+        mouseX = e.pageX;
+        mouseY = e.pageY;
+    });
+    addEventListener("keydown", function (e){
+        keys[e.key] = true;
+    });
+    addEventListener("keyup", function (e){
+        keys[e.key] = false;
+    });
+  </script>
+</body>
+</html>

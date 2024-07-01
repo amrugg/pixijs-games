@@ -67,8 +67,14 @@ var enemyProperties = {
             comboCooldown: 120,
             lastCombo: -Infinity
         },
-        colXPercent: 0.5,
-        colYPercent: 0.9,
+        colRects: [
+            {
+                colXPercent: 0.5,
+                colYPercent: 0.9,
+                dmgMult: 1,
+            }
+        ],
+        
         dropChances: []
     },
     "enemy-1-2": {
@@ -78,8 +84,18 @@ var enemyProperties = {
         damage: 1,
         cooldown: 120,
         lastFire: -Infinity,
-        colXPercent: 0.75,
-        colYPercent: 0.9,
+        colRects: [
+            {
+                colXPercent: 1,
+                colYPercent: 0.5,
+                dmgMult: 1,
+            },
+            {
+                colXPercent: 0.25,
+                colYPercent: 0.9,
+                dmgMult: 3,
+            }
+        ],
         dropChances: [100],
         possibleDrops: ["green"]
     }

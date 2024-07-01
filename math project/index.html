@@ -1,0 +1,530 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Direction ship</title>
+</head>
+    <style>* {padding: 0; margin: 0}</style>
+    <script src="pixi/pixi.min.js"></script>
+    <script src="usefulFunctions.js"></script>
+<body style="background-color: black;">
+  <script type="text/javascript">
+    "use strict";
+    
+    var params = getParams();
+    function getParams() {
+      var params = {};
+      location.search.substr(1).split("&").forEach(function(el) {
+        var data = el.replace(/\+/g, " ").split("=");
+        params[decodeURIComponent(data[0])] = data[1] ? decodeURIComponent(data[1]) : true;
+      });
+      return params;
+    }
+    PIXI.utils.skipHello();
+    PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
+    let Application = PIXI.Application,
+        Container = PIXI.Container,
+        loader = PIXI.loader,
+        resources = PIXI.loader.resources,
+        TextureCache = PIXI.utils.TextureCache,
+        Sprite = PIXI.Sprite,
+        Rectangle = PIXI.Rectangle,
+        Graphics = PIXI.Graphics;
+    let app = new Application({ 
+        width: innerHeight,
+        height: innerHeight,
+        antialias: true,
+        transparent: false,
+        resolution: 1
+      }
+    );
+    var canvasLength = app.renderer.view.width
+    app.renderer.backgroundColor = 0x55DD55;
+    /// Fill the screen 
+    app.renderer.view.style.left = (innerWidth - innerHeight)/2 + "px";
+    app.renderer.view.style.position = "absolute";
+    app.renderer.view.style.display = "block";
+    document.body.appendChild(app.view);
+    var scalar = innerHeight/800;
+    var canvasOffset = (innerWidth - innerHeight)/2;
+    loader.add(["sprites/ground.png", "sprites/enemy.png", "sprites/tower1.png", "sprites/tower2.png", "sprites/tower3.png", "sprites/coin.png", "sprites/arrow.png", "sprites/ballista.png", "sprites/rock.png"]).load(setup);
+    var state;
+    var keys = {};
+    var mouseX,mouseY;
+    var map = [];
+    var path = [];
+    var enemies = [];
+    var missiles = [];
+    ///23563
+    ///50931
+    ///94163
+    ///99047
+    ///576
+    ///98945
+    var randSeed = randInt(1, 100000)
+    var level1 = {
+        seed: 23563,
+        startingSeed: 23563,
+        randInt: function(min, max) {
+            var x = Math.sin(level1.seed++) * 100000;
+            x = x - Math.floor(x);
+            return Math.floor(x * (max - min + 1)) + min;
+        },
+        rand: function(min, max) {
+            var x = Math.sin(level1.seed++) * 100000;
+            x = x - Math.floor(x);
+            return x;
+        },
+        spawnSeq: [],
+        wave: 0,
+        curWave: false,
+        waves: [
+            {minHealth: 1, maxHealth: 2, minSpeed: 130, maxSpeed: 150, enemyNum: 10, minGold: 1, maxGold: 2},
+            {minHealth: 1, maxHealth: 3, minSpeed: 130, maxSpeed: 150, enemyNum: 15, minGold: 1, maxGold: 2},
+            {minHealth: 2, maxHealth: 3, minSpeed: 110, maxSpeed: 150, enemyNum: 20, minGold: 2, maxGold: 3},
+            {minHealth: 3, maxHealth: 5, minSpeed: 100, maxSpeed: 140, enemyNum: 25, minGold: 3, maxGold: 3},
+            {minHealth: 5, maxHealth: 7, minSpeed: 70, maxSpeed: 130, enemyNum: 30, minGold: 3, maxGold: 5},
+        ],
+    }
+    var towerData = {
+        tower1: {range: 300*scalar, dmg: 1, cooldown: 1000, gold:30, pierce:1},
+        tower2: {range: 500*scalar, dmg: 3, cooldown: 6000, gold:50, pierce:3},
+        tower3: {range: 100*scalar, dmg: 1, cooldown: 900, gold:30, pierce:1},
+    }
+    var goldCounter = new PIXI.Text("50", new PIXI.TextStyle({fontSize: 30*scalar}));
+    var gold = 500;
+    updateGoldText();
+    goldCounter.anchor.set(1,0.5);
+    app.stage.addChild(goldCounter);
+    goldCounter.y = 25*scalar;
+    goldCounter.x = canvasLength - 55*scalar;
+    var towerMenu = [];
+    var buildMode = {active: false};
+    var towers = [];
+    var pathLocs = [];
+    var textures = {
+        tower1: "sprites/tower1.png",
+        tower2: "sprites/tower2.png",
+        tower3: "sprites/tower3.png",
+    }
+    var curLevel;
+    function setup() {
+        state = play;
+        curLevel = level1;
+        generateLevel(curLevel);
+        prepWave(curLevel);
+        var coin = new Sprite(resources["sprites/coin.png"].texture);
+        coin.scale.set(0.75*scalar);
+        coin.x = canvasLength - coin.width*1.1;
+        coin.y = 5*scalar;
+        app.stage.addChild(coin);
+        var tower1 = new Sprite(resources["sprites/tower1.png"].texture);
+        tower1.scale.set(scalar);
+        tower1.x = canvasLength - tower1.width * 1.1;
+        tower1.y = 100*scalar;
+        tower1.type = "tower1";
+        app.stage.addChild(tower1);
+        towerMenu.push(tower1);
+        var tower2 = new Sprite(resources["sprites/tower2.png"].texture);
+        tower2.scale.set(scalar);
+        tower2.x = canvasLength - tower2.width * 1.1;
+        tower2.y = 200*scalar;
+        tower2.type = "tower2";
+        app.stage.addChild(tower2);
+        towerMenu.push(tower2);
+        var tower3 = new Sprite(resources["sprites/tower3.png"].texture);
+        tower3.scale.set(scalar);
+        tower3.x = canvasLength - tower3.width * 1.1;
+        tower3.y = 300*scalar;
+        tower3.type = "tower3";
+        app.stage.addChild(tower3);
+        towerMenu.push(tower3);
+        buildMode.icon = new Sprite(resources["sprites/tower1.png"].texture);
+        app.stage.addChild(buildMode.icon);
+        buildMode.icon.visible = false;
+        buildMode.icon.scale.set(scalar);
+        app.ticker.add(delta => gameLoop(delta));
+    }
+    function prepWave(level) {
+        level.curWave = level.waves[level.wave];
+        for(var i = 0; i < level.curWave.enemyNum; i++) {
+            level.spawnSeq.push(Date.now() + i * 1000 + randInt(-500,500));
+        }
+    }
+    function spawnEnemy(beginX, beginY, level) {
+        var enemy = new Sprite(resources["sprites/enemy.png"].texture);
+        enemy.scale.set(scalar);
+        enemy.anchor.set(0.5,0.5);
+        enemy.x = (beginX * 80 + 40) * scalar;
+        enemy.y = (beginY * 80 + 40) * scalar;
+        enemy.targetX = enemy.x;
+        enemy.targetY = enemy.y;
+        enemy.index = -1;
+        enemy.speed = level.randInt(level.curWave.minSpeed,level.curWave.maxSpeed);
+        enemy.chooseNewDir = function () {
+            enemy.dir = path[++enemy.index];
+            if(enemy.dir === 0) {
+                enemy.targetX -= 80*scalar;
+            } else if(enemy.dir === 1) {
+                enemy.targetX += 80*scalar;   
+            } else {
+                enemy.targetY += 80*scalar;
+            }
+            enemy.steps = enemy.speed;
+        }
+        enemy.chooseNewDir();
+        enemy.health = level.randInt(level.curWave.minHealth,level.curWave.maxHealth);
+        enemy.gold = level.randInt(level.curWave.minGold,level.curWave.maxGold);
+        enemy.advance = 0;
+        app.stage.addChild(enemy);
+        enemies.push(enemy);
+        return enemy;
+    }
+    function generateLevel(level) {
+        var x = 5;
+        var y = -1;
+        var generatingPath = true;
+        var mem1 = false;
+        var mem2 = false;
+        while(generatingPath) {
+            var tile = new Sprite(resources["sprites/ground.png"].texture);
+            app.stage.addChild(tile);
+            tile.x = x * 80 * scalar;
+            tile.y = y * 80 * scalar;
+            tile.scale.set(scalar);
+            map.push(tile);
+            pathLocs.push({x:x,y:y});
+            do {
+                var rand = level1.rand();
+                /// 0 for left, 1 for right, 2 for down
+                if(!path.length) {
+                    dir = 2;
+                } else {
+                    var dir = rand < 0.3 ? 0 : rand < 0.6 ? 1 : 2;
+                }
+            } while(mem1 === 1-dir || mem2 === 1-dir);
+            mem2 = mem1;
+            mem1 = dir;
+            if(dir === 0) {
+                x--;
+            } else if(dir === 1) {
+                x++;
+            } else {
+                y++;
+            }
+            path.push(dir);
+            if(x < 0 || x > 10 || y > 10) {
+                generatingPath = false;
+            }
+        }
+    }
+    function gameLoop(delta) {
+      state(delta)
+    }
+    function updateGoldText() {
+        goldCounter.text = gold.toString();
+    }
+    function play(){
+        handleEnemies();
+        if(curLevel.spawnSeq[0] < Date.now()) {
+            curLevel.spawnSeq.splice(0,1);
+            spawnEnemy(5,-1, curLevel);
+        }
+        if(press(" ")) {
+            if(enemies.length === 0) {
+                ++curLevel.wave;
+                prepWave(curLevel);
+            }
+        }
+        if(press("mouse")) {
+            if(buildMode.active) {
+                if(mouseX > canvasLength - 160*scalar) {
+                    buildMode.active = false;
+                    buildMode.icon.visible = false;
+                } else {
+                    var buildX = Math.floor(mouseX/(80*scalar));
+                    var buildY = Math.floor(mouseY/(80*scalar));
+                    if(isClear({x:buildX,y:buildY}) && gold >= towerData[buildMode.building].gold) {
+                        buildTower({x:buildX,y:buildY}, buildMode.building);
+                        gold -= towerData[buildMode.building].gold;
+                        updateGoldText();
+                        buildMode.active = false;
+                        buildMode.icon.visible = false;
+                    }
+                }
+            } else {
+                towerMenu.forEach(function(tower) {
+                    if(mouseX > tower.x && mouseX < tower.x + tower.width && mouseY > tower.y && mouseY < tower.y + tower.height) {
+                        buildMode.active = true;
+                        buildMode.building = tower.type;
+                        buildMode.icon.visible = true;
+                        buildMode.icon.texture = resources[textures[tower.type]].texture;
+                    }
+                });
+            }
+        }
+        if(buildMode.active) {
+            buildMode.icon.x = Math.floor(mouseX/(80*scalar))*80*scalar;
+            buildMode.icon.y = Math.floor(mouseY/(80*scalar))*80*scalar;
+            if(mouseX > canvasLength - 160*scalar) {
+                buildMode.icon.tint = 0xFF8888;
+            } else {
+                buildMode.icon.tint = 0xFFFFFF;
+            }
+        }
+        towers.forEach(function(tower) {
+            if(tower.type === "tower1") {
+                var pivotX = tower.x + 40 * scalar;
+                var pivotY = tower.y + 40 * scalar;            
+                var target = getBestEnemyWR({x:pivotX, y: pivotY},tower.range);
+                if(getDistance(pivotX,pivotY,target.x,target.y) <= tower.range) {
+                    if(tower.lastFire + tower.cooldown < Date.now()) {
+                        shootMissile(pivotX,pivotY,normalize(target.x - pivotX, target.y - pivotY, 10*scalar), tower.dmg, tower.pierce, "arrow");
+                        tower.lastFire = Date.now();
+                    }
+                }
+            }
+            if(tower.type === "tower2") {
+                var pivotX = tower.x + 40 * scalar;
+                var pivotY = tower.y + 40 * scalar;            
+                var target = getBestEnemyWR({x:pivotX, y: pivotY},tower.range);
+                if(getDistance(pivotX,pivotY,target.x,target.y) <= tower.range) {
+                    if(tower.lastFire + tower.cooldown < Date.now()) {
+                        shootMissile(pivotX,pivotY,normalize(target.x - pivotX, target.y - pivotY, 7*scalar), tower.dmg, tower.pierce, "ballista");
+                        tower.lastFire = Date.now();
+                    }
+                }
+            }
+            if(tower.type === "tower3") {
+                var pivotX = tower.x + 40 * scalar;
+                var pivotY = tower.y + 40 * scalar;            
+                var target = getBestEnemyWR({x:pivotX, y: pivotY},tower.range, function(target) {
+                    var dx = target.x - pivotX;
+                    var dy = target.y - pivotY;
+                    if(dy < 0 && Math.abs(dy/dx) > 1) {
+                        /// Up
+                        if(tower.faces[0] + tower.cooldown < Date.now()) {
+                            return true;
+                        }
+                    }
+                    if(dy > 0 && Math.abs(dy/dx) > 1) {
+                        /// Down
+                        if(tower.faces[1] + tower.cooldown < Date.now()) {
+                            return true;
+                        }
+                    }
+                    if(dx < 0 && Math.abs(dx/dy) > 1) {
+                        /// Left
+                        if(tower.faces[2] + tower.cooldown < Date.now()) {
+                            return true;
+                        }
+                    }
+                    if(dx > 0 && Math.abs(dx/dy) > 1) {
+                        /// Right
+                        if(tower.faces[3] + tower.cooldown < Date.now()) {
+                            return true;
+                        }
+                    }
+                });
+                if(getDistance(pivotX,pivotY,target.x,target.y) <= tower.range) {
+                    shootMissile(pivotX,pivotY,normalize(target.x - pivotX, target.y - pivotY, 7*scalar), tower.dmg, tower.pierce, "rock");
+                    var dx = target.x - pivotX;
+                    var dy = target.y - pivotY;
+                    if(dy < 0 && Math.abs(dy/dx) > 1) {
+                        tower.faces[0] =  Date.now();
+                    }
+                    if(dy > 0 && Math.abs(dy/dx) > 1) {
+                        tower.faces[1] =  Date.now();
+                    }
+                    if(dx < 0 && Math.abs(dx/dy) > 1) {
+                        tower.faces[2] =  Date.now();
+                    }
+                    if(dx > 0 && Math.abs(dx/dy) > 1) {
+                        tower.faces[3] =  Date.now();
+                    }
+                }
+            }
+        });
+        handleMissiles();
+        
+    }
+    function getBestEnemyWR(pos, range, valid) {
+        valid = valid || function() {return true;};
+        var i;
+        var len = enemies.length;
+        var bestAdv = 0;
+        var bestMatch = false;
+        for(i = 0; i < len; i++) {
+            var dist = getDistance(pos.x,pos.y,enemies[i].x,enemies[i].y);
+            if(dist < range && enemies[i].advance > bestAdv && valid(enemies[i])) {
+                bestAdv = enemies[i].advance;
+                bestMatch = enemies[i];
+            }
+        }
+        return bestMatch;
+    }
+    function handleEnemies() {
+
+        var i;
+        var len = enemies.length;
+        for(i = 0; i < len; i++) {
+            var enemy = enemies[i];
+            if(enemy.health <= 0) {
+                gold += enemy.gold;
+                updateGoldText();
+                app.stage.removeChild(enemy);
+                enemies.splice(i,1);
+                --i;
+                --len;
+                continue;
+            }
+            if(enemy.steps) {
+                enemy.x += (enemy.targetX - enemy.x)/enemy.steps;
+                enemy.y += (enemy.targetY - enemy.y)/enemy.steps;
+                enemy.advance += 1/enemy.speed;
+                enemy.steps--;
+            } else {
+                enemy.chooseNewDir();
+            }
+        }
+    }
+    function handleMissiles() {
+        var i;
+        var len = missiles.length;
+        for(i = 0; i < len; i++) {
+            var missile = missiles[i];
+            missile.x += missile.vector.x;
+            missile.y += missile.vector.y;
+            if(missile.x < - missile.height || missile.x > canvasLength + missile.height || missile.y < - missile.height || missile.y > canvasLength + missile.height) {
+                app.stage.removeChild(missile);
+                missiles.splice(i,1);
+                --i;
+                --len;
+                continue;
+            }
+            var normVector = normalize(missile.vector.x,missile.vector.y, missile.width/2);
+            var missilePoint = {x:normVector.x + missile.x, y: normVector.y + missile.y};
+            var target = getClosestEnemy(missilePoint, function(target) {
+                if(missile.immune.includes(target)) {
+                    return false;
+                }
+                return true;
+            });
+                if(getDistance(missilePoint.x, missilePoint.y, target.x, target.y) <= 32*scalar) {
+                    target.health -= missile.dmg;
+                    if(--missile.pierce < 1) {
+                        app.stage.removeChild(missile);
+                        missiles.splice(i,1);
+                        --i;
+                        --len;
+                        continue;
+                    } else {
+                        missile.immune.push(target);
+                    }
+                }
+        }
+    }
+    function shootMissile(x,y, vector, dmg, pierce, type) {
+        var missile = new Sprite(resources["sprites/" + type + ".png"].texture);
+        missile.vector = vector;
+        missile.anchor.set(0.5,0.5);
+        missile.x = x;
+        missile.y = y;
+        missile.dmg = dmg;
+        missile.pierce = pierce;
+        missile.immune = [];
+        missile.rotation = Math.PI * (-pointTowards(0,0,vector.x,vector.y)) / 180;
+        // console.log(missile.rotation, pointTowards(0,0,vector.x,vector.y));
+        missile.scale.set(scalar);
+        app.stage.addChild(missile);
+        missiles.push(missile);
+    }
+    function getClosestEnemy(pos, valid) {
+        valid = valid || function() {return true;};
+        var i;
+        var len = enemies.length;
+        var bestDist = Infinity;
+        var bestMatch = false;
+        for(i = 0; i < len; i++) {
+            var dist = getDistance(pos.x,pos.y,enemies[i].x,enemies[i].y);
+            if(dist < bestDist && valid(enemies[i])) {
+                bestDist = dist;
+                bestMatch = enemies[i];
+            }
+        }
+        return bestMatch;
+    }
+    function buildTower(pos, type) {
+        var tower = new Sprite(resources[textures[type]].texture);
+        tower.scale.set(scalar);
+        tower.x = pos.x * 80*scalar;
+        tower.y = pos.y * 80*scalar;
+        tower.buildX = pos.x;
+        tower.buildY = pos.y;
+        towers.push(tower);
+        tower.type = type;
+        tower.range = towerData[type].range;
+        tower.dmg = towerData[type].dmg;
+        tower.pierce = towerData[type].pierce;
+        tower.cooldown = towerData[type].cooldown;
+        if(type === "tower3") {
+            tower.faces = [0,0,0,0];
+        } else {
+            tower.lastFire = 0;
+        }
+
+        app.stage.addChild(tower);
+    }
+    function isClear(pos) {
+        for(var i = 0; i < pathLocs.length; i++) {
+            if(pathLocs[i].x === pos.x && pathLocs[i].y === pos.y) {
+                return false;
+            }
+        }
+        i = 0;
+        for(i = 0; i < towers.length; i++) {
+            if(towers[i].buildX === pos.x && towers[i].buildY === pos.y) {
+                return false;
+            }
+        }
+        return true;
+    }
+    function press(key){
+        if(keys[key]){
+            keys[key] = false;
+            return true;
+        }
+        return false;
+    }
+    addEventListener("mousedown",function(e){
+        if(e.button == 0) {
+            keys.mouse = true;
+        } else if(e.button == 2) {
+            keys.rightMouse = true;
+        }
+        mouseX = e.pageX - canvasOffset;
+        mouseY = e.pageY;
+    });
+    addEventListener("mouseup",function(e){
+        if(e.button == 0) { 
+            keys.mouse = false;
+        } else if(e.button == 2) {
+            keys.rightMouse = false;
+        }
+    });
+    addEventListener("blur", function (){
+        keys = {};
+    });
+    addEventListener("mousemove",function(e){
+        mouseX = e.pageX - canvasOffset;
+        mouseY = e.pageY;
+    });
+    addEventListener("keydown", function (e){
+        keys[e.key] = true;
+    });
+    addEventListener("keyup", function (e){
+        keys[e.key] = false;
+    });
+  </script>
+</body>
+</html>
