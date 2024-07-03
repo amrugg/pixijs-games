@@ -22,7 +22,7 @@
     }
     PIXI.utils.skipHello();
     PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
-    let Application = PIXI.Application,
+    var Application = PIXI.Application,
         Container = PIXI.Container,
         loader = PIXI.loader,
         resources = PIXI.loader.resources,
@@ -30,24 +30,24 @@
         Sprite = PIXI.Sprite,
         Rectangle = PIXI.Rectangle,
         Graphics = PIXI.Graphics;
-    let app = new Application({ 
-        width: innerHeight,
-        height: innerHeight,
+    var canvasLength = Math.min(innerHeight, innerWidth);
+    var app = new Application({ 
+        width: canvasLength,
+        height: canvasLength,
         antialias: true,
         transparent: false,
         resolution: 1
       }
     );
-    var canvasLength = app.renderer.view.width
     app.renderer.backgroundColor = 0x55DD55;
     /// Fill the screen 
-    app.renderer.view.style.left = (innerWidth - innerHeight)/2 + "px";
+    app.renderer.view.style.left = (innerWidth - canvasLength)/2 + "px";
     app.renderer.view.style.position = "absolute";
     app.renderer.view.style.display = "block";
     document.body.appendChild(app.view);
-    var scalar = innerHeight/800;
-    var canvasOffset = (innerWidth - innerHeight)/2;
-    loader.add(["sprites/ground.png", "sprites/enemy.png", "sprites/tower1.png", "sprites/tower2.png", "sprites/tower3.png", "sprites/coin.png", "sprites/arrow.png", "sprites/ballista.png", "sprites/rock.png"]).load(setup);
+    var scalar = canvasLength/800;
+    var canvasOffset = (innerWidth - canvasLength)/2;
+    loader.add(["sprites/ground.png", "sprites/enemy.png", "sprites/tower1.png", "sprites/tower2.png", "sprites/tower3.png", "sprites/coin.png", "sprites/heart.png", "sprites/arrow.png", "sprites/ballista.png", "sprites/rock.png","sprites/upgrades/tower1/damage.png", "sprites/upgrades/tower1/range.png", "sprites/upgrades/tower1/twin.png"]).load(setup);
     var state;
     var keys = {};
     var mouseX,mouseY;
@@ -78,28 +78,61 @@
         spawnSeq: [],
         wave: 0,
         curWave: false,
-        waves: [
-            {minHealth: 1, maxHealth: 2, minSpeed: 130, maxSpeed: 150, enemyNum: 10, minGold: 1, maxGold: 2},
-            {minHealth: 1, maxHealth: 3, minSpeed: 130, maxSpeed: 150, enemyNum: 15, minGold: 1, maxGold: 2},
-            {minHealth: 2, maxHealth: 3, minSpeed: 110, maxSpeed: 150, enemyNum: 20, minGold: 2, maxGold: 3},
-            {minHealth: 3, maxHealth: 5, minSpeed: 100, maxSpeed: 140, enemyNum: 25, minGold: 3, maxGold: 3},
-            {minHealth: 5, maxHealth: 7, minSpeed: 70, maxSpeed: 130, enemyNum: 30, minGold: 3, maxGold: 5},
-        ],
+        waveNum: 10,
+        levelDiffMin: {minHealth: 1, maxHealth: 1, minSpeed: -5, maxSpeed: -5, enemyNum: 5, minGold: 0, maxGold: 0},
+        levelDiffMax: {minHealth: 2, maxHealth: 2, minSpeed: -7, maxSpeed: -7, enemyNum: 7, minGold: 0, maxGold: 1},
+        waves: [{minHealth: 1, maxHealth: 2, minSpeed: 110, maxSpeed: 120, enemyNum: 10, minGold: 1, maxGold: 2}],
     }
     var towerData = {
         tower1: {range: 300*scalar, dmg: 1, cooldown: 1000, gold:30, pierce:1},
         tower2: {range: 500*scalar, dmg: 3, cooldown: 6000, gold:50, pierce:3},
         tower3: {range: 100*scalar, dmg: 1, cooldown: 900, gold:30, pierce:1},
     }
+    var upgradeData = {
+        "tower1": {
+            upgrades: [
+                [
+                    {desc: "+1 damage.", cost: 20, texture: "sprites/upgrades/tower1/damage.png", apply: function(tower) {
+                        tower.dmg++;
+                    }}
+                ],
+                [
+                    {desc: "+100 range.", cost: 20, texture: "sprites/upgrades/tower1/range.png", apply: function(tower) {
+                        tower.range += 100 * scalar;
+                    }}
+                ],
+                [
+                    {desc: "Shoots arrows faster.", cost: 20, texture: "sprites/upgrades/tower1/twin.png", apply: function(tower) {
+                        tower.cooldown /= 1.5;
+                    }}
+                ]
+            ]
+        }
+    }
     var goldCounter = new PIXI.Text("50", new PIXI.TextStyle({fontSize: 30*scalar}));
-    var gold = 500;
-    updateGoldText();
+    var gold = 50;
     goldCounter.anchor.set(1,0.5);
     app.stage.addChild(goldCounter);
     goldCounter.y = 25*scalar;
     goldCounter.x = canvasLength - 55*scalar;
+    updateGoldText();
+    var healthCounter = new PIXI.Text("20", new PIXI.TextStyle({fontSize: 30*scalar}));
+    var health = 20;
+    healthCounter.anchor.set(0,0.5);
+    app.stage.addChild(healthCounter);
+    healthCounter.y = 25*scalar;
+    healthCounter.x = 60*scalar;
+    updateHealthText();
+
+    var waveCounter = new PIXI.Text("Wave 1/10", new PIXI.TextStyle({fontSize: 30*scalar}));
+    waveCounter.anchor.set(1,1);
+    waveCounter.x = canvasLength - 20*scalar;
+    waveCounter.y = canvasLength - 20*scalar;
+    app.stage.addChild(waveCounter);
+    var waveButton = {};
     var towerMenu = [];
     var buildMode = {active: false};
+    var upgradeMode = {active: false, menu: []};
     var towers = [];
     var pathLocs = [];
     var textures = {
@@ -111,13 +144,19 @@
     function setup() {
         state = play;
         curLevel = level1;
-        generateLevel(curLevel);
+        generateMap(curLevel);
+        generateWaves(curLevel);
         prepWave(curLevel);
         var coin = new Sprite(resources["sprites/coin.png"].texture);
         coin.scale.set(0.75*scalar);
         coin.x = canvasLength - coin.width*1.1;
         coin.y = 5*scalar;
         app.stage.addChild(coin);
+        var heart = new Sprite(resources["sprites/heart.png"].texture);
+        heart.scale.set(0.75*scalar);
+        heart.x = scalar*5;
+        heart.y = 5*scalar;
+        app.stage.addChild(heart);
         var tower1 = new Sprite(resources["sprites/tower1.png"].texture);
         tower1.scale.set(scalar);
         tower1.x = canvasLength - tower1.width * 1.1;
@@ -143,12 +182,34 @@
         app.stage.addChild(buildMode.icon);
         buildMode.icon.visible = false;
         buildMode.icon.scale.set(scalar);
+
+        upgradeMode.bar = new PIXI.Graphics();
+        upgradeMode.bar.beginFill(0xF666666);
+        upgradeMode.bar.drawRect(0,canvasLength - 100*scalar, canvasLength, 100*scalar);
+        upgradeMode.bar.alpha = 0.8;
+        upgradeMode.bar.visible = false;
+        app.stage.addChild(upgradeMode.bar);
         app.ticker.add(delta => gameLoop(delta));
+    }
+    function generateWaves(level) {
+        var props = Object.keys(level.levelDiffMin);
+        for(var i = 1; i < level.waveNum; i++) {
+            var nextWave = {};
+            for(var prop of props) {
+                nextWave[prop] = level.waves[i-1][prop] + level.randInt(level.levelDiffMin[prop], level.levelDiffMax[prop]);
+            }
+            level.waves.push(nextWave);
+        }
     }
     function prepWave(level) {
         level.curWave = level.waves[level.wave];
         for(var i = 0; i < level.curWave.enemyNum; i++) {
             level.spawnSeq.push(Date.now() + i * 1000 + randInt(-500,500));
+        }
+    }
+    function debug() {
+        if(press(" ")) {
+            play();
         }
     }
     function spawnEnemy(beginX, beginY, level) {
@@ -162,7 +223,12 @@
         enemy.index = -1;
         enemy.speed = level.randInt(level.curWave.minSpeed,level.curWave.maxSpeed);
         enemy.chooseNewDir = function () {
-            enemy.dir = path[++enemy.index];
+            if(++enemy.index >= path.length) {
+                health -= 1;
+                updateHealthText();
+                return -1;
+            }
+            enemy.dir = path[enemy.index];
             if(enemy.dir === 0) {
                 enemy.targetX -= 80*scalar;
             } else if(enemy.dir === 1) {
@@ -180,7 +246,7 @@
         enemies.push(enemy);
         return enemy;
     }
-    function generateLevel(level) {
+    function generateMap(level) {
         var x = 5;
         var y = -1;
         var generatingPath = true;
@@ -218,11 +284,69 @@
             }
         }
     }
+    function clearUpdateMenu() {
+        upgradeMode.bar.visible = false;
+        app.stage.removeChild(upgradeMode.desc);
+        app.stage.removeChild(upgradeMode.costTxt);
+        upgradeMode.menu.forEach(function(tower) {
+            app.stage.removeChild(tower);
+        })
+    }
+    function loadUpdateMenu(tower) {
+        var i;
+        var len = tower.upgrades.length;
+        clearUpdateMenu();
+        upgradeMode.bar.visible = true;
+        upgradeMode.menu = [];
+        for(i = 0; i < len; i++) {
+            var curUpgrade = upgradeData[tower.type].upgrades[i][tower.upgrades[i]];
+            if(curUpgrade) {
+                var upgradeIcon = new Sprite(resources[curUpgrade.texture].texture);
+                upgradeIcon.y = canvasLength - 90*scalar;
+                // upgradeIcon.anchor.set(0.5,0)
+                /// The cutting problem: How far apart would we have to cut len+1 boards out of a board canvasLength long?
+                upgradeIcon.x = ((canvasLength- 200*scalar)/(len+1)) * (i+1) - upgradeIcon.width/2;
+                upgradeIcon.scale.set(scalar);
+                app.stage.addChild(upgradeIcon);
+                upgradeIcon.desc = curUpgrade.desc;
+                upgradeIcon.upgrade = curUpgrade.apply;
+                debugger;
+                upgradeIcon.cost = curUpgrade.cost;
+                upgradeMode.menu.push(upgradeIcon);
+            }
+        }
+        waveCounter.visible = false;
+
+        var costTxt = new PIXI.Text("", new PIXI.TextStyle({fontSize: 30*scalar}));
+        costTxt.anchor.set(0.5,0.5);
+        costTxt.y = canvasLength - 70*scalar;
+        costTxt.x = (canvasLength/(len+1))/3;
+        app.stage.addChild(costTxt);
+        upgradeMode.costTxt = costTxt;
+        var coin = new Sprite(resources["sprites/coin.png"].texture);
+        coin.scale.set(0.6*scalar);
+        coin.anchor.set(0.5,0.5);
+        coin.y = canvasLength - 30*scalar;
+        coin.x = (canvasLength/(len+1))/3;
+        app.stage.addChild(coin);
+        upgradeMode.menu.push(coin);
+
+        var desc = new PIXI.Text("", new PIXI.TextStyle({fontSize: 30*scalar}));
+        desc.anchor.set(0.5,0.5);
+        desc.y = canvasLength - 50*scalar;
+        desc.x = (canvasLength/(len+2)) * (i+1);
+        app.stage.addChild(desc);
+        upgradeMode.desc = desc;
+        upgradeMode.activeTower = tower;
+    }
     function gameLoop(delta) {
       state(delta)
     }
     function updateGoldText() {
         goldCounter.text = gold.toString();
+    }
+    function updateHealthText() {
+        healthCounter.text = health.toString();
     }
     function play(){
         handleEnemies();
@@ -230,11 +354,16 @@
             curLevel.spawnSeq.splice(0,1);
             spawnEnemy(5,-1, curLevel);
         }
-        if(press(" ")) {
-            if(enemies.length === 0) {
+        if(enemies.length === 0 && curLevel.spawnSeq.length === 0) {
+            waveCounter.text = "Next Wave!";
+            if(press(" ") || (keys.mouse && (mouseX > waveButton.x && mouseX < waveButton.x + waveButton.width && mouseY > waveButton.y && mouseY < waveButton.y + waveButton.height))) {
                 ++curLevel.wave;
                 prepWave(curLevel);
+                waveCounter.text = "Wave " + (curLevel.wave + 1) + "/" + (curLevel.waveNum)
             }
+        }
+        if(press("q")) {
+            state = debug;
         }
         if(press("mouse")) {
             if(buildMode.active) {
@@ -252,6 +381,18 @@
                         buildMode.icon.visible = false;
                     }
                 }
+            } else if(upgradeMode.active) {
+                upgradeMode.menu.forEach(function (icon){
+                    if(mouseX > icon.x && mouseX < icon.x + icon.width && mouseY > icon.y && mouseY < icon.y + icon.height) {
+                        if(icon.cost <= gold) {
+                            gold -= icon.cost;
+                            updateGoldText();
+                            icon.upgrade(upgradeMode.activeTower);
+                            clearUpdateMenu();
+                            upgradeMode.active = false;
+                        }
+                    }
+                });
             } else {
                 towerMenu.forEach(function(tower) {
                     if(mouseX > tower.x && mouseX < tower.x + tower.width && mouseY > tower.y && mouseY < tower.y + tower.height) {
@@ -261,6 +402,14 @@
                         buildMode.icon.texture = resources[textures[tower.type]].texture;
                     }
                 });
+                if(!buildMode.active) {
+                    towers.forEach(function(tower) {
+                        if(mouseX > tower.x && mouseX < tower.x + tower.width && mouseY > tower.y && mouseY < tower.y + tower.height) {
+                            upgradeMode.active = true;
+                            loadUpdateMenu(tower);
+                        }
+                    });
+                }
             }
         }
         if(buildMode.active) {
@@ -271,6 +420,18 @@
             } else {
                 buildMode.icon.tint = 0xFFFFFF;
             }
+        } else if(upgradeMode.active) {
+            var blank = true;
+            upgradeMode.menu.forEach(function (icon){
+                if(mouseX > icon.x && mouseX < icon.x + icon.width && mouseY > icon.y && mouseY < icon.y + icon.height) {
+                    upgradeMode.desc.text = icon.desc;
+                    upgradeMode.costTxt.text = icon.cost.toString();
+                    blank = false;
+                }
+            });
+            if(blank) {
+                upgradeMode.menu[upgradeMode.menu.length-1].text = "";
+            }
         }
         towers.forEach(function(tower) {
             if(tower.type === "tower1") {
@@ -279,7 +440,7 @@
                 var target = getBestEnemyWR({x:pivotX, y: pivotY},tower.range);
                 if(getDistance(pivotX,pivotY,target.x,target.y) <= tower.range) {
                     if(tower.lastFire + tower.cooldown < Date.now()) {
-                        shootMissile(pivotX,pivotY,normalize(target.x - pivotX, target.y - pivotY, 10*scalar), tower.dmg, tower.pierce, "arrow");
+                        shootMissile(pivotX,pivotY,normalize(target.x - pivotX, target.y - pivotY, 10*scalar), tower.dmg, tower.pierce, "arrow", tower.range);
                         tower.lastFire = Date.now();
                     }
                 }
@@ -290,7 +451,7 @@
                 var target = getBestEnemyWR({x:pivotX, y: pivotY},tower.range);
                 if(getDistance(pivotX,pivotY,target.x,target.y) <= tower.range) {
                     if(tower.lastFire + tower.cooldown < Date.now()) {
-                        shootMissile(pivotX,pivotY,normalize(target.x - pivotX, target.y - pivotY, 7*scalar), tower.dmg, tower.pierce, "ballista");
+                        shootMissile(pivotX,pivotY,normalize(target.x - pivotX, target.y - pivotY, 7*scalar), tower.dmg, tower.pierce, "ballista", tower.range);
                         tower.lastFire = Date.now();
                     }
                 }
@@ -327,7 +488,7 @@
                     }
                 });
                 if(getDistance(pivotX,pivotY,target.x,target.y) <= tower.range) {
-                    shootMissile(pivotX,pivotY,normalize(target.x - pivotX, target.y - pivotY, 7*scalar), tower.dmg, tower.pierce, "rock");
+                    shootMissile(pivotX,pivotY,normalize(target.x - pivotX, target.y - pivotY, 7*scalar), tower.dmg, tower.pierce, "rock", tower.range);
                     var dx = target.x - pivotX;
                     var dy = target.y - pivotY;
                     if(dy < 0 && Math.abs(dy/dx) > 1) {
@@ -384,7 +545,13 @@
                 enemy.advance += 1/enemy.speed;
                 enemy.steps--;
             } else {
-                enemy.chooseNewDir();
+                if(enemy.chooseNewDir() === -1) {
+                    app.stage.removeChild(enemy);
+                    enemies.splice(i,1);
+                    --i;
+                    --len;
+                    continue;
+                }
             }
         }
     }
@@ -395,14 +562,14 @@
             var missile = missiles[i];
             missile.x += missile.vector.x;
             missile.y += missile.vector.y;
-            if(missile.x < - missile.height || missile.x > canvasLength + missile.height || missile.y < - missile.height || missile.y > canvasLength + missile.height) {
+            if(missile.x < - missile.height || missile.x > canvasLength + missile.height || missile.y < - missile.height || missile.y > canvasLength + missile.height || getDistance(missile.x,missile.y,missile.initX, missile.initY) > missile.range) {
                 app.stage.removeChild(missile);
                 missiles.splice(i,1);
                 --i;
                 --len;
                 continue;
             }
-            var normVector = normalize(missile.vector.x,missile.vector.y, missile.width/2);
+            var normVector = normalize(missile.vector.x,missile.vector.y, missile.height/2);
             var missilePoint = {x:normVector.x + missile.x, y: normVector.y + missile.y};
             var target = getClosestEnemy(missilePoint, function(target) {
                 if(missile.immune.includes(target)) {
@@ -424,12 +591,15 @@
                 }
         }
     }
-    function shootMissile(x,y, vector, dmg, pierce, type) {
+    function shootMissile(x,y, vector, dmg, pierce, type, range) {
         var missile = new Sprite(resources["sprites/" + type + ".png"].texture);
         missile.vector = vector;
         missile.anchor.set(0.5,0.5);
         missile.x = x;
         missile.y = y;
+        missile.initX = x;
+        missile.initY = y;
+        missile.range = range;
         missile.dmg = dmg;
         missile.pierce = pierce;
         missile.immune = [];
@@ -467,6 +637,7 @@
         tower.dmg = towerData[type].dmg;
         tower.pierce = towerData[type].pierce;
         tower.cooldown = towerData[type].cooldown;
+        tower.upgrades = [0,0,0];
         if(type === "tower3") {
             tower.faces = [0,0,0,0];
         } else {

@@ -210,6 +210,12 @@ function pointTowards(x1,y1,x2,y2) {
     if(xDiff === 0 && yDiff > 0) {
         return 0;
     }
+    if(yDiff === 0 && xDiff > 0) {
+        return 90;
+    }
+    if(yDiff === 0 && xDiff < 0) {
+        return -90;
+    }
     if(xDiff > 0 && yDiff > 0) {
         degree += 90;
     } else if(xDiff < 0 && yDiff > 0) {
