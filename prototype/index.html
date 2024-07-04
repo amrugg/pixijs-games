@@ -18,6 +18,7 @@
     <script src="pixi/pixi.min.js"></script>
     <script src="usefulFunctions.js"></script>
     <div id="question" style="position: absolute; z-index: 1; font-size: 30px; width: 1000px; text-align: center; top:10px">Ye call me Master and Lord; and ye say well; for so I am.</div>
+    <div id="questionsLeft" style="position: absolute; z-index: 1; font-size: 30px; width: 100px; text-align: center; top:10px">10</div>
     <div id="answer1" class="answer">John 13:13</div>
     <div id="answer2" class="answer">John 13:14</div>
     <div id="answer3" class="answer">John 13:15</div>
@@ -59,6 +60,7 @@
     app.renderer.view.style.display = "block";
     app.renderer.autoResize = true;
     app.renderer.resize(window.innerWidth, window.innerHeight);
+    app.renderer.view.style.visibility = "hidden";
     document.body.appendChild(app.view);
     loader.add(["sprites/arrow.png","sprites/ballista.png", "sprites/button.png", "sprites/base.png","sprites/coin.png", "sprites/enemy.png","sprites/hammer.png", "sprites/player.png", "sprites/question.png", "sprites/rock.png","sprites/tower1.png","sprites/tower2.png","sprites/tower3.png","sprites/wall.png",]).load(setup);
     var state;
@@ -67,7 +69,7 @@
     var player;
     var buildMenu = [];
     var buildingTextures = ["sprites/wall.png", "sprites/tower1.png", "sprites/tower2.png", "sprites/tower3.png", "sprites/base.png"];
-    var buildingData = [{dmg:0, fireRate:0, hp:5, range:0},{dmg:5, fireRate: 1000, hp:15, range:300},{dmg:20, fireRate: 3000, hp:15, range:600},{dmg: 2, fireRate: 250, hp:15, range:150},{dmg: 5, fireRate: 1000, hp:50, range:400},]
+    var buildingData = [{dmg:0, fireRate:0, hp:5, range:0},{dmg:3, fireRate: 1000, hp:15, range:300},{dmg:20, fireRate: 3000, hp:15, range:600},{dmg: 2, fireRate: 250, hp:15, range:150},{dmg: 5, fireRate: 1000, hp:50, range:400},]
     var buildingDesc = ["A cheap palisade wall for slowing down enemies. 1 gold.", "A quick-firing arrow tower for quick attacks. 5 gold.", "A heavy ballista tower for dealing heavy damage. 10 gold.", "A murder-hole tower for attacking many enemies at once. 10 gold."];
     var buildingCost = [1, 5, 10, 10]
     var indicator;
@@ -77,34 +79,43 @@
     var arrows = [];
     var base;
     var toolMenu = [];
-    var gold = 0;
+    var gold = 5;
     var goldText;
+    var questionsLeftDiv = document.getElementById("questionsLeft");
     var lastWave = Date.now() + 10000;
     var waveCleared = true;
-    var mode = "build";
+    var mode = "test";
     var verses = ["Now before the feast of the passover, when Jesus knew that his hour was come that he should depart out of this world unto the Father, having loved his own which were in the world, he loved them unto the end.", "And supper being ended, the devil having now put into the heart of Judas Iscariot, Simon's son, to betray him;", "Jesus knowing that the Father had given all things into his hands, and that he was come from God, and went to God;", "He riseth from supper, and laid aside his garments; and took a towel, and girded himself.", "After that he poureth water into a bason, and began to wash the disciples' feet, and to wipe them with the towel wherewith he was girded.", "Then cometh he to Simon Peter: and Peter saith unto him, Lord, dost thou wash my feet?", "Jesus answered and said unto him, What I do thou knowest not now; but thou shalt know hereafter.", "Peter saith unto him, Thou shalt never wash my feet. Jesus answered him, If I wash thee not, thou hast no part with me.", "Simon Peter saith unto him, Lord, not my feet only, but also my hands and my head.", "Jesus saith to him, He that is washed needeth not save to wash his feet, but is clean every whit: and ye are clean, but not all.", "For he knew who should betray him; therefore said he, Ye are not all clean.", "So after he had washed their feet, and had taken his garments, and was set down again, he said unto them, Know ye what I have done to you?", "Ye call me Master and Lord: and ye say well; for so I am.", "If I then, your Lord and Master, have washed your feet; ye also ought to wash one another's feet.", "For I have given you an example, that ye should do as I have done to you.", "Verily, verily, I say unto you, The servant is not greater than his lord; neither he that is sent greater than he that sent him.", "If ye know these things, happy are ye if ye do them.", "I speak not of you all: I know whom I have chosen: but that the scripture may be fulfilled, He that eateth bread with me hath lifted up his heel against me.", "Now I tell you before it come, that, when it is come to pass, ye may believe that I am he.", "Verily, verily, I say unto you, He that receiveth whomsoever I send receiveth me; and he that receiveth me receiveth him that sent me.", "When Jesus had thus said, he was troubled in spirit, and testified, and said, Verily, verily, I say unto you, that one of you shall betray me.", "Then the disciples looked one on another, doubting of whom he spake.", "Now there was leaning on Jesus' bosom one of his disciples, whom Jesus loved.", "Simon Peter therefore beckoned to him, that he should ask who it should be of whom he spake.", "He then lying on Jesus' breast saith unto him, Lord, who is it?", "Jesus answered, He it is, to whom I shall give a sop, when I have dipped it. And when he had dipped the sop, he gave it to Judas Iscariot, the son of Simon.", "And after the sop Satan entered into him. Then said Jesus unto him, That thou doest, do quickly.", "Now no man at the table knew for what intent he spake this unto him.", "For some of them thought, because Judas had the bag, that Jesus had said unto him, Buy those things that we have need of against the feast; or, that he should give something to the poor.", "He then having received the sop went immediately out: and it was night.", "Therefore, when he was gone out, Jesus said, Now is the Son of man glorified, and God is glorified in him.", "If God be glorified in him, God shall also glorify him in himself, and shall straightway glorify him.", "Little children, yet a little while I am with you. Ye shall seek me: and as I said unto the Jews, Whither I go, ye cannot come; so now I say to you.", "A new commandment I give unto you, That ye love one another; as I have loved you, that ye also love one another.", "By this shall all men know that ye are my disciples, if ye have love one to another.", "Simon Peter said unto him, Lord, whither goest thou? Jesus answered him, Whither I go, thou canst not follow me now; but thou shalt follow me afterwards.", "Peter said unto him, Lord, why cannot I follow thee now? I will lay down my life for thy sake.", "Jesus answered him, Wilt thou lay down thy life for my sake? Verily, verily, I say unto thee, The cock shall not crow, till thou hast denied me thrice."];
     var questionMenu = {questionDiv: document.getElementById("question"), answers: document.getElementsByClassName("answer"), delay: 1000, lastAnswer: 0, answerQuestion: function(answerEl){
-        if(questionMenu.lastAnswer + questionMenu.delay > Date.now() || buildMode.active) {
+        if(questionMenu.lastAnswer + questionMenu.delay > Date.now() || mode === "build") {
             return;
         }
+        if(mode === "test") {
+            --questionMenu.questionsLeft;
+        }
+        questionsLeftDiv.innerHTML = questionMenu.questionsLeft.toString();
         if(answerEl.innerHTML === questionMenu.rightAnswer) {
-            gold++;
+            if(mode === "test") {
+                gold++;
+            } else if(mode === "fight") {
+                handlePlayerAttack();
+            }
             answerEl.className = "correct";
-            questionMenu.delay = 250;
+            questionMenu.delay = 25;
             setTimeout(function() {
                 answerEl.className = "answer";
                 goldText.text = gold.toString();
                 questionMenu.newQuestion();
-            }, 250);
+            }, 25);
         } else {
             answerEl.className = "incorrect";
             questionMenu.corAnsEl.className = "correct";
-            questionMenu.delay = 1000;
+            questionMenu.delay = 100;
             setTimeout(function() {
                 answerEl.className = "answer";
                 questionMenu.corAnsEl.className = "answer";
                 questionMenu.newQuestion();
-            }, 1000);
+            }, 100);
         }
         questionMenu.lastAnswer = Date.now();
     }, newQuestion: function() {
@@ -126,10 +137,26 @@
                 questionMenu.answers[i].innerHTML = "John 13:" + (newRand+1).toString();
             }
         }
-    }};
+        if(questionMenu.questionsLeft === 0 && mode === "test") {
+            app.renderer.view.style.visibility = "visible";
+            state = play;
+            mode = "build";
+            indicator.visible = true;
+            questionMenu.questionDiv.innerHTML = buildingDesc[buildMode.building];
+            questionMenu.hide();
+            toolMenu[0].alpha = 1;
+            toolMenu[1].alpha = 0.5;
+            questionMenu.hide();
+        }
+    },
+    questionsLeft: 10,
+    };
     questionMenu.questionDiv.style.left = (innerWidth/2-500) + "px";
     var i;
     var lvl = 0;
+    var waves = [
+        
+    ]
     for(i = 0; i < questionMenu.answers.length; i++) {
         questionMenu.answers[i].style.left = (innerWidth/2-400 + (200*i)) + "px";
         let me = questionMenu.answers[i];
@@ -144,6 +171,9 @@
         player.x = innerWidth/2;
         player.y = innerHeight/2 - 64;
         player.speed = 3;
+        player.range = 300;
+        player.dmg = 1;
+        player.scale.set(0.75,0.75);
         var wallIcon = new Sprite(resources["sprites/wall.png"].texture);
         var tower1Icon = new Sprite(resources["sprites/tower1.png"].texture);
         var tower2Icon = new Sprite(resources["sprites/tower2.png"].texture);
@@ -213,8 +243,11 @@
         // spawnEnemy(innerWidth/2,1000, 5, 1);
         // spawnEnemy(innerWidth/2,-200, 5, 1);
         app.stage.addChild(indicator);
-        state = play;
+        state = wait;
         app.ticker.add(delta => gameLoop(delta));
+    }
+    function wait(){
+
     }
     function spawnEnemy(x,y, hp, dmg) {
         var enemy = new Sprite(resources["sprites/enemy.png"].texture);
@@ -235,9 +268,6 @@
     function play(){
         player.vx = 0;
         player.vy = 0;
-        if(keys.e) {
-            spawnEnemy(Math.random()*innerWidth, Math.random() * -100, 5, 2);
-        }
         if(keys.ArrowUp) {
             player.vy -= player.speed;
         }
@@ -250,33 +280,15 @@
         if(keys.ArrowRight) {
             player.vx += player.speed;
         }
-        if(!checkCol(player.x+player.vx, player.y + player.vy)) {
+        if(!checkCol(player.x+player.vx, player.y + player.vy, player.width, player.height)) {
             player.x += player.vx;
             player.y += player.vy;
-        } else if(!checkCol(player.x, player.y + player.vy)) {
+        } else if(!checkCol(player.x, player.y + player.vy, player.width, player.height)) {
             player.y += player.vy;
-        } else if(!checkCol(player.x + player.vx, player.y)) {
+        } else if(!checkCol(player.x + player.vx, player.y, player.width, player.height)) {
             player.x += player.vx;
         }
-        if(press(" ")) {
-            if(mode === "build") {
-                buildMode.active = !buildMode.active;
-                if(buildMode.active) {
-                    indicator.visible = true;
-                    questionMenu.questionDiv.innerHTML = buildingDesc[buildMode.building];
-                    questionMenu.hide();
-                    toolMenu[0].alpha = 1;
-                    toolMenu[1].alpha = 0.5;
-                } else {
-                    indicator.visible = false;
-                    questionMenu.questionDiv.innerHTML = verses[questionMenu.verseNum];
-                    questionMenu.show();
-                    toolMenu[0].alpha = 0.5;
-                    toolMenu[1].alpha = 1;
-                }
-            }
-        }
-        if(buildMode.active) {
+        if(mode === "build") {
             indicator.x = Math.round((mouseX)/64)*64;
             indicator.y = Math.round((mouseY)/64)*64;
             updateBuildMode();
@@ -297,24 +309,36 @@
                 }
             }
         }
-        if(!enemies.length && Date.now() > lastWave) {
-            if(waveCleared) {
+        if(press(" ")) {
+            if(mode === "build") {
                 spawnWave(++lvl);
                 waveCleared = false;
                 mode = "fight";
-                questionMenu.questionDiv.innerHTML = "Attacking!";
-                questionMenu.hide();
-            } else {
-                waveCleared = true;
-                lastWave = Date.now() + 10000;
-                mode = "biuld";
                 questionMenu.show();
+                questionMenu.newQuestion();
             }
+        }
+        if(mode === "fight" && enemies.length === 0) {
+            app.renderer.view.style.visibility = "hidden";
+            mode = "test";
+            questionMenu.show();
+            questionMenu.questionsLeft = 10;
+            questionsLeftDiv.innerHTML = "10";
+            questionMenu.newQuestion();
         }
         handleEnemies();
         handleBuildings();
         
         handleArrows();
+    }
+    function handlePlayerAttack() {
+        debugger;
+        var target = getClosestEnemy(player.x,player.y);
+        if(target) {
+            if(getDistance(target.x,target.y,player.x,player.y) < player.range) {
+                shootArrow(normalize(target.x-player.x,target.y-player.y,10), player.x, player.y,pointTowards(player.x,player.y,target.x,target.y),player.dmg);
+            }
+        }
     }
     function spawnWave(level) {
         for(var i = 0; i < level*10; i++) {
@@ -444,11 +468,11 @@
                 ++enemy.anim.step;
             } else {
                 var baseVector = normalize(base.x-enemy.x,base.y-enemy.y,2);
-                if(!checkCol(enemy.x+baseVector.x, enemy.y + baseVector.y)) {
+                var target = checkCol(enemy.x+baseVector.x, enemy.y + baseVector.y, enemy.width, enemy.height);
+                if(!target) {
                     enemy.x += baseVector.x;
                     enemy.y += baseVector.y;
                 } else if(enemy.lastAtk + enemy.atkSpeed < Date.now()) {
-                    var target = checkCol(enemy.x+baseVector.x, enemy.y + baseVector.y);
                     target.hp -= enemy.dmg;
                     enemy.anim.active = true;
                     enemy.anim.step = 0;
@@ -508,17 +532,22 @@
         for(var i = 0; i < questionMenu.answers.length; i++) {
             questionMenu.answers[i].style.visibility = "hidden";
         }
+        questionsLeftDiv.style.visibility = "hidden";
     }
     questionMenu.show = function () {
         for(var i = 0; i < questionMenu.answers.length; i++) {
             questionMenu.answers[i].style.visibility = "visible";
         }
+        if(mode === "test") {
+            questionsLeftDiv.style.visibility = "visible";
+        }
     }
-    function checkCol(x,y){
-        
+    function checkCol(x,y,length, height){
+        length = (length+64)/2;
+        height = (height+64)/2;
         for(var i = 0; i < buildings.length; i++) {
             var curBuilding = buildings[i];
-            if((curBuilding.boardX*64+64 < x || curBuilding.boardX*64-64 > x) || (curBuilding.boardY*64+64 < y || curBuilding.boardY*64-64 > y)) {
+            if((curBuilding.boardX*64+length < x || curBuilding.boardX*64-length > x) || (curBuilding.boardY*64+height < y || curBuilding.boardY*64-height > y)) {
 
             } else {
                 return curBuilding;
