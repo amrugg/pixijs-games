@@ -55,6 +55,12 @@
     var path = [];
     var enemies = [];
     var missiles = [];
+    var background = new PIXI.Container();
+    var foreground = new PIXI.Container();
+    var ui = new PIXI.Container();
+    app.stage.addChild(background);
+    app.stage.addChild(foreground);
+    app.stage.addChild(ui);
     ///23563
     ///50931
     ///94163
@@ -84,7 +90,7 @@
         waves: [{minHealth: 1, maxHealth: 2, minSpeed: 110, maxSpeed: 120, enemyNum: 10, minGold: 1, maxGold: 2}],
     }
     var towerData = {
-        tower1: {range: 300*scalar, dmg: 1, cooldown: 1000, gold:30, pierce:1},
+        tower1: {range: 200*scalar, dmg: 1, cooldown: 1000, gold:30, pierce:1},
         tower2: {range: 500*scalar, dmg: 3, cooldown: 6000, gold:50, pierce:3},
         tower3: {range: 100*scalar, dmg: 1, cooldown: 900, gold:30, pierce:1},
     }
@@ -97,7 +103,7 @@
                     }}
                 ],
                 [
-                    {desc: "+100 range.", cost: 20, texture: "sprites/upgrades/tower1/range.png", apply: function(tower) {
+                    {desc: "+100 range.", cost: 10, texture: "sprites/upgrades/tower1/range.png", apply: function(tower) {
                         tower.range += 100 * scalar;
                     }}
                 ],
@@ -112,14 +118,14 @@
     var goldCounter = new PIXI.Text("50", new PIXI.TextStyle({fontSize: 30*scalar}));
     var gold = 50;
     goldCounter.anchor.set(1,0.5);
-    app.stage.addChild(goldCounter);
+    ui.addChild(goldCounter);
     goldCounter.y = 25*scalar;
     goldCounter.x = canvasLength - 55*scalar;
     updateGoldText();
     var healthCounter = new PIXI.Text("20", new PIXI.TextStyle({fontSize: 30*scalar}));
     var health = 20;
     healthCounter.anchor.set(0,0.5);
-    app.stage.addChild(healthCounter);
+    ui.addChild(healthCounter);
     healthCounter.y = 25*scalar;
     healthCounter.x = 60*scalar;
     updateHealthText();
@@ -128,7 +134,7 @@
     waveCounter.anchor.set(1,1);
     waveCounter.x = canvasLength - 20*scalar;
     waveCounter.y = canvasLength - 20*scalar;
-    app.stage.addChild(waveCounter);
+    ui.addChild(waveCounter);
     var waveButton = {};
     var towerMenu = [];
     var buildMode = {active: false};
@@ -141,6 +147,7 @@
         tower3: "sprites/tower3.png",
     }
     var curLevel;
+    var rangeGraphics;
     function setup() {
         state = play;
         curLevel = level1;
@@ -151,44 +158,47 @@
         coin.scale.set(0.75*scalar);
         coin.x = canvasLength - coin.width*1.1;
         coin.y = 5*scalar;
-        app.stage.addChild(coin);
+        ui.addChild(coin);
         var heart = new Sprite(resources["sprites/heart.png"].texture);
         heart.scale.set(0.75*scalar);
         heart.x = scalar*5;
         heart.y = 5*scalar;
-        app.stage.addChild(heart);
+        ui.addChild(heart);
         var tower1 = new Sprite(resources["sprites/tower1.png"].texture);
         tower1.scale.set(scalar);
         tower1.x = canvasLength - tower1.width * 1.1;
         tower1.y = 100*scalar;
         tower1.type = "tower1";
-        app.stage.addChild(tower1);
+        ui.addChild(tower1);
         towerMenu.push(tower1);
         var tower2 = new Sprite(resources["sprites/tower2.png"].texture);
         tower2.scale.set(scalar);
         tower2.x = canvasLength - tower2.width * 1.1;
         tower2.y = 200*scalar;
         tower2.type = "tower2";
-        app.stage.addChild(tower2);
+        ui.addChild(tower2);
         towerMenu.push(tower2);
         var tower3 = new Sprite(resources["sprites/tower3.png"].texture);
         tower3.scale.set(scalar);
         tower3.x = canvasLength - tower3.width * 1.1;
         tower3.y = 300*scalar;
         tower3.type = "tower3";
-        app.stage.addChild(tower3);
+        ui.addChild(tower3);
         towerMenu.push(tower3);
         buildMode.icon = new Sprite(resources["sprites/tower1.png"].texture);
-        app.stage.addChild(buildMode.icon);
+        ui.addChild(buildMode.icon);
         buildMode.icon.visible = false;
         buildMode.icon.scale.set(scalar);
 
+        rangeGraphics = new PIXI.Graphics();
+        rangeGraphics.alpha = 0.5;
+        ui.addChild(rangeGraphics);
         upgradeMode.bar = new PIXI.Graphics();
         upgradeMode.bar.beginFill(0xF666666);
         upgradeMode.bar.drawRect(0,canvasLength - 100*scalar, canvasLength, 100*scalar);
         upgradeMode.bar.alpha = 0.8;
         upgradeMode.bar.visible = false;
-        app.stage.addChild(upgradeMode.bar);
+        ui.addChild(upgradeMode.bar);
         app.ticker.add(delta => gameLoop(delta));
     }
     function generateWaves(level) {
@@ -242,7 +252,7 @@
         enemy.health = level.randInt(level.curWave.minHealth,level.curWave.maxHealth);
         enemy.gold = level.randInt(level.curWave.minGold,level.curWave.maxGold);
         enemy.advance = 0;
-        app.stage.addChild(enemy);
+        foreground.addChild(enemy);
         enemies.push(enemy);
         return enemy;
     }
@@ -254,7 +264,7 @@
         var mem2 = false;
         while(generatingPath) {
             var tile = new Sprite(resources["sprites/ground.png"].texture);
-            app.stage.addChild(tile);
+            background.addChild(tile);
             tile.x = x * 80 * scalar;
             tile.y = y * 80 * scalar;
             tile.scale.set(scalar);
@@ -286,11 +296,13 @@
     }
     function clearUpdateMenu() {
         upgradeMode.bar.visible = false;
-        app.stage.removeChild(upgradeMode.desc);
-        app.stage.removeChild(upgradeMode.costTxt);
+        ui.removeChild(upgradeMode.desc);
+        ui.removeChild(upgradeMode.coin);
+        ui.removeChild(upgradeMode.costTxt);
         upgradeMode.menu.forEach(function(tower) {
-            app.stage.removeChild(tower);
+            ui.removeChild(tower);
         })
+        rangeGraphics.visible = false;
     }
     function loadUpdateMenu(tower) {
         var i;
@@ -307,11 +319,11 @@
                 /// The cutting problem: How far apart would we have to cut len+1 boards out of a board canvasLength long?
                 upgradeIcon.x = ((canvasLength- 200*scalar)/(len+1)) * (i+1) - upgradeIcon.width/2;
                 upgradeIcon.scale.set(scalar);
-                app.stage.addChild(upgradeIcon);
+                ui.addChild(upgradeIcon);
                 upgradeIcon.desc = curUpgrade.desc;
                 upgradeIcon.upgrade = curUpgrade.apply;
-                debugger;
                 upgradeIcon.cost = curUpgrade.cost;
+                upgradeIcon.index = i;
                 upgradeMode.menu.push(upgradeIcon);
             }
         }
@@ -321,21 +333,21 @@
         costTxt.anchor.set(0.5,0.5);
         costTxt.y = canvasLength - 70*scalar;
         costTxt.x = (canvasLength/(len+1))/3;
-        app.stage.addChild(costTxt);
+        ui.addChild(costTxt);
         upgradeMode.costTxt = costTxt;
         var coin = new Sprite(resources["sprites/coin.png"].texture);
         coin.scale.set(0.6*scalar);
         coin.anchor.set(0.5,0.5);
         coin.y = canvasLength - 30*scalar;
         coin.x = (canvasLength/(len+1))/3;
-        app.stage.addChild(coin);
-        upgradeMode.menu.push(coin);
+        ui.addChild(coin);
+        upgradeMode.coin = coin;
 
         var desc = new PIXI.Text("", new PIXI.TextStyle({fontSize: 30*scalar}));
         desc.anchor.set(0.5,0.5);
         desc.y = canvasLength - 50*scalar;
         desc.x = (canvasLength/(len+2)) * (i+1);
-        app.stage.addChild(desc);
+        ui.addChild(desc);
         upgradeMode.desc = desc;
         upgradeMode.activeTower = tower;
     }
@@ -347,6 +359,18 @@
     }
     function updateHealthText() {
         healthCounter.text = health.toString();
+    }
+    function showRange(tower) {
+        rangeGraphics.clear();
+        rangeGraphics.visible = true;
+        rangeGraphics.x = tower.x + tower.width*scalar/2;
+        rangeGraphics.y = tower.y + tower.height*scalar/2;
+        rangeGraphics.beginFill(0xFFFFFF);
+        for(var i = 0; i < 360; i += 15) {
+            var vector = direction(tower.range, i);
+            rangeGraphics.drawCircle(vector.x,vector.y,10*scalar);
+        }
+        rangeGraphics.endFill();
     }
     function play(){
         handleEnemies();
@@ -388,11 +412,13 @@
                             gold -= icon.cost;
                             updateGoldText();
                             icon.upgrade(upgradeMode.activeTower);
-                            clearUpdateMenu();
-                            upgradeMode.active = false;
+                            upgradeMode.activeTower.upgrades[icon.index]++;
                         }
                     }
                 });
+
+                clearUpdateMenu();
+                upgradeMode.active = false;
             } else {
                 towerMenu.forEach(function(tower) {
                     if(mouseX > tower.x && mouseX < tower.x + tower.width && mouseY > tower.y && mouseY < tower.y + tower.height) {
@@ -400,6 +426,10 @@
                         buildMode.building = tower.type;
                         buildMode.icon.visible = true;
                         buildMode.icon.texture = resources[textures[tower.type]].texture;
+                        buildMode.icon.range = towerData[tower.type].range;
+                        showRange(buildMode.icon);
+                        rangeGraphics.x = buildMode.icon.x + buildMode.icon.width*scalar/2;
+                        rangeGraphics.y = buildMode.icon.y + buildMode.icon.height*scalar/2;
                     }
                 });
                 if(!buildMode.active) {
@@ -407,6 +437,7 @@
                         if(mouseX > tower.x && mouseX < tower.x + tower.width && mouseY > tower.y && mouseY < tower.y + tower.height) {
                             upgradeMode.active = true;
                             loadUpdateMenu(tower);
+                            showRange(tower);
                         }
                     });
                 }
@@ -417,20 +448,30 @@
             buildMode.icon.y = Math.floor(mouseY/(80*scalar))*80*scalar;
             if(mouseX > canvasLength - 160*scalar) {
                 buildMode.icon.tint = 0xFF8888;
+                rangeGraphics.tint = 0xFF8888;
             } else {
                 buildMode.icon.tint = 0xFFFFFF;
+                rangeGraphics.tint = 0xFFFFFF;
             }
+            rangeGraphics.x = buildMode.icon.x + buildMode.icon.width/2;
+            rangeGraphics.y = buildMode.icon.y + buildMode.icon.height/2;
         } else if(upgradeMode.active) {
             var blank = true;
-            upgradeMode.menu.forEach(function (icon){
+            upgradeMode.menu.forEach(function (icon,i){
                 if(mouseX > icon.x && mouseX < icon.x + icon.width && mouseY > icon.y && mouseY < icon.y + icon.height) {
                     upgradeMode.desc.text = icon.desc;
                     upgradeMode.costTxt.text = icon.cost.toString();
                     blank = false;
                 }
+                if(icon.cost > gold) {
+                    icon.alpha = 0.5;
+                } else {
+                    icon.alpha = 1;
+                }
             });
             if(blank) {
-                upgradeMode.menu[upgradeMode.menu.length-1].text = "";
+                upgradeMode.desc.text = "";
+                upgradeMode.costTxt.text = "";
             }
         }
         towers.forEach(function(tower) {
@@ -533,7 +574,7 @@
             if(enemy.health <= 0) {
                 gold += enemy.gold;
                 updateGoldText();
-                app.stage.removeChild(enemy);
+                foreground.removeChild(enemy);
                 enemies.splice(i,1);
                 --i;
                 --len;
@@ -546,7 +587,7 @@
                 enemy.steps--;
             } else {
                 if(enemy.chooseNewDir() === -1) {
-                    app.stage.removeChild(enemy);
+                    foreground.removeChild(enemy);
                     enemies.splice(i,1);
                     --i;
                     --len;
@@ -563,7 +604,7 @@
             missile.x += missile.vector.x;
             missile.y += missile.vector.y;
             if(missile.x < - missile.height || missile.x > canvasLength + missile.height || missile.y < - missile.height || missile.y > canvasLength + missile.height || getDistance(missile.x,missile.y,missile.initX, missile.initY) > missile.range) {
-                app.stage.removeChild(missile);
+                foreground.removeChild(missile);
                 missiles.splice(i,1);
                 --i;
                 --len;
@@ -580,7 +621,7 @@
                 if(getDistance(missilePoint.x, missilePoint.y, target.x, target.y) <= 32*scalar) {
                     target.health -= missile.dmg;
                     if(--missile.pierce < 1) {
-                        app.stage.removeChild(missile);
+                        foreground.removeChild(missile);
                         missiles.splice(i,1);
                         --i;
                         --len;
@@ -604,9 +645,8 @@
         missile.pierce = pierce;
         missile.immune = [];
         missile.rotation = Math.PI * (-pointTowards(0,0,vector.x,vector.y)) / 180;
-        // console.log(missile.rotation, pointTowards(0,0,vector.x,vector.y));
         missile.scale.set(scalar);
-        app.stage.addChild(missile);
+        foreground.addChild(missile);
         missiles.push(missile);
     }
     function getClosestEnemy(pos, valid) {
@@ -644,7 +684,7 @@
             tower.lastFire = 0;
         }
 
-        app.stage.addChild(tower);
+        foreground.addChild(tower);
     }
     function isClear(pos) {
         for(var i = 0; i < pathLocs.length; i++) {
