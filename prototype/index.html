@@ -62,21 +62,21 @@
     app.renderer.resize(window.innerWidth, window.innerHeight);
     app.renderer.view.style.visibility = "hidden";
     document.body.appendChild(app.view);
-    loader.add(["sprites/arrow.png","sprites/ballista.png", "sprites/button.png", "sprites/base.png","sprites/coin.png", "sprites/enemy.png","sprites/hammer.png", "sprites/player.png", "sprites/question.png", "sprites/rock.png","sprites/tower1.png","sprites/tower2.png","sprites/tower3.png","sprites/wall.png",]).load(setup);
+    loader.add(["sprites/arrow.png","sprites/ballista.png", "sprites/button.png", "sprites/base.png","sprites/coin.png", "sprites/enemy.png","sprites/hammer.png", "sprites/player.png", "sprites/question.png", "sprites/rock.png","sprites/tower1.png","sprites/tower2.png","sprites/tower3.png","sprites/wall.png","sprites/upgrades/tower2/damage.png","sprites/upgrades/tower2/range.png","sprites/upgrades/tower2/speed.png",]).load(setup);
     var state;
     var keys = {};
     var mouseX,mouseY;
     var player;
     var buildMenu = [];
     var buildingTextures = ["sprites/wall.png", "sprites/tower1.png", "sprites/tower2.png", "sprites/tower3.png", "sprites/base.png"];
-    var buildingData = [{dmg:0, fireRate:0, hp:5, range:0},{dmg:3, fireRate: 1000, hp:15, range:300},{dmg:20, fireRate: 3000, hp:15, range:600},{dmg: 2, fireRate: 250, hp:15, range:150},{dmg: 5, fireRate: 1000, hp:50, range:400},]
+    var buildingData = [{dmg:0, fireRate:0, hp:5, range:0, pierce: 0, name: "Wall"},{dmg:3, fireRate: 1000, hp:15, range:250, pierce:1, name: "Archer Tower"}, {dmg:20, fireRate: 3000, hp:15, range:500, pierce:5, name: "Ballista Tower"},{dmg: 2, fireRate: 250, hp:15, range:150, pierce:1, name: "Murder Hole Tower"},{dmg: 3, fireRate: 1000, hp:50, range:400, pierce: 1, name: "Castle"},]
     var buildingDesc = ["A cheap palisade wall for slowing down enemies. 1 gold.", "A quick-firing arrow tower for quick attacks. 5 gold.", "A heavy ballista tower for dealing heavy damage. 10 gold.", "A murder-hole tower for attacking many enemies at once. 10 gold."];
     var buildingCost = [1, 5, 10, 10]
     var indicator;
     var buildMode = {active:false, building: 0};
     var buildings = [];
     var enemies = [];
-    var arrows = [];
+    var missiles = [];
     var base;
     var toolMenu = [];
     var gold = 5;
@@ -88,10 +88,25 @@
     var background = new PIXI.Container();
     var foreground = new PIXI.Container();
     var ui = new PIXI.Container();
+    var testCombo = 0;
+    var powerMeter = 0;
+    var powerMax = 5;
     app.stage.addChild(background);
     app.stage.addChild(foreground);
     app.stage.addChild(ui);
     var verses = ["Now before the feast of the passover, when Jesus knew that his hour was come that he should depart out of this world unto the Father, having loved his own which were in the world, he loved them unto the end.", "And supper being ended, the devil having now put into the heart of Judas Iscariot, Simon's son, to betray him;", "Jesus knowing that the Father had given all things into his hands, and that he was come from God, and went to God;", "He riseth from supper, and laid aside his garments; and took a towel, and girded himself.", "After that he poureth water into a bason, and began to wash the disciples' feet, and to wipe them with the towel wherewith he was girded.", "Then cometh he to Simon Peter: and Peter saith unto him, Lord, dost thou wash my feet?", "Jesus answered and said unto him, What I do thou knowest not now; but thou shalt know hereafter.", "Peter saith unto him, Thou shalt never wash my feet. Jesus answered him, If I wash thee not, thou hast no part with me.", "Simon Peter saith unto him, Lord, not my feet only, but also my hands and my head.", "Jesus saith to him, He that is washed needeth not save to wash his feet, but is clean every whit: and ye are clean, but not all.", "For he knew who should betray him; therefore said he, Ye are not all clean.", "So after he had washed their feet, and had taken his garments, and was set down again, he said unto them, Know ye what I have done to you?", "Ye call me Master and Lord: and ye say well; for so I am.", "If I then, your Lord and Master, have washed your feet; ye also ought to wash one another's feet.", "For I have given you an example, that ye should do as I have done to you.", "Verily, verily, I say unto you, The servant is not greater than his lord; neither he that is sent greater than he that sent him.", "If ye know these things, happy are ye if ye do them.", "I speak not of you all: I know whom I have chosen: but that the scripture may be fulfilled, He that eateth bread with me hath lifted up his heel against me.", "Now I tell you before it come, that, when it is come to pass, ye may believe that I am he.", "Verily, verily, I say unto you, He that receiveth whomsoever I send receiveth me; and he that receiveth me receiveth him that sent me.", "When Jesus had thus said, he was troubled in spirit, and testified, and said, Verily, verily, I say unto you, that one of you shall betray me.", "Then the disciples looked one on another, doubting of whom he spake.", "Now there was leaning on Jesus' bosom one of his disciples, whom Jesus loved.", "Simon Peter therefore beckoned to him, that he should ask who it should be of whom he spake.", "He then lying on Jesus' breast saith unto him, Lord, who is it?", "Jesus answered, He it is, to whom I shall give a sop, when I have dipped it. And when he had dipped the sop, he gave it to Judas Iscariot, the son of Simon.", "And after the sop Satan entered into him. Then said Jesus unto him, That thou doest, do quickly.", "Now no man at the table knew for what intent he spake this unto him.", "For some of them thought, because Judas had the bag, that Jesus had said unto him, Buy those things that we have need of against the feast; or, that he should give something to the poor.", "He then having received the sop went immediately out: and it was night.", "Therefore, when he was gone out, Jesus said, Now is the Son of man glorified, and God is glorified in him.", "If God be glorified in him, God shall also glorify him in himself, and shall straightway glorify him.", "Little children, yet a little while I am with you. Ye shall seek me: and as I said unto the Jews, Whither I go, ye cannot come; so now I say to you.", "A new commandment I give unto you, That ye love one another; as I have loved you, that ye also love one another.", "By this shall all men know that ye are my disciples, if ye have love one to another.", "Simon Peter said unto him, Lord, whither goest thou? Jesus answered him, Whither I go, thou canst not follow me now; but thou shalt follow me afterwards.", "Peter said unto him, Lord, why cannot I follow thee now? I will lay down my life for thy sake.", "Jesus answered him, Wilt thou lay down thy life for my sake? Verily, verily, I say unto thee, The cock shall not crow, till thou hast denied me thrice."];
+    var upgradeData = [
+        [
+            [{desc: "Brick Walls: Build walls with mud bricks instead of wood.", texture: "sprites/upgrades/tower1/brick.png", cost: 5, upgrade: function (tower) {
+                tower.health = 15;
+                tower.texture = resources["sprites/upgrades/tower1/brick.png"].texture;
+            }},
+            {desc: "Stone Walls: Build stone walls instead of mud walls.", cost: 10, texture: "sprites/upgrades/tower1/stone.png", upgrade: function (tower) {
+                tower.health = 45;
+                tower.texture = resources["sprites/upgrades/tower1/stone.png"].texture;
+            }}]
+        ]
+    ];
     var questionMenu = {questionDiv: document.getElementById("question"), answers: document.getElementsByClassName("answer"), delay: 1000, lastAnswer: 0, answerQuestion: function(answerEl){
         if(questionMenu.lastAnswer + questionMenu.delay > Date.now() || mode === "build") {
             return;
@@ -102,18 +117,30 @@
         questionsLeftDiv.innerHTML = questionMenu.questionsLeft.toString();
         if(answerEl.innerHTML === questionMenu.rightAnswer) {
             if(mode === "test") {
+                testCombo++;
                 gold++;
+                if(testCombo % 3 === 0) {
+                    gold += testCombo/3;
+                }
             } else if(mode === "fight") {
+                powerMeter++;
+                updatePowerMeter();
                 handlePlayerAttack();
             }
             answerEl.className = "correct";
-            questionMenu.delay = 25;
+            questionMenu.delay = 20;
             setTimeout(function() {
                 answerEl.className = "answer";
                 goldText.text = gold.toString();
                 questionMenu.newQuestion();
-            }, 25);
+            }, 20);
         } else {
+            if(mode === "test") {
+                testCombo = 0;
+            } else if(mode === "fight") {
+                powerMeter = Math.max(powerMeter-1,0);
+                updatePowerMeter();
+            }
             answerEl.className = "incorrect";
             questionMenu.corAnsEl.className = "correct";
             questionMenu.delay = 100;
@@ -150,8 +177,6 @@
             indicator.visible = true;
             questionMenu.questionDiv.innerHTML = buildingDesc[buildMode.building];
             questionMenu.hide();
-            toolMenu[0].alpha = 1;
-            toolMenu[1].alpha = 0.5;
             questionMenu.hide();
         }
     },
@@ -173,10 +198,15 @@
     questionMenu.newQuestion();
     var rangeMarker = new PIXI.Graphics();
     var targetTracker = new PIXI.Graphics();
+    var powerBarHolder = new PIXI.Graphics();
+    var powerBar = new PIXI.Graphics();
     ui.addChild(rangeMarker);
     ui.addChild(targetTracker);
+    ui.addChild(powerBarHolder);
+    ui.addChild(powerBar);
     targetTracker.visible = false;
     rangeMarker.visible = false;
+    
     function setup() {
         player = new Sprite(resources["sprites/player.png"].texture);
         foreground.addChild(player);
@@ -184,6 +214,7 @@
         player.y = innerHeight/2 - 64;
         player.speed = 3;
         player.range = 300;
+        player.pierce = 1;
         player.dmg = 5;
         player.scale.set(0.75,0.75);
         var wallIcon = new Sprite(resources["sprites/wall.png"].texture);
@@ -209,16 +240,17 @@
         buildMenu.forEach(function(tower) {
             tower.visible = false;
         })
-        var hammerIcon = new Sprite(resources["sprites/hammer.png"].texture);
-        hammerIcon.x = 25;
-        hammerIcon.y = innerHeight - 100;
-        hammerIcon.alpha = 0.5;
-        ui.addChild(hammerIcon);
+        
+        powerBarHolder.beginFill(0x000000);
+        powerBarHolder.drawRect(0,0,100,20);
+        powerBarHolder.x = 20;
+        powerBarHolder.y = innerHeight - 40;
 
-        var questionIcon = new Sprite(resources["sprites/question.png"].texture);
-        questionIcon.x = 75;
-        questionIcon.y = innerHeight - 105;
-        ui.addChild(questionIcon);
+        powerBar.beginFill(0x4444FF);
+        powerBar.drawRect(0,0,100,20);
+        powerBar.x = 20;
+        powerBar.y = innerHeight - 40;
+        powerBar.width = 0;
         
         var goldIcon = new Sprite(resources["sprites/coin.png"].texture);
         goldIcon.x = innerWidth - 100;
@@ -231,7 +263,7 @@
         goldText.y = innerHeight - 75;
         ui.addChild(goldText);
 
-        toolMenu.push(hammerIcon, questionIcon, goldIcon, goldText);
+        toolMenu.push(goldIcon, goldText);
 
         
         indicator = new Sprite(resources["sprites/wall.png"].texture);
@@ -239,27 +271,16 @@
         indicator.alpha = 0.75;
         indicator.anchor.set(0.5,0.5);
         player.anchor.set(0.5,0.5);
-        base = build(4,15,8);
-        // spawnEnemy(0,750, 2, 1);
-        // spawnEnemy(0,0, 10, 1);
-        // spawnEnemy(0,750, 5, 1);
-        // spawnEnemy(0,850, 5, 1);
-        // spawnEnemy(0,950, 5, 1);
-        // spawnEnemy(0,650, 5, 1);
-        // spawnEnemy(0,550, 5, 1);
-        // spawnEnemy(innerWidth,750, 5, 1);
-        // spawnEnemy(innerWidth,850, 5, 1);
-        // spawnEnemy(innerWidth,950, 5, 1);
-        // spawnEnemy(innerWidth,650, 5, 1);
-        // spawnEnemy(innerWidth,550, 5, 1);
-        // spawnEnemy(innerWidth/2,1000, 5, 1);
-        // spawnEnemy(innerWidth/2,-200, 5, 1);
+        base = build(4,Math.floor(Math.round(innerWidth/64)/2),Math.round((innerHeight - 64)/64));
         foreground.addChild(indicator);
         state = wait;
         app.ticker.add(delta => gameLoop(delta));
     }
     function wait(){
 
+    }
+    function loadUpgradeMenu(tower) {
+        
     }
     function spawnEnemy(x,y, hp, dmg) {
         var enemy = new Sprite(resources["sprites/enemy.png"].texture);
@@ -270,6 +291,7 @@
         enemy.dmg = dmg;
         enemy.lastAtk = 0;
         enemy.atkSpeed = 1000;
+        enemy.speed = 0.5;
         enemy.anchor.set(0.5, 0.5);
         enemy.anim = {active: false, step: 0};
         enemies.push(enemy);
@@ -337,11 +359,21 @@
             } else if(press("r")) {
                 buildMode.building = 3;
             }
-            if(keys.mouse) {
-                if(noBuildingAt(Math.round((mouseX)/64),Math.round((mouseY)/64)) && gold >= buildingCost[buildMode.building]) {
+            var selectedBuilding = buildingAt(Math.round((mouseX)/64),Math.round((mouseY)/64));
+            if(!selectedBuilding) {
+                if(keys.mouse && gold >= buildingCost[buildMode.building]) {
                     build(buildMode.building, Math.round((mouseX)/64), Math.round((mouseY)/64))
                     gold -= buildingCost[buildMode.building];
                     goldText.text = gold.toString();
+                }
+                questionMenu.questionDiv.innerHTML = buildingDesc[buildMode.building];
+                indicator.visible = true;
+            } else {
+                questionMenu.questionDiv.innerHTML = "Level " + (selectedBuilding.level+1) + " " + selectedBuilding.name;
+                indicator.visible = false;
+                if(keys.mouse) {
+                    mode = "upgrade";
+                    loadUpgradeMenu(selectedBuilding);
                 }
             }
         }
@@ -375,13 +407,22 @@
         handleEnemies();
         handleBuildings();
         
-        handleArrows();
+        handleMissiles();
     }
     function handlePlayerAttack() {
-        debugger;
-        var target = getClosestEnemy(player.x,player.y,player.range);
-        if(target) {
-            shootArrow(normalize(target.x-player.x,target.y-player.y,10), player.x, player.y,pointTowards(player.x,player.y,target.x,target.y),player.dmg);
+        if(powerMeter > powerMax) {
+            powerMeter = 0;
+            updatePowerMeter();
+            var targets = getEnemiesWithinRange(player.x,player.y,player.range);
+            for(var i = 0; i < targets.length; i++) {
+                var target = targets[i];
+                shootMissile(normalize(target.x-player.x,target.y-player.y,10), player.x, player.y,pointTowards(player.x,player.y,target.x,target.y),player.dmg, player.pierce, "arrow");
+            }
+        } else {
+            var target = getClosestEnemy(player.x,player.y,player.range);
+            if(target) {
+                shootMissile(normalize(target.x-player.x,target.y-player.y,10), player.x, player.y,pointTowards(player.x,player.y,target.x,target.y),player.dmg, player.pierce, "arrow");
+            }
         }
     }
     function spawnWave(level) {
@@ -389,37 +430,42 @@
             spawnEnemy(Math.random()*innerWidth, Math.random() * -100, 5, 2);
         }
     }
-    function handleArrows() {
+    function handleMissiles() {
         var i;
-        var len = arrows.length;
+        var len = missiles.length;
         for(i = 0; i < len; i++) {
-            var arrow = arrows[i];
-            arrow.x += arrow.velocity.x;
-            arrow.y += arrow.velocity.y;
-            var spearhead = normalize(arrow.velocity.x,arrow.velocity.y,arrow.height/2);
-            spearhead.x += arrow.x;
-            spearhead.y += arrow.y;
-            var enemyHit = hitEnemy(spearhead);
+            var missile = missiles[i];
+            missile.x += missile.velocity.x;
+            missile.y += missile.velocity.y;
+            var spearhead = normalize(missile.velocity.x,missile.velocity.y,missile.height/2);
+            spearhead.x += missile.x;
+            spearhead.y += missile.y;
+            var enemyHit = hitEnemy(spearhead,missile.hit);
             if(enemyHit) {
-                enemyHit.hp -= arrow.dmg;
-                foreground.removeChild(arrow);
-                arrows.splice(i,1);
-                --i;
-                --len;
+                enemyHit.hp -= missile.dmg;
+                --missile.pierce;
+                if(missile.pierce <= 0) {
+                    foreground.removeChild(missile);
+                    missiles.splice(i,1);
+                    --i;
+                    --len;
+                } else {
+                    missile.hit.push(enemyHit);
+                }
             }
-            if(arrow.x > innerWidth+100 || arrow.x < -100 || arrow.y > innerHeight + 100 || arrow.y < -100) {
-                foreground.removeChild(arrow);
-                arrows.splice(i,1);
+            if(missile.x > innerWidth+100 || missile.x < -100 || missile.y > innerHeight + 100 || missile.y < -100) {
+                foreground.removeChild(missile);
+                missiles.splice(i,1);
                 --i;
                 --len;
             }
         }
     }
-    function hitEnemy(point) {
+    function hitEnemy(point, hit) {
         var i;
         var len = enemies.length;
         for(i = 0; i < len; i++) {
-            if(getDistance(point.x,point.y, enemies[i].x, enemies[i].y) <32) {
+            if(getDistance(point.x,point.y, enemies[i].x, enemies[i].y) <32 && !hit.includes(enemies[i])) {
                 return enemies[i];
             }
         }
@@ -440,33 +486,32 @@
             if((building.type === 1 || building.type === 4) && building.lastAtk + building.fireRate < Date.now()) {
                 var target = getClosestEnemy(building.x,building.y,building.range);
                 if(target) {
-                    shootArrow(normalize(target.x-building.x,target.y-building.y,10), building.x, building.y,pointTowards(building.x,building.y,target.x,target.y),building.dmg);
+                    shootMissile(normalize(target.x-building.x,target.y-building.y,10), building.x, building.y,pointTowards(building.x,building.y,target.x,target.y),building.dmg, building.pierce, "arrow");
+                    building.lastAtk = Date.now();
+                }
+            } else if(building.type === 2 && building.lastAtk + building.fireRate < Date.now()) {
+                var target = getClosestEnemy(building.x,building.y,building.range);
+                if(target) {
+                    shootMissile(normalize(target.x-building.x,target.y-building.y,10), building.x, building.y,pointTowards(building.x,building.y,target.x,target.y),building.dmg, building.pierce, "ballista");
                     building.lastAtk = Date.now();
                 }
             }
         }
     }
-    function pointTowards(x1,y1,x2,y2) {
-        /// Mine
-        var xDiff = x1 - x2;
-        var yDiff = y1 - y2;
-        var ans = Math.atan(yDiff/xDiff);
-        if(ans < 0) {
-            ans += Math.PI;
-        }
-        return ans;
-    }
-    function shootArrow(vector, x,y,dir,dmg) {
-        var arrow = new Sprite(resources["sprites/arrow.png"].texture);
-        arrow.scale.set(2)
-        foreground.addChild(arrow);
-        arrow.anchor.set(0.5,0.5);
-        arrow.x = x;
-        arrow.y = y;
-        arrow.velocity = vector;
-        arrow.rotation = dir - Math.PI/2;
-        arrow.dmg = dmg;
-        arrows.push(arrow);
+    function shootMissile(vector, x,y,dir,dmg,pierce,type) {
+        var missile = new Sprite(resources["sprites/"+ type +".png"].texture);
+        missile.scale.set(2);
+        missile.type = type;
+        foreground.addChild(missile);
+        missile.anchor.set(0.5,0.5);
+        missile.x = x;
+        missile.y = y;
+        missile.velocity = vector;
+        missile.hit = [];
+        missile.pierce = pierce;
+        missile.rotation = Math.PI * (-dir) / 180;
+        missile.dmg = dmg;
+        missiles.push(missile);
     }
     function getClosestEnemy(x,y,range) {
         if(!enemies.length) {
@@ -485,6 +530,21 @@
             }
         } 
         return match;
+    }
+    function getEnemiesWithinRange(x,y,range) {
+        var matches = [];
+        if(!enemies.length) {
+            return [];
+        }
+        var i;
+        var len = enemies.length;
+        for(i = 0; i < len; i++) {
+            var dist = getDistance(x,y,enemies[i].x,enemies[i].y);
+            if(dist < range) {
+                matches.push(enemies[i]);
+            }
+        } 
+        return matches;
     }
     function handleEnemies() {
         var i;
@@ -510,7 +570,7 @@
                 }
                 ++enemy.anim.step;
             } else {
-                var baseVector = normalize(base.x-enemy.x,base.y-enemy.y,2);
+                var baseVector = normalize(base.x-enemy.x,base.y-enemy.y,enemy.speed);
                 var target = checkCol(enemy.x+baseVector.x, enemy.y + baseVector.y, enemy.width, enemy.height);
                 if(!target) {
                     enemy.x += baseVector.x;
@@ -524,13 +584,13 @@
             }
         } 
     }
-    function noBuildingAt(x,y) {
+    function buildingAt(x,y) {
         for(var i = 0; i < buildings.length; i++) {
             if(buildings[i].boardX === x && buildings[i].boardY === y) {
-                return false;
+                return buildings[i];
             }
         }
-        return true;
+        return false;
     }
     function build(type,x,y) {
         var building = new Sprite(resources[buildingTextures[type]].texture);
@@ -540,16 +600,22 @@
         building.boardY = y;
         building.type = type;
         building.dmg = buildingData[type].dmg;
+        building.name = buildingData[type].name;
         building.fireRate = buildingData[type].fireRate;
         console.log(building.fireRate);
         building.hp = buildingData[type].hp;
         building.range = buildingData[type].range;
+        building.pierce = buildingData[type].pierce;
         foreground.addChild(building);
         buildings.push(building);
         keys.mouse = false;
         building.lastAtk = 0;
+        building.level = 0;
         building.anchor.set(0.5,0.5);
         return building;
+    }
+    function updatePowerMeter() {
+        powerBar.width = 100 * (powerMeter/powerMax);
     }
     function updateBuildMode() {
         if(press("q") || press("1")) {

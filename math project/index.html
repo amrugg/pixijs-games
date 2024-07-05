@@ -91,7 +91,7 @@
     }
     var towerData = {
         tower1: {range: 200*scalar, dmg: 1, cooldown: 1000, gold:30, pierce:1},
-        tower2: {range: 500*scalar, dmg: 3, cooldown: 6000, gold:50, pierce:3},
+        tower2: {range: 300*scalar, dmg: 3, cooldown: 6000, gold:50, pierce:3},
         tower3: {range: 100*scalar, dmg: 1, cooldown: 900, gold:30, pierce:1},
     }
     var upgradeData = {
@@ -109,6 +109,44 @@
                 ],
                 [
                     {desc: "Shoots arrows faster.", cost: 20, texture: "sprites/upgrades/tower1/twin.png", apply: function(tower) {
+                        tower.cooldown /= 1.5;
+                    }}
+                ]
+            ]
+        },
+        "tower2": {
+            upgrades: [
+                [
+                    {desc: "+2 pierce.", cost: 20, texture: "sprites/upgrades/tower1/damage.png", apply: function(tower) {
+                        tower.dmg++;
+                    }}
+                ],
+                [
+                    {desc: "+100 range.", cost: 10, texture: "sprites/upgrades/tower1/range.png", apply: function(tower) {
+                        tower.range += 100 * scalar;
+                    }}
+                ],
+                [
+                    {desc: "Shoots arrows faster.", cost: 20, texture: "sprites/upgrades/tower1/twin.png", apply: function(tower) {
+                        tower.cooldown /= 1.5;
+                    }}
+                ]
+            ]
+        },
+        "tower3": {
+            upgrades: [
+                [
+                    {desc: "+1 damage.", cost: 20, texture: "sprites/upgrades/tower1/damage.png", apply: function(tower) {
+                        tower.dmg++;
+                    }}
+                ],
+                [
+                    {desc: "+50 range.", cost: 10, texture: "sprites/upgrades/tower1/range.png", apply: function(tower) {
+                        tower.range += 100 * scalar;
+                    }}
+                ],
+                [
+                    {desc: "Faster firing.", cost: 20, texture: "sprites/upgrades/tower1/twin.png", apply: function(tower) {
                         tower.cooldown /= 1.5;
                     }}
                 ]
