@@ -47,7 +47,9 @@
     document.body.appendChild(app.view);
     var scalar = canvasLength/800;
     var canvasOffset = (innerWidth - canvasLength)/2;
-    loader.add(["sprites/ground.png", "sprites/enemy.png", "sprites/tower1.png", "sprites/tower2.png", "sprites/tower3.png", "sprites/coin.png", "sprites/heart.png", "sprites/arrow.png", "sprites/ballista.png", "sprites/rock.png","sprites/upgrades/tower1/damage.png", "sprites/upgrades/tower1/range.png", "sprites/upgrades/tower1/twin.png"]).load(setup);
+    var miscAssets = ["sprites/ground.png", "sprites/tower1.png", "sprites/tower2.png", "sprites/tower3.png", "sprites/coin.png", "sprites/heart.png", "sprites/arrow.png", "sprites/ballista.png", "sprites/rock.png","sprites/upgrades/tower1/damage.png", "sprites/upgrades/tower1/range.png", "sprites/upgrades/tower1/twin.png"];
+    var enemies = ["sprites/enemy.png", "sprites/enemy-armor.png"]
+    loader.add(miscAssets.concat(enemies)).load(setup);
     var state;
     var keys = {};
     var mouseX,mouseY;
@@ -85,9 +87,20 @@
         wave: 0,
         curWave: false,
         waveNum: 10,
-        levelDiffMin: {minHealth: 1, maxHealth: 1, minSpeed: -5, maxSpeed: -5, enemyNum: 5, minGold: 0, maxGold: 0},
-        levelDiffMax: {minHealth: 2, maxHealth: 2, minSpeed: -7, maxSpeed: -7, enemyNum: 7, minGold: 0, maxGold: 1},
-        waves: [{minHealth: 1, maxHealth: 2, minSpeed: 110, maxSpeed: 120, enemyNum: 10, minGold: 1, maxGold: 2}],
+        levelDiffMin: {
+            enemy: {minHealth: 1, maxHealth: 1, minSpeed: -5, maxSpeed: -5, enemyNum: 5, minGold: 0, maxGold: 0, armor: 0},
+            "enemy-armor": {minHealth: 1, maxHealth: 1, minSpeed: -5, maxSpeed: -5, enemyNum: 3, minGold: 0, maxGold: 0, armor: 0}
+        },
+        levelDiffMax: {
+            enemy: {minHealth: 2, maxHealth: 2, minSpeed: -7, maxSpeed: -7, enemyNum: 7, minGold: 0, maxGold: 0, armor: 0},
+            "enemy-armor": {minHealth: 2, maxHealth: 2, minSpeed: -5, maxSpeed: -5, enemyNum: 4, minGold: 0, maxGold: 0, armor: 0}
+        },
+        waves: {
+            enemy: [{minHealth: 1, maxHealth: 2, minSpeed: 110, maxSpeed: 120, enemyNum: 10, minGold: 1, maxGold: 2, armor: 0}],
+            "enemy-armor": [{minHealth: 5, maxHealth: 7, minSpeed: 150, maxSpeed: 170, enemyNum: 3, minGold: 2, maxGold: 3, armor: 3}]
+        },
+        /// Names of all the enemies
+        keys: ["enemy", "enemy-armor"]
     }
     var towerData = {
         tower1: {range: 200*scalar, dmg: 1, cooldown: 1000, gold:30, pierce:1},
@@ -100,7 +113,7 @@
                 [
                     {desc: "+1 damage.", cost: 20, texture: "sprites/upgrades/tower1/damage.png", apply: function(tower) {
                         tower.dmg++;
-                    }}
+                    }},
                 ],
                 [
                     {desc: "+100 range.", cost: 10, texture: "sprites/upgrades/tower1/range.png", apply: function(tower) {
@@ -240,28 +253,42 @@
         app.ticker.add(delta => gameLoop(delta));
     }
     function generateWaves(level) {
-        var props = Object.keys(level.levelDiffMin);
-        for(var i = 1; i < level.waveNum; i++) {
-            var nextWave = {};
-            for(var prop of props) {
-                nextWave[prop] = level.waves[i-1][prop] + level.randInt(level.levelDiffMin[prop], level.levelDiffMax[prop]);
+        for(var enI = 0; enI < level.keys.length; enI++) {
+            var curLevelDiffMin = level.levelDiffMin[level.keys[enI]];
+            var curLevelDiffMax = level.levelDiffMax[level.keys[enI]];
+            var waveSet = level.waves[level.keys[enI]];
+            var props = Object.keys(curLevelDiffMin);
+            for(var i = 1; i < level.waveNum; i++) {
+                var nextWave = {};
+                console.log(curLevelDiffMin);
+                for(var prop of props) {
+                    nextWave[prop] = waveSet[i-1][prop] + level.randInt(curLevelDiffMin[prop], curLevelDiffMax[prop]);
+                }
+                level.waves[level.keys[enI]].push(nextWave);
             }
-            level.waves.push(nextWave);
         }
     }
     function prepWave(level) {
-        level.curWave = level.waves[level.wave];
-        for(var i = 0; i < level.curWave.enemyNum; i++) {
-            level.spawnSeq.push(Date.now() + i * 1000 + randInt(-500,500));
+        for(var enI = 0; enI < level.keys.length; enI++) {
+            var curWave = level.waves[level.keys[enI]][level.wave];
+
+            var enemyNum = curWave.enemyNum;
+            for(var i = 0; i < enemyNum; i++) {
+                level.spawnSeq.push({time: Date.now() + i * 1000 + level.randInt(-500,500), type: level.keys[enI]});
+            }
         }
+        level.spawnSeq.sort(function (a,b) {
+            return a.time-b.time;
+        })
     }
     function debug() {
         if(press(" ")) {
             play();
         }
     }
-    function spawnEnemy(beginX, beginY, level) {
-        var enemy = new Sprite(resources["sprites/enemy.png"].texture);
+    function spawnEnemy(beginX, beginY, level,type) {
+        var enemy = new Sprite(resources["sprites/"+type+".png"].texture);
+        var waveProps = level.waves[type][level.wave];
         enemy.scale.set(scalar);
         enemy.anchor.set(0.5,0.5);
         enemy.x = (beginX * 80 + 40) * scalar;
@@ -269,7 +296,7 @@
         enemy.targetX = enemy.x;
         enemy.targetY = enemy.y;
         enemy.index = -1;
-        enemy.speed = level.randInt(level.curWave.minSpeed,level.curWave.maxSpeed);
+        enemy.speed = level.randInt(waveProps.minSpeed, waveProps.maxSpeed);
         enemy.chooseNewDir = function () {
             if(++enemy.index >= path.length) {
                 health -= 1;
@@ -287,8 +314,8 @@
             enemy.steps = enemy.speed;
         }
         enemy.chooseNewDir();
-        enemy.health = level.randInt(level.curWave.minHealth,level.curWave.maxHealth);
-        enemy.gold = level.randInt(level.curWave.minGold,level.curWave.maxGold);
+        enemy.health = level.randInt(waveProps.minHealth,waveProps.maxHealth);
+        enemy.gold = level.randInt(waveProps.minGold,waveProps.maxGold);
         enemy.advance = 0;
         foreground.addChild(enemy);
         enemies.push(enemy);
@@ -341,6 +368,7 @@
             ui.removeChild(tower);
         })
         rangeGraphics.visible = false;
+        waveCounter.visible = true;
     }
     function loadUpdateMenu(tower) {
         var i;
@@ -412,9 +440,11 @@
     }
     function play(){
         handleEnemies();
-        if(curLevel.spawnSeq[0] < Date.now()) {
-            curLevel.spawnSeq.splice(0,1);
-            spawnEnemy(5,-1, curLevel);
+        if(curLevel.spawnSeq[0]) {
+            if(curLevel.spawnSeq[0].time < Date.now()) {
+                spawnEnemy(5,-1, curLevel, curLevel.spawnSeq[0].type);
+                curLevel.spawnSeq.splice(0,1);
+            }
         }
         if(enemies.length === 0 && curLevel.spawnSeq.length === 0) {
             waveCounter.text = "Next Wave!";
@@ -441,6 +471,7 @@
                         updateGoldText();
                         buildMode.active = false;
                         buildMode.icon.visible = false;
+                        rangeGraphics.visible = false;
                     }
                 }
             } else if(upgradeMode.active) {
