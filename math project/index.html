@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Direction ship</title>
+  <title>Tower Defense</title>
 </head>
     <style>* {padding: 0; margin: 0}</style>
     <script src="pixi/pixi.min.js"></script>
@@ -47,8 +47,14 @@
     document.body.appendChild(app.view);
     var scalar = canvasLength/800;
     var canvasOffset = (innerWidth - canvasLength)/2;
-    var miscAssets = ["sprites/ground.png", "sprites/tower1.png", "sprites/tower2.png", "sprites/tower3.png", "sprites/coin.png", "sprites/heart.png", "sprites/arrow.png", "sprites/ballista.png", "sprites/rock.png","sprites/upgrades/tower1/damage.png", "sprites/upgrades/tower1/range.png", "sprites/upgrades/tower1/twin.png"];
-    var enemies = ["sprites/enemy.png", "sprites/enemy-armor.png"]
+    var miscAssets = ["sprites/ground.png", "sprites/tower1.png", "sprites/tower2.png", "sprites/tower3.png", "sprites/coin.png", "sprites/heart.png", "sprites/arrow.png", "sprites/ballista.png", "sprites/rock.png",];
+    var enemies = ["sprites/enemy.png", "sprites/enemy-armor.png"];
+    var tower1Assets = ["damage","fire","pierce","range","speed","tower1-1","tower1-2","tower1-3","twin"];
+    var tower2Assets = ["damage","range","tower2-1","tower2-2","twin"];
+    var tower3Assets = ["avalanche","damage","facet","range","tower3-1","tower3-2","twin"];
+    loadArray(tower1Assets, "sprites/upgrades/tower1", "png");
+    loadArray(tower2Assets, "sprites/upgrades/tower2", "png");
+    loadArray(tower3Assets, "sprites/upgrades/tower3", "png");
     loader.add(miscAssets.concat(enemies)).load(setup);
     var state;
     var keys = {};
@@ -99,13 +105,15 @@
             enemy: [{minHealth: 1, maxHealth: 2, minSpeed: 110, maxSpeed: 120, enemyNum: 10, minGold: 1, maxGold: 2, armor: 0}],
             "enemy-armor": [{minHealth: 5, maxHealth: 7, minSpeed: 150, maxSpeed: 170, enemyNum: 3, minGold: 2, maxGold: 3, armor: 3}]
         },
+        speed: [1,1,0.9,0.8,0.7,0.6,0.55,0.5,0.75,0.75],
         /// Names of all the enemies
-        keys: ["enemy", "enemy-armor"]
+        keys: ["enemy", "enemy-armor"],
+        beginWaves: {"enemy": 0, "enemy-armor": 9},
     }
     var towerData = {
-        tower1: {range: 200*scalar, dmg: 1, cooldown: 1000, gold:30, pierce:1},
-        tower2: {range: 300*scalar, dmg: 3, cooldown: 6000, gold:50, pierce:3},
-        tower3: {range: 100*scalar, dmg: 1, cooldown: 900, gold:30, pierce:1},
+        tower1: {range: 200*scalar, dmg: 1, cooldown: 1000, gold:30, pierce:1, aPierce:0},
+        tower2: {range: 300*scalar, dmg: 3, cooldown: 6000, gold:50, pierce:3, aPierce:1},
+        tower3: {range: 100*scalar, dmg: 1, cooldown: 900, gold:30, pierce:1, aPierce:0},
     }
     var upgradeData = {
         "tower1": {
@@ -114,24 +122,35 @@
                     {desc: "+1 damage.", cost: 20, texture: "sprites/upgrades/tower1/damage.png", apply: function(tower) {
                         tower.dmg++;
                     }},
+                    {desc: "+5 damage.", cost: 50, texture: "sprites/upgrades/tower1/fire.png", apply: function(tower) {
+                        tower.dmg += 5;
+                    }},
                 ],
                 [
                     {desc: "+100 range.", cost: 10, texture: "sprites/upgrades/tower1/range.png", apply: function(tower) {
                         tower.range += 100 * scalar;
-                    }}
+                    }},
+                    {desc: "+1 pierce.", cost: 40, texture: "sprites/upgrades/tower1/pierce.png", apply: function(tower) {
+                        tower.aPierce++;
+                    }},
                 ],
                 [
-                    {desc: "Shoots arrows faster.", cost: 20, texture: "sprites/upgrades/tower1/twin.png", apply: function(tower) {
+                    {desc: "Shoots arrows faster.", cost: 20, texture: "sprites/upgrades/tower1/speed.png", apply: function(tower) {
                         tower.cooldown /= 1.5;
-                    }}
+                    }},
+                    {desc: "Shoots two arrows\nat once.", cost: 50, texture: "sprites/upgrades/tower1/twin.png", apply: function(tower) {
+                        tower.doubleArrow = true;
+                    }},
                 ]
-            ]
+            ],
+            upgradeLevels: ["sprites/upgrades/tower1/tower1-1.png", "sprites/upgrades/tower1/tower1-2.png", "sprites/upgrades/tower1/tower1-3.png"]
         },
         "tower2": {
             upgrades: [
                 [
                     {desc: "+2 pierce.", cost: 20, texture: "sprites/upgrades/tower1/damage.png", apply: function(tower) {
-                        tower.dmg++;
+                        tower.aPierce += 2;
+                        tower.pierce += 2;
                     }}
                 ],
                 [
@@ -144,7 +163,8 @@
                         tower.cooldown /= 1.5;
                     }}
                 ]
-            ]
+            ],
+            upgradeLevels: ["sprites/upgrades/tower2/tower2-1.png", "sprites/upgrades/tower2/tower2-2.png"]
         },
         "tower3": {
             upgrades: [
@@ -163,11 +183,12 @@
                         tower.cooldown /= 1.5;
                     }}
                 ]
-            ]
+            ],
+            upgradeLevels: ["sprites/upgrades/tower3/tower3-1.png", "sprites/upgrades/tower3/tower3-2.png"]
         }
     }
     var goldCounter = new PIXI.Text("50", new PIXI.TextStyle({fontSize: 30*scalar}));
-    var gold = 50;
+    var gold = 50000;
     goldCounter.anchor.set(1,0.5);
     ui.addChild(goldCounter);
     goldCounter.y = 25*scalar;
@@ -219,6 +240,7 @@
         tower1.scale.set(scalar);
         tower1.x = canvasLength - tower1.width * 1.1;
         tower1.y = 100*scalar;
+        tower1.cost = 30;
         tower1.type = "tower1";
         ui.addChild(tower1);
         towerMenu.push(tower1);
@@ -226,6 +248,7 @@
         tower2.scale.set(scalar);
         tower2.x = canvasLength - tower2.width * 1.1;
         tower2.y = 200*scalar;
+        tower2.cost = 50;
         tower2.type = "tower2";
         ui.addChild(tower2);
         towerMenu.push(tower2);
@@ -233,6 +256,7 @@
         tower3.scale.set(scalar);
         tower3.x = canvasLength - tower3.width * 1.1;
         tower3.y = 300*scalar;
+        tower3.cost = 30;
         tower3.type = "tower3";
         ui.addChild(tower3);
         towerMenu.push(tower3);
@@ -260,9 +284,12 @@
             var props = Object.keys(curLevelDiffMin);
             for(var i = 1; i < level.waveNum; i++) {
                 var nextWave = {};
-                console.log(curLevelDiffMin);
                 for(var prop of props) {
-                    nextWave[prop] = waveSet[i-1][prop] + level.randInt(curLevelDiffMin[prop], curLevelDiffMax[prop]);
+                    if(level.beginWaves[level.keys[enI]] || level.beginWaves[level.keys[enI]] >= i) {
+                        nextWave[prop] = waveSet[i-1][prop];
+                    } else {
+                        nextWave[prop] = waveSet[i-1][prop] + level.randInt(curLevelDiffMin[prop], curLevelDiffMax[prop]);
+                    }
                 }
                 level.waves[level.keys[enI]].push(nextWave);
             }
@@ -274,7 +301,9 @@
 
             var enemyNum = curWave.enemyNum;
             for(var i = 0; i < enemyNum; i++) {
-                level.spawnSeq.push({time: Date.now() + i * 1000 + level.randInt(-500,500), type: level.keys[enI]});
+                if(level.beginWaves[level.keys[enI]] <= curLevel.wave) {
+                    level.spawnSeq.push({time: Date.now() + i * 1000*curLevel.speed[curLevel.wave] + level.randInt(-500,500)*curLevel.speed[curLevel.wave], type: level.keys[enI]});
+                }
             }
         }
         level.spawnSeq.sort(function (a,b) {
@@ -315,6 +344,7 @@
         }
         enemy.chooseNewDir();
         enemy.health = level.randInt(waveProps.minHealth,waveProps.maxHealth);
+        enemy.armor = waveProps.armor
         enemy.gold = level.randInt(waveProps.minGold,waveProps.maxGold);
         enemy.advance = 0;
         foreground.addChild(enemy);
@@ -389,6 +419,7 @@
                 upgradeIcon.desc = curUpgrade.desc;
                 upgradeIcon.upgrade = curUpgrade.apply;
                 upgradeIcon.cost = curUpgrade.cost;
+                upgradeIcon.level = tower.upgrades[i];
                 upgradeIcon.index = i;
                 upgradeMode.menu.push(upgradeIcon);
             }
@@ -462,6 +493,7 @@
                 if(mouseX > canvasLength - 160*scalar) {
                     buildMode.active = false;
                     buildMode.icon.visible = false;
+                    rangeGraphics.visible = false;
                 } else {
                     var buildX = Math.floor(mouseX/(80*scalar));
                     var buildY = Math.floor(mouseY/(80*scalar));
@@ -477,11 +509,13 @@
             } else if(upgradeMode.active) {
                 upgradeMode.menu.forEach(function (icon){
                     if(mouseX > icon.x && mouseX < icon.x + icon.width && mouseY > icon.y && mouseY < icon.y + icon.height) {
-                        if(icon.cost <= gold) {
+                        if(icon.cost <= gold && upgradeMode.activeTower.level === icon.level) {
                             gold -= icon.cost;
                             updateGoldText();
                             icon.upgrade(upgradeMode.activeTower);
                             upgradeMode.activeTower.upgrades[icon.index]++;
+                            upgradeMode.activeTower.level = Math.min.apply(null, upgradeMode.activeTower.upgrades);
+                            upgradeMode.activeTower.texture = resources[upgradeData[upgradeMode.activeTower.type].upgradeLevels[upgradeMode.activeTower.level]].texture;
                         }
                     }
                 });
@@ -490,7 +524,7 @@
                 upgradeMode.active = false;
             } else {
                 towerMenu.forEach(function(tower) {
-                    if(mouseX > tower.x && mouseX < tower.x + tower.width && mouseY > tower.y && mouseY < tower.y + tower.height) {
+                    if(mouseX > tower.x && mouseX < tower.x + tower.width && mouseY > tower.y && mouseY < tower.y + tower.height && tower.cost <= gold) {
                         buildMode.active = true;
                         buildMode.building = tower.type;
                         buildMode.icon.visible = true;
@@ -512,6 +546,13 @@
                 }
             }
         }
+        towerMenu.forEach(function(tower) {
+            if(tower.cost <= gold) {
+                tower.alpha = 1;
+            } else {
+                tower.alpha = 0.5;
+            }
+        })
         if(buildMode.active) {
             buildMode.icon.x = Math.floor(mouseX/(80*scalar))*80*scalar;
             buildMode.icon.y = Math.floor(mouseY/(80*scalar))*80*scalar;
@@ -532,7 +573,7 @@
                     upgradeMode.costTxt.text = icon.cost.toString();
                     blank = false;
                 }
-                if(icon.cost > gold) {
+                if(icon.cost > gold || upgradeMode.activeTower.level !== icon.level) {
                     icon.alpha = 0.5;
                 } else {
                     icon.alpha = 1;
@@ -550,8 +591,18 @@
                 var target = getBestEnemyWR({x:pivotX, y: pivotY},tower.range);
                 if(getDistance(pivotX,pivotY,target.x,target.y) <= tower.range) {
                     if(tower.lastFire + tower.cooldown < Date.now()) {
-                        shootMissile(pivotX,pivotY,normalize(target.x - pivotX, target.y - pivotY, 10*scalar), tower.dmg, tower.pierce, "arrow", tower.range);
-                        tower.lastFire = Date.now();
+                        shootMissile(pivotX,pivotY,normalize(target.x - pivotX, target.y - pivotY, 10*scalar), tower.dmg, tower.pierce, tower.aPierce, "arrow", tower.range);
+                        if(tower.doubleArrow) {
+                            if(tower.secondArrow) {
+                                tower.secondArrow = false;
+                                tower.lastFire = Date.now();
+                            } else {
+                                tower.lastFire = Date.now() - tower.cooldown + 100;
+                                tower.secondArrow = true;
+                            }
+                        } else {
+                            tower.lastFire = Date.now();
+                        }
                     }
                 }
             }
@@ -561,7 +612,7 @@
                 var target = getBestEnemyWR({x:pivotX, y: pivotY},tower.range);
                 if(getDistance(pivotX,pivotY,target.x,target.y) <= tower.range) {
                     if(tower.lastFire + tower.cooldown < Date.now()) {
-                        shootMissile(pivotX,pivotY,normalize(target.x - pivotX, target.y - pivotY, 7*scalar), tower.dmg, tower.pierce, "ballista", tower.range);
+                        shootMissile(pivotX,pivotY,normalize(target.x - pivotX, target.y - pivotY, 7*scalar), tower.dmg, tower.pierce, tower.aPierce, "ballista", tower.range);
                         tower.lastFire = Date.now();
                     }
                 }
@@ -598,7 +649,7 @@
                     }
                 });
                 if(getDistance(pivotX,pivotY,target.x,target.y) <= tower.range) {
-                    shootMissile(pivotX,pivotY,normalize(target.x - pivotX, target.y - pivotY, 7*scalar), tower.dmg, tower.pierce, "rock", tower.range);
+                    shootMissile(pivotX,pivotY,normalize(target.x - pivotX, target.y - pivotY, 7*scalar), tower.dmg, tower.pierce, tower.aPierce, "rock", tower.range);
                     var dx = target.x - pivotX;
                     var dy = target.y - pivotY;
                     if(dy < 0 && Math.abs(dy/dx) > 1) {
@@ -688,7 +739,7 @@
                 return true;
             });
                 if(getDistance(missilePoint.x, missilePoint.y, target.x, target.y) <= 32*scalar) {
-                    target.health -= missile.dmg;
+                    target.health -= missile.dmg/Math.max(1,target.armor-missile.aPierce);
                     if(--missile.pierce < 1) {
                         foreground.removeChild(missile);
                         missiles.splice(i,1);
@@ -701,7 +752,7 @@
                 }
         }
     }
-    function shootMissile(x,y, vector, dmg, pierce, type, range) {
+    function shootMissile(x,y, vector, dmg, pierce, aPierce, type, range) {
         var missile = new Sprite(resources["sprites/" + type + ".png"].texture);
         missile.vector = vector;
         missile.anchor.set(0.5,0.5);
@@ -712,6 +763,7 @@
         missile.range = range;
         missile.dmg = dmg;
         missile.pierce = pierce;
+        missile.aPierce = aPierce;
         missile.immune = [];
         missile.rotation = Math.PI * (-pointTowards(0,0,vector.x,vector.y)) / 180;
         missile.scale.set(scalar);
@@ -743,7 +795,9 @@
         towers.push(tower);
         tower.type = type;
         tower.range = towerData[type].range;
+        tower.aPierce = towerData[type].aPierce;
         tower.dmg = towerData[type].dmg;
+        tower.level = 0;
         tower.pierce = towerData[type].pierce;
         tower.cooldown = towerData[type].cooldown;
         tower.upgrades = [0,0,0];
@@ -768,6 +822,35 @@
             }
         }
         return true;
+    }
+    function loadArray(array, folder, type){
+    /// Loop through the array
+        for(let i = 0; i < array.length; i++) {
+            /// Make a string that we will change and eventually load with the loader
+            let newString = "";
+            /// If you give it a folder to load stuff from, so that you don't have to type it all yourself
+            if(folder) {
+            /// Start with that
+            newString += folder;
+            if(newString[newString.length - 1] != "/") {
+                /// Make sure there's a slash at the end
+                newString += "/"
+            }
+            }
+            /// Then add that element
+            newString += array[i];
+            /// If you want to give it a type and not type that as well
+            if(type){
+            /// Make sure there's a dot at the end
+            if(type[0] != ".") {
+                newString += ".";
+            }
+            /// Add the type
+            newString += type;
+            }
+            /// Load it!
+            PIXI.loader.add(newString);
+        }
     }
     function press(key){
         if(keys[key]){
