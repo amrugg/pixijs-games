@@ -47,7 +47,7 @@
     document.body.appendChild(app.view);
     var scalar = canvasLength/800;
     var canvasOffset = (innerWidth - canvasLength)/2;
-    var miscAssets = ["sprites/ground.png", "sprites/tower1.png", "sprites/tower2.png", "sprites/tower3.png", "sprites/coin.png", "sprites/heart.png", "sprites/arrow.png", "sprites/ballista.png", "sprites/rock.png",];
+    var miscAssets = ["sprites/ground.png", "sprites/tower1.png", "sprites/tower2.png", "sprites/tower3.png", "sprites/coin.png", "sprites/heart.png", "sprites/arrow.png", "sprites/ballista.png", "sprites/rock.png","sprites/cannonball.png"];
     var enemies = ["sprites/enemy.png", "sprites/enemy-armor.png"];
     var tower1Assets = ["damage","fire","pierce","range","speed","tower1-1","tower1-2","tower1-3","twin", "maxSpeed", "maxRange", "maxPower"];
     var tower2Assets = ["damage","range","tower2-1","tower2-2","tower2-3","twin","speed", "golddmg","knockback","cannon"];
@@ -128,7 +128,6 @@
                     {desc: "Final Upgrade:\nSlow firing, +10 damage.", cost: 40, texture: "sprites/upgrades/tower1/maxPower.png", apply: function(tower) {
                         tower.range += 50*scalar;
                         tower.cooldown *= 2;
-                        tower.dmg += 10;
                         tower.texture = resources["sprites/upgrades/tower1/maxPower.png"].texture;
                     }},
                 ],
@@ -166,6 +165,7 @@
                     {desc: "+2 pierce.", cost: 20, texture: "sprites/upgrades/tower2/damage.png", apply: function(tower) {
                         tower.aPierce += 2;
                         tower.pierce += 2;
+                        tower.dmg += 1000;
                     }},
                     {desc: "+3 damage.", cost: 20, texture: "sprites/upgrades/tower2/golddmg.png", apply: function(tower) {
                         tower.dmg += 3;
@@ -173,16 +173,24 @@
                     {desc: "Final Upgrade:\nCannon shots explode.", cost: 40, texture: "sprites/upgrades/tower2/cannon.png", apply: function(tower) {
                         tower.range += 50*scalar;
                         tower.cooldown *= 2;
+                        tower.pierce = 1;
                         tower.dmg += 10;
                         tower.texture = resources["sprites/upgrades/tower2/cannon.png"].texture;
+                        tower.cannonball = true;
                     }},
                 ],
                 [
                     {desc: "+100 range.", cost: 10, texture: "sprites/upgrades/tower2/range.png", apply: function(tower) {
                         tower.range += 100 * scalar;
                     }},
-                    {desc: "Bolts knock enemies\nbackward slightly.", cost: 10, texture: "sprites/upgrades/tower2/knockback.png", apply: function(tower) {
-                        tower.knockback = 50;
+                    {desc: "Bolts slow enemies\ndown slightly.", cost: 10, texture: "sprites/upgrades/tower2/knockback.png", apply: function(tower) {
+                        tower.slowdown = 50;
+                    }},
+                    {desc: "Final upgrade: Shots stun enemies.", cost: 10, texture: "sprites/upgrades/tower2/knockback.png", apply: function(tower) {
+                        tower.stun = 75;
+                        tower.pierce = 1;
+                        tower.range += 200*scalar;
+                        tower.cannonball = true;
                     }},
                 ],
                 [
@@ -690,9 +698,17 @@
                 var target = getBestEnemyWR({x:pivotX, y: pivotY},tower.range);
                 if(getDistance(pivotX,pivotY,target.x,target.y) <= tower.range) {
                     if(tower.lastFire + tower.cooldown < Date.now()) {
-                        var missile = shootMissile(pivotX,pivotY,normalize(target.x - pivotX, target.y - pivotY, tower.speed*scalar), tower.dmg, tower.pierce, tower.aPierce, "ballista", tower.range);
-                        if(tower.knockback) {
-                            missile.knockback = tower.knockback;
+                        if(tower.cannonball) {
+                            var missile = shootMissile(pivotX,pivotY,normalize(target.x - pivotX, target.y - pivotY, tower.speed*scalar), tower.dmg, tower.pierce, tower.aPierce, "cannonball", tower.range);
+                            missile.explodes = true;
+                        } else {
+                            var missile = shootMissile(pivotX,pivotY,normalize(target.x - pivotX, target.y - pivotY, tower.speed*scalar), tower.dmg, tower.pierce, tower.aPierce, "ballista", tower.range);
+                        }
+                        if(tower.slowdown) {
+                            missile.slowdown = tower.slowdown;
+                        }
+                        if(tower.stun) {
+                            missile.stun = tower.stun;
                         }
                         tower.lastFire = Date.now();
                     }
@@ -781,14 +797,11 @@
                 --len;
                 continue;
             }
-            if(enemy.knockback) {
-                if(enemy.steps < enemy.speed) {
-                    enemy.x -= (enemy.targetX - enemy.x)/enemy.steps;
-                    enemy.y -= (enemy.targetY - enemy.y)/enemy.steps;
-                    enemy.advance -= 1/enemy.speed;
-                    enemy.steps++;
-                }
-                enemy.knockback--;
+            if(enemy.stun) {
+                enemy.stun--;
+            } if(enemy.slowdown) {
+                enemy.steps += enemy.slowdown;
+                enemy.slowdown = 0;
             } else if(enemy.steps) {
                 enemy.x += (enemy.targetX - enemy.x)/enemy.steps;
                 enemy.y += (enemy.targetY - enemy.y)/enemy.steps;
@@ -850,14 +863,22 @@
             });
                 if(getDistance(missilePoint.x, missilePoint.y, target.x, target.y) <= 32*scalar) {
                     target.health -= missile.dmg/Math.max(1,target.armor-missile.aPierce);
-                    if(missile.knockback) {
-                        target.knockback = missile.knockback;
+                    if(missile.slowdown) {
+                        target.slowdown = missile.slowdown;
                     }
                     if(--missile.pierce < 1) {
                         foreground.removeChild(missile);
                         missiles.splice(i,1);
                         --i;
                         --len;
+                        if(missile.explodes) {
+                            debugger;
+                            var targets = getEnemiesWithinRange(missile, 100*scalar);
+                            targets.forEach(function (enemy){
+
+                                enemy.health -= missile.dmg/Math.max(1,target.armor-missile.aPierce)/3;
+                            });
+                        }
                         continue;
                     } else {
                         missile.immune.push(target);
@@ -883,6 +904,19 @@
         foreground.addChild(missile);
         missiles.push(missile);
         return missile;
+    }
+    function getEnemiesWithinRange(pos, dist,  valid) {
+        valid = valid || function() {return true;};
+        var i;
+        var len = enemies.length;
+        var matches = [];
+        for(i = 0; i < len; i++) {
+            var enDist = getDistance(pos.x,pos.y,enemies[i].x,enemies[i].y);
+            if(enDist < dist && valid(enemies[i])) {
+                matches.push(enemies[i])
+            }
+        }
+        return matches;
     }
     function getClosestEnemy(pos, valid) {
         valid = valid || function() {return true;};
