@@ -86,6 +86,7 @@ var handleEnemyBehaviors = {
         if(enemy.health <= 0) {
             explode(20,enemy, 50);
             app.stage.removeChild(enemy);
+            enemy.link.health = 0;
             /// Return true; the ship was destroyed and should be removed from the array
             return true;
         }
@@ -101,11 +102,55 @@ var handleEnemyBehaviors = {
         }
         if(hitTestRectangle(playerRect, enemy)) {
             player.health -= enemy.damage;
+            enemy.link.health = 0;
             updateHealthBar();
             explode(20,{x:(enemy.x+player.x)/2, y: (enemy.y+player.y)/2}, 50);
             app.stage.removeChild(enemy);
             /// Return true; the ship was destroyed and should be removed from the array
             return true;
+        }
+        /// Return false; the ship should not be removed from the array
+        return false;
+    },
+    "plasma-base": function(enemy) {
+        enemy.y = enemy.myY - globalY;
+        if(enemy.health <= 0) {
+            explode(20,enemy, 50);
+            enemy.link.health = 0;
+            app.stage.removeChild(enemy);
+            /// Return true; the ship was destroyed and should be removed from the array
+            return true;
+        }
+
+        var playerRect = {
+            x: player.x,
+            y: player.y,
+            width: player.colRect.width,
+            height: player.colRect.height
+        }
+        animate(enemy.animation)
+        if(enemy.y < player.y) {
+            playerRect.y += Math.abs(enemy.x-player.x)
+        }
+        /// Return false; the ship should not be removed from the array
+        return false;
+    },
+    "plasma-top": function(enemy) {
+        enemy.y = enemy.myY - globalY;
+        if(enemy.y > 0 && !enemy.randomized) {
+            enemy.lastFire = globalFrameCount + curLevel.randInt(60,160);
+            enemy.randomized = true;
+        } 
+        if(enemy.health <= 0) {
+            explode(20,enemy, 50);
+            app.stage.removeChild(enemy);
+            /// Return true; the ship was destroyed and should be removed from the array
+            return true;
+        }
+        enemy.rotation = -pointTowards(enemy.x,enemy.y,player.x,player.y) * Math.PI/180;
+        if(globalFrameCount - enemy.cooldown > enemy.lastFire) {
+            enemy.lastFire = globalFrameCount;
+            fireLaser(enemy.x, enemy.y, -pointTowards(enemy.x,enemy.y,player.x,player.y), 7.5, "red", enemy.damage);
         }
         /// Return false; the ship should not be removed from the array
         return false;
@@ -133,8 +178,8 @@ var enemyProperties = {
                 dmgMult: 1,
             }
         ],
-
-        dropChances: [],
+        dropChance: 0,
+        dropWeights: [],
         possibleDrops: []
     },
     "enemy-1-2": {
@@ -156,7 +201,8 @@ var enemyProperties = {
                 dmgMult: 3,
             }
         ],
-        dropChances: [100],
+        dropChance: 100,
+        dropWeights: [1],
         possibleDrops: ["green"]
     },
     "enemy-1-3": {
@@ -175,9 +221,9 @@ var enemyProperties = {
                 shiftingSlope: 1
             }
         ],
-
-        dropChances: [],
-        possibleDrops: [],
+        dropChance: 100,
+        dropWeights: [50,10,30,10],
+        possibleDrops: ["coin", "5coin", "orange","green"],
         init: function(enemy) {
             enemy.origX = enemy.x;
         }
@@ -196,8 +242,8 @@ var enemyProperties = {
                 dmgMult: 1,
             }
         ],
-
-        dropChances: [],
+        dropChance: 0,
+        dropWeights: [],
         possibleDrops: [],
     },
     
@@ -215,15 +261,20 @@ var enemyProperties = {
                 dmgMult: 1,
             }
         ],
-
-        dropChances: [],
+        dropChance: 0,
+        dropWeights: [],
         possibleDrops: [],
+        init: function(enemy) {
+            enemy.textureRect = new PIXI.Rectangle(0,0,23,23);
+            enemy.texture.frame = enemy.textureRect;
+            enemy.animation = {y: 0, x: 0, length: 4, speed: 20, frameCount: 0, texture: enemy.texture, rectangle: enemy.textureRect, size: 23, bouncy: true, direction: 1};
+        }
     },
     "plasma-top": {
         healthRange: {min: 3, max: 5},
         scale: 1.75,
         direction: 180,
-        damage: 2,
+        damage: 0.5,
         cooldown: 120,
         lastFire: -Infinity,
         colRects: [
@@ -233,8 +284,8 @@ var enemyProperties = {
                 dmgMult: 1,
             }
         ],
-
-        dropChances: [],
+        dropChance: 0,
+        dropWeights: [],
         possibleDrops: [],
     },
 }

@@ -195,6 +195,28 @@ function circleInRectangle(rectangle, circle, radius){
         return true;    
     return false
 }
+function animate(animation) {
+    if(animation.frameCount%animation.speed === 0) {
+        if(animation.x >= animation.length || animation.x < 0) {
+            if(animation.destructive) {
+                animation.destructive();
+                return;
+            } else if(animation.bouncy) {
+                animation.direction *= -1;
+                animation.x += animation.direction;
+            } else {
+                animation.x = 0;
+            }
+        }
+        animation.rectangle.x = animation.x * animation.size;
+        animation.rectangle.y = animation.y * animation.size;
+        animation.rectangle.width = animation.size;
+        animation.rectangle.height = animation.size;
+        animation.texture.frame = animation.rectangle;
+        animation.x += animation.direction;
+    }
+    ++animation.frameCount;
+}
 function pointTowards(x1,y1,x2,y2) {
     /// Mine
     var xDiff = x1 - x2;

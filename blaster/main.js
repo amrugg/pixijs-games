@@ -36,12 +36,13 @@ document.body.appendChild(app.view);
 
 /// Defining variables
 var spritesToLoad = ["sprites/rocket.png", "sprites/laser.png", "sprites/enemy-laser.png", "sprites/lvl1/enemy1.png", "sprites/lvl1/enemy2.png", "sprites/lvl1/enemy3.png", "sprites/lvl1/asteroid-1.png","sprites/exp1.png", "sprites/exp2.png", "sprites/exp3.png",
-"sprites/ball.png"];
-var spriteNames = ["player", "blue_plasma", "red_plasma", "enemy-1-1", "enemy-1-2", "enemy-1-3", "asteroid-1", "exp_1", "exp_2", "exp_3",
-"upgrade_ball"];
+"sprites/ball.png", "sprites/lvl1/plasma-top.png", "sprites/lvl1/plasma-base.png", "sprites/grey-laser.png", "sprites/coin.png","sprites/5coin.png","sprites/10coin.png",];
+var spriteNames = ["player", "blue-plasma", "red-plasma", "enemy-1-1", "enemy-1-2", "enemy-1-3", "asteroid-1", "exp-1", "exp-2", "exp-3",
+"upgrade-ball", "plasma-top", "plasma-base", "grey-plasma", "coin", "5coin", "10coin"];
 
 var keysOfSprites;
 var state;
+var dependencies = [];
 var keys = {};
 var mouseX
 var mouseY;
@@ -59,6 +60,7 @@ var energyBar;
 var energyHolder;
 var starfield;
 var curLevel;
+var coins = 0;
 
 /// Scale the sprites for different screens
 var scalar = innerHeight/800;
@@ -190,11 +192,8 @@ function setup() {
 
 /// Overly simplified
 function overworld() {
-    if(keys["1"]) {
-        prepareLevel(level1);
-        state = play;
-    } else if(keys["2"]) {
-        prepareLevel(level2);
+    if(keys[" "]) {
+        prepareLevel(levels[++levelOn]);
         state = play;
     }
 }
@@ -220,7 +219,8 @@ function prepareLevel(level) {
     var len = level.enemies.length;
     for(i = 0; i < len; i++) {
         var curEnemies = level.enemies[i];
-        spawnNewEnemy(curEnemies.type, curEnemies.level, curEnemies.positions, level.randInt,curEnemies.specialInit);
+        console.log(curEnemies)
+        spawnNewEnemy(curEnemies.type, curEnemies.level, curEnemies.positions, level.randInt, curEnemies.link);
     }
     starfield.y = 0;
     starfield.clear();
@@ -230,7 +230,7 @@ function prepareLevel(level) {
     }
     player.visible = true;
 }
-function spawnNewEnemy(type, level, positions, seededRandInt, specialExtra) {
+function spawnNewEnemy(type, level, positions, seededRandInt,link) {
     for(var i = 0; i < positions.length; i++) {
         var enemy = new Sprite(keysOfSprites[type]);
         var curPos = positions[i];
@@ -277,15 +277,22 @@ function spawnNewEnemy(type, level, positions, seededRandInt, specialExtra) {
                 shiftingSlope: rect.shiftingSlope,
             })
         });
-        enemy.dropChances = positions[i].dropChances || properties.dropChances;
+        enemy.dropWeights = positions[i].dropWeights || properties.dropWeights;
+        enemy.dropChance = positions[i].dropChance || properties.dropChance;
         enemy.possibleDrops = positions[i].possibleDrops || properties.possibleDrops;
         app.stage.addChild(enemy);
         enemies.push(enemy);
         if(properties.init) {
             properties.init(enemy);
         }
-        if(specialExtra) {
-            specialExtra(type,level,seededRandInt, enemy);
+        if(link) {
+            if(link.nextSet) {
+                dependencies.push(enemy);
+            }
+            if(link.thisSet) {
+                dependencies[0].link = enemy;
+                dependencies.shift();
+            }
         }
     }
 }
@@ -379,6 +386,7 @@ function restart() {
     energyHolder.visible = false;
     healthBar.visible = false;
     healthHolder.visible = false;
+    
     starfield.clear();
     state = overworld;
 }
@@ -414,6 +422,10 @@ function handlePowerups() {
             powerups.splice(i,1);
             --i;
             --len;
+            if(cur.value) {
+                coins += cur.value;
+                continue;
+            }
             player.tint = cur.tint;
             player.activePowerup.type = cur.type;
             player.powerupEnergy = cur.energy;
@@ -439,6 +451,7 @@ function handleLasers() {
     var len = lasers.length;
     for(i = 0; i < len; i++) {
         var laser = lasers[i];
+        console.log(i, laser, len);
         if(laser.kill) {
             app.stage.removeChild(laser);
             lasers.splice(i,1);
@@ -467,7 +480,8 @@ function handleLasers() {
         if(laser.good) {
             enemies.forEach(function(enemy){
                 var col = handleLaserCol(laser,enemy);
-                if(col) {
+                if(col && !laser.alreadyDead) {
+                    laser.alreadyDead = true;
                     app.stage.removeChild(laser);
                     lasers.splice(i,1);
                     --i;
@@ -550,33 +564,55 @@ function handleEnemies() {
     }
 }
 function handleDrop(enemy) {
-    var len = enemy.dropChances.length;
+    var len = enemy.dropWeights.length;
     var random = curLevel.randInt(1,100);
+    if(enemy.dropChance < random) {
+        return;
+    }
     var i;
+    var random = curLevel.randInt(1,100);
+    var sum = 0;
     for(i = 0; i < len; i++) {
-        if(enemy.dropChances[i] >= random) {
+        if(enemy.dropWeights[i]+sum >= random) {
             spawnDrop(enemy.possibleDrops[i], enemy.x, enemy.y);
             break;
         }
+        sum += enemy.dropWeights[i];
     }
 }
 function spawnDrop(type, x, y) {
-    var powerup = new Sprite(keysOfSprites.upgrade_ball);
+    if(type === "coin" || type === "5coin" || type === "10coin") {
+        var powerup = new Sprite(keysOfSprites[type]);
+    } else {
+        var powerup = new Sprite(keysOfSprites["upgrade-ball"]);
+    }
     powerup.anchor.set(0.5,0.5);
     powerup.scale.set(2);
-    powerup.tint = powerupData[type].tint;
-    powerup.trueColor = 0xAA1100;
     app.stage.addChild(powerup);
     powerup.x = x;
     powerup.y = y;
     powerup.myY = y + globalY;
     powerup.type = type;
-    powerup.energy = powerupData[type].maxEnergy;
-    powerup.maxEnergy = powerupData[type].maxEnergy;
+    if(type === "coin") {
+        powerup.value = 1;
+    } else if(type === "5coin") {
+        powerup.value = 5;
+    } else if(type === "10coin") {
+        powerup.value = 10;
+    } else {
+        powerup.tint = powerupData[type].tint;
+        powerup.energy = powerupData[type].maxEnergy;
+        powerup.maxEnergy = powerupData[type].maxEnergy;
+    }
     powerups.push(powerup);
 }
 function fireLaser(x, y, direction, speed, type, damage) {
-    var laser = new Sprite(keysOfSprites[type + "_plasma"]);
+    if(type !== "red" && type !== "blue") {
+        var laser = new Sprite(keysOfSprites["grey-plasma"]);
+        laser.tint = powerupData[type].tint;
+    } else {
+        var laser = new Sprite(keysOfSprites[type + "-plasma"]);
+    }
     laser.scale.set(2 * scalar);
     laser.good = type !== "red";
     laser.x = x;
