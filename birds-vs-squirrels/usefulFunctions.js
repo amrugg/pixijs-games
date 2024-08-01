@@ -17,6 +17,25 @@ function inside(point, vs) {
     
     return inside;
 };
+function animate() {
+    if(animation.frameCount%animation.speed === 0) {
+        if(animation.x >= animation.length) {
+            if(animation.destructive) {
+                animation.destructive();
+                return;
+            } else {
+                animation.x = 0;
+            }
+        }
+        animation.rectangle.x = animation.x * animation.size;
+        animation.rectangle.y = animation.y * animation.size;
+        animation.rectangle.width = animation.size;
+        animation.rectangle.height = animation.size;
+        animation.texture.frame = animation.rectangle;
+        ++animation.x;
+    }
+    ++animation.frameCount;
+}
 function isInside(polygon,n,p)
 {
     let INF = 10000;
