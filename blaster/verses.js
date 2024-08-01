@@ -8,7 +8,7 @@ var questionSet = {
     chapterRequired: false,
     curVerse: 1,
     curVerseText: "God, who at sundry times and in divers manners spake in time past unto the fathers by the prophets,",
-    verseRange: "12-30",
+    verseRange: "1-20",
     chapterRange: "1",
     verifyAnswer: function (answer) {
         answer = answer.split(".");
