@@ -803,8 +803,9 @@
                         enemy.scale.y += 0.01*scaleFactor;
                     }
                     if(enemy.health < 10) {
-
                         enemy.level = "nursing-mother";
+                        healthBar.width = 200;
+                        energyBar.width = 200;
                         enemy.waitTime = Date.now();
                         enemy.waitRate = 40000 * difficulty;
                         enemy.backupRate = 20000;
@@ -855,6 +856,8 @@
                 } else if(enemy.level === "nursing-mother") {
                     if(enemy.waitTime + enemy.waitRate < Date.now() && enemies.length === 1) {
                         enemy.level = "missileship";
+                        healthBar.width = 200;
+                        energyBar.width = 200;
                         enemy.health = 250*difficulty;
                         enemy.lastFire = Date.now();
                     }
@@ -932,7 +935,8 @@
                         enemy.scale.y += 0.01*scaleFactor;
                     }
                     if(enemy.health < 10) {
-                        
+                        healthBar.width = 200;
+                        energyBar.width = 200;
                         enemy.level = "bossattack";
                         enemy.waitTime = Date.now();
                         enemy.waitRate = 40000 * difficulty;
@@ -1006,6 +1010,8 @@
                                 spawnNewEnemy(1, "boss3")[0].xOffset = 0;
                                 --enemy.bossesToSpawn;
                             } else {
+                                healthBar.width = 200;
+                                energyBar.width = 200;
                                 enemy.level = "maxxforce";
                                 enemy.health = 250*difficulty;
                                 enemy.lastFire = Date.now();
@@ -1283,8 +1289,13 @@
                     mothership.fade(0,0.5,2000);
                 }, 2000);
             } else {
-                spawnNewEnemy(level/3.5, "medium");
-                spawnNewEnemy(level/3.5, "easy");
+                spawnNewEnemy(level/5, "medium");
+                spawnNewEnemy(level/5, "easy");
+                if(level > 20) {
+                    spawnNewFormation("drone", "N", 5);
+                    spawnNewFormation("drone", "V", 5);
+                    fullLevel = true;
+                }
             }
         }
         for(var i = 0; i < explosions.length; i++) {
