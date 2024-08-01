@@ -35,8 +35,11 @@ app.renderer.backgroundColor = 0x050520;
 document.body.appendChild(app.view);
 
 /// Defining variables
-var spritesToLoad = ["sprites/rocket.png", "sprites/laser.png", "sprites/enemy-laser.png", "sprites/lvl1/enemy1.png", "sprites/lvl1/enemy2.png", "sprites/exp1.png", "sprites/exp2.png", "sprites/exp3.png", "sprites/ball.png"];
-var spriteNames = ["player", "blue_plasma", "red_plasma", "enemy-1-1", "enemy-1-2", "exp_1", "exp_2", "exp_3", "upgrade_ball"];
+var spritesToLoad = ["sprites/rocket.png", "sprites/laser.png", "sprites/enemy-laser.png", "sprites/lvl1/enemy1.png", "sprites/lvl1/enemy2.png", "sprites/lvl1/enemy3.png", "sprites/lvl1/asteroid-1.png","sprites/exp1.png", "sprites/exp2.png", "sprites/exp3.png",
+"sprites/ball.png"];
+var spriteNames = ["player", "blue_plasma", "red_plasma", "enemy-1-1", "enemy-1-2", "enemy-1-3", "asteroid-1", "exp_1", "exp_2", "exp_3",
+"upgrade_ball"];
+
 var keysOfSprites;
 var state;
 var keys = {};
@@ -190,6 +193,9 @@ function overworld() {
     if(keys["1"]) {
         prepareLevel(level1);
         state = play;
+    } else if(keys["2"]) {
+        prepareLevel(level2);
+        state = play;
     }
 }
 /// Testing only
@@ -214,7 +220,7 @@ function prepareLevel(level) {
     var len = level.enemies.length;
     for(i = 0; i < len; i++) {
         var curEnemies = level.enemies[i];
-        spawnNewEnemy(curEnemies.type, curEnemies.level, curEnemies.positions, level.randInt);
+        spawnNewEnemy(curEnemies.type, curEnemies.level, curEnemies.positions, level.randInt,curEnemies.specialInit);
     }
     starfield.y = 0;
     starfield.clear();
@@ -224,7 +230,7 @@ function prepareLevel(level) {
     }
     player.visible = true;
 }
-function spawnNewEnemy(type, level, positions, seededRandInt) {
+function spawnNewEnemy(type, level, positions, seededRandInt, specialExtra) {
     for(var i = 0; i < positions.length; i++) {
         var enemy = new Sprite(keysOfSprites[type]);
         var curPos = positions[i];
@@ -268,12 +274,19 @@ function spawnNewEnemy(type, level, positions, seededRandInt) {
                 width: enemy.width * rect.colXPercent,
                 height: enemy.height * rect.colYPercent,
                 dmgMult: rect.dmgMult,
+                shiftingSlope: rect.shiftingSlope,
             })
         });
-        enemy.dropChances = properties.dropChances;
-        enemy.possibleDrops = properties.possibleDrops;
+        enemy.dropChances = positions[i].dropChances || properties.dropChances;
+        enemy.possibleDrops = positions[i].possibleDrops || properties.possibleDrops;
         app.stage.addChild(enemy);
         enemies.push(enemy);
+        if(properties.init) {
+            properties.init(enemy);
+        }
+        if(specialExtra) {
+            specialExtra(type,level,seededRandInt, enemy);
+        }
     }
 }
 function disableUserInput(input) {
@@ -358,6 +371,10 @@ function restart() {
     enemies = [];
     lasers = [];
     explosions = [];
+    player.tint = 0xFFFFFF;
+    player.activePowerup = false;
+    powerupHolder.visible = false;
+    powerupBar.visible = false;
     energyBar.visible = false;
     energyHolder.visible = false;
     healthBar.visible = false;
@@ -383,7 +400,16 @@ function handlePowerups() {
     for(i = 0; i < len; i++) {
         var cur = powerups[i];
         cur.y = cur.myY - globalY;
-        if(hitTestRectangle(cur,player)) {
+        var playerRect = {
+            x: player.x,
+            y: player.y,
+            width: player.colRect.width,
+            height: player.colRect.height
+        }
+        if(cur.y < player.y) {
+            playerRect.y += Math.abs(cur.x-player.x)
+        }
+        if(hitTestRectangle(cur,playerRect)) {
             app.stage.removeChild(cur);
             powerups.splice(i,1);
             --i;
@@ -451,9 +477,13 @@ function handleLasers() {
         } else {
             var playerRect = {
                 x: player.x,
-                y: player.y+ Math.abs(laser.x-player.x),
+                y: player.y,
                 width: player.colRect.width,
                 height: player.colRect.height
+            }
+
+            if(laser.y < player.y) {
+                playerRect.y += Math.abs(laser.x-player.x)
             }
             if(hitTestRectangle(laser,playerRect)) {
                 app.stage.removeChild(laser);
@@ -476,6 +506,9 @@ function handleLaserCol(laser, enemy) {
             y: enemy.y,
             width: enemy.colRects[i].width,
             height: enemy.colRects[i].height
+        }
+        if(enemy.colRects[i].shiftingSlope && laser.y > enemy.y) {
+            enemyRect.y -= Math.abs(laser.x-enemy.x) * enemy.colRects[i].shiftingSlope;
         }
         if(hitTestRectangle(laser,enemyRect)) {
             if(laser === player.activePowerup.loadedBullet) {
