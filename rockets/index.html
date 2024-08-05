@@ -323,14 +323,17 @@
         rocketIndicator.x = innerWidth - 50*scaleFactor;
         rocketIndicator.y = innerHeight - 200*scaleFactor;
         rocketIndicator.alpha = 0.5;
-        rocket.x = 100;
-        rocket.y = 100;
+        rocket.x = innerWidth/2;
+        rocket.y = innerHeight - rocket.height;
+        rocket.vx = 0;
+        rocket.vr = 0;
+        rocket.vy = 0;
         rocket.tek = {
             cooldown: 0,
             leftFlare: false,
             rightFlare: false,
             active: 0,
-            maxCooldown: 30
+            maxCooldown: 120
         }
 
         emp = new Sprite(resources["sprites/emp.png"].texture);
@@ -466,45 +469,45 @@
         if(healthBar.width < 0) {
             state = die;
         }
-        rocket.vx = 0;
-        rocket.vy = 0;
+        rocket.ax = 0;
+        rocket.ay = 0;
         if(keys.ArrowUp || keys.w) {
-            rocket.vy += -10;
+            rocket.ay += -1;
         }
         if(keys.ArrowDown || keys.s) {
-            rocket.vy += 10;
+            rocket.ay += 1;
         }
         if(keys.ArrowLeft || keys.a) {
-            rocket.vx += -10;
+            rocket.ax += -1;
         }
         if(keys.ArrowRight || keys.d) {
-            rocket.vx += 10;
+            rocket.ax += 1;
         }
-        rocket.rotation = 0;
+        rocket.ar = 0;
         if((rocket.tek.cooldown === 0 || rocket.tek.active) && energyBar.width > 0) {
             if(keys.z && keys.x) {
-                rocket.vy += -10;
+                rocket.ay += -0.5;
                 rocket.tek.cooldown++;
                 rocket.tek.active = 5;
                 rocket.tek.rightFlare = true;
                 rocket.tek.leftFlare = true;
             } else if(keys.z) {
-                rocket.vx += -10;
+                rocket.ax += -0.5;
                 rocket.tek.cooldown++;
                 rocket.tek.active = 5;
-                rocket.rotation = -0.5;
+                rocket.ar = -0.1;
                 rocket.tek.leftFlare = true;
             } else if(keys.x) {
-                rocket.vx += 10;
+                rocket.ax += 0.5;
                 rocket.tek.cooldown++;
                 rocket.tek.active = 5;
-                rocket.rotation = 0.5;
+                rocket.ar = 0.1;
                 rocket.tek.rightFlare = true;
             } else {
                 rocket.tek.rightFlare = false;
                 rocket.tek.leftFlare = false;
                 rocket.tek.active = 0;
-                rocket.tek.cooldown -= 0.25;
+                rocket.tek.cooldown -= 1;
                 rocket.tek.cooldown = Math.max(rocket.tek.cooldown,0);
             }
             if(rocket.tek.cooldown >= rocket.tek.maxCooldown) {
@@ -512,7 +515,7 @@
             }
         } else {
             rocket.tek.active = 0;
-            rocket.tek.cooldown -= 0.25;
+            rocket.tek.cooldown -= 1;
             rocket.tek.cooldown = Math.max(rocket.tek.cooldown,0);
         }
         if(rocket.tek.active) {
@@ -580,24 +583,35 @@
             laserGraphics.visible = false;
         }
         if(energyBar.width > Math.abs(rocket.vx/100) + Math.abs(rocket.vy/100)) {
-            if(rocket.x > rocket.width/2 && rocket.vx < 0) {
-                rocket.x += rocket.vx*scaleFactor;
-            } else if(rocket.x + rocket.width/2 < innerWidth && rocket.vx > 0) {
-                rocket.x += rocket.vx*scaleFactor;
-            }
-
-            if(rocket.y > rocket.height/2 && rocket.vy < 0) {
-                rocket.y += rocket.vy*scaleFactor;
-            } else if(rocket.y + rocket.height/2 < innerHeight && rocket.vy > 0) {
-                rocket.y += rocket.vy*scaleFactor;
-            }
-            energyBar.width -= Math.abs(rocket.vx/100)*(energyToFire/5) + Math.abs(rocket.vy/100)*(energyToFire/5);
+            rocket.vx += rocket.ax;
+            rocket.vy += rocket.ay;
+            rocket.vr += rocket.ar;
+            energyBar.width -= Math.abs(rocket.ax/25)*(energyToFire/5) + Math.abs(rocket.ay/25)*(energyToFire/5);
             if(rocket.tek.active) {
-                energyBar.width -= scaleFactor;
+                energyBar.width -= scaleFactor/3;
             }
-            laserGraphics.x = rocket.x;
-            laserGraphics.y = rocket.y;
         }
+        rocket.vx *= 0.9;
+        rocket.vy *= 0.9;
+        rocket.vr *= 0.9;
+        rocket.rotation = rocket.vr;
+        if(Math.abs(rocket.rotation) < 0.05) {
+            rocket.rotation = 0;
+            rocket.vr = 0;
+        }
+        if(rocket.x > rocket.width/2 && rocket.vx < 0) {
+            rocket.x += rocket.vx*scaleFactor;
+        } else if(rocket.x + rocket.width/2 < innerWidth && rocket.vx > 0) {
+            rocket.x += rocket.vx*scaleFactor;
+        }
+
+        if(rocket.y > rocket.height/2 && rocket.vy < 0) {
+            rocket.y += rocket.vy*scaleFactor;
+        } else if(rocket.y + rocket.height/2 < innerHeight && rocket.vy > 0) {
+            rocket.y += rocket.vy*scaleFactor;
+        }
+        laserGraphics.x = rocket.x;
+        laserGraphics.y = rocket.y;
 
         for(var i = 0; i < missiles.length; i++) {
             var missile = missiles[i];
@@ -1646,7 +1660,7 @@
         laser.y = position.y;
         laser.anchor.set(0.5,0.5);
         laser.speed = 20;
-        if(type === "good" && rocket.tek.leftFlare && rocket.tek.rightFlare) {
+        if(type === "good" && rocket.tek.leftFlare && rocket.tek.rightFlare && keys.ArrowUp) {
             laser.speed = 40;
         }
         laser.scale.set(3*scaleFactor);
