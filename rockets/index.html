@@ -309,14 +309,29 @@
     app.stage.addChild(laserGraphics);
     app.stage.sortableChildren = true;
     var scaleFactor = innerWidth/1920;
+    var rocketIndicator;
     function setup() {
         spawnNewEnemy(1,"easy");
         rocket = new Sprite(resources["sprites/rocket.png"].texture);
         app.stage.addChild(rocket);
         rocket.anchor.set(0.5,0.5);
         rocket.scale.set(3*scaleFactor);
+        rocketIndicator = new Sprite(resources["sprites/rocket.png"].texture);
+        app.stage.addChild(rocketIndicator);
+        rocketIndicator.anchor.set(0.5,0.5);
+        rocketIndicator.scale.set(1.5*scaleFactor);
+        rocketIndicator.x = innerWidth - 50*scaleFactor;
+        rocketIndicator.y = innerHeight - 200*scaleFactor;
+        rocketIndicator.alpha = 0.5;
         rocket.x = 100;
         rocket.y = 100;
+        rocket.tek = {
+            cooldown: 0,
+            leftFlare: false,
+            rightFlare: false,
+            active: 0,
+            maxCooldown: 30
+        }
 
         emp = new Sprite(resources["sprites/emp.png"].texture);
         app.stage.addChild(emp);
@@ -465,8 +480,52 @@
         if(keys.ArrowRight || keys.d) {
             rocket.vx += 10;
         }
+        rocket.rotation = 0;
+        if((rocket.tek.cooldown === 0 || rocket.tek.active) && energyBar.width > 0) {
+            if(keys.z && keys.x) {
+                rocket.vy += -10;
+                rocket.tek.cooldown++;
+                rocket.tek.active = 5;
+                rocket.tek.rightFlare = true;
+                rocket.tek.leftFlare = true;
+            } else if(keys.z) {
+                rocket.vx += -10;
+                rocket.tek.cooldown++;
+                rocket.tek.active = 5;
+                rocket.rotation = -0.5;
+                rocket.tek.leftFlare = true;
+            } else if(keys.x) {
+                rocket.vx += 10;
+                rocket.tek.cooldown++;
+                rocket.tek.active = 5;
+                rocket.rotation = 0.5;
+                rocket.tek.rightFlare = true;
+            } else {
+                rocket.tek.rightFlare = false;
+                rocket.tek.leftFlare = false;
+                rocket.tek.active = 0;
+                rocket.tek.cooldown -= 0.25;
+                rocket.tek.cooldown = Math.max(rocket.tek.cooldown,0);
+            }
+            if(rocket.tek.cooldown >= rocket.tek.maxCooldown) {
+                rocket.tek.active = 0;
+            }
+        } else {
+            rocket.tek.active = 0;
+            rocket.tek.cooldown -= 0.25;
+            rocket.tek.cooldown = Math.max(rocket.tek.cooldown,0);
+        }
+        if(rocket.tek.active) {
+            rocketIndicator.alpha = 1;
+        } else if(rocket.tek.cooldown > 0) {
+            rocketIndicator.alpha = 0;
+        } else {
+            rocketIndicator.alpha = 0.5;
+        }
+        var vector = radDirection(-rocket.height/2, -rocket.rotation);
+        var rocketPoint = {x:vector.r + rocket.x,y:vector.u+rocket.y};
         if(keys[" "] && Date.now() - reloadTime > lastFire && energyBar.width >= energyToFire) {
-            shootLaser("good", {x:rocket.x, y: rocket.y - rocket.height/2}, 0);
+            shootLaser("good", rocketPoint, -rocket.rotation);
             lastFire = Date.now();
             energyBar.width -= energyToFire;
         }
@@ -533,6 +592,9 @@
                 rocket.y += rocket.vy*scaleFactor;
             }
             energyBar.width -= Math.abs(rocket.vx/100)*(energyToFire/5) + Math.abs(rocket.vy/100)*(energyToFire/5);
+            if(rocket.tek.active) {
+                energyBar.width -= scaleFactor;
+            }
             laserGraphics.x = rocket.x;
             laserGraphics.y = rocket.y;
         }
@@ -619,7 +681,7 @@
 
         for(var i = 0; i < lasers.length; i++) {
             var laser = lasers[i];
-            var laserDirection = radDirection(20,-laser.rotation + Math.PI);
+            var laserDirection = radDirection(laser.speed,-laser.rotation + Math.PI);
             laser.x += laserDirection.r*scaleFactor;
             laser.y += laserDirection.u*scaleFactor;
             if(laser.y < -10 || laser.y > innerHeight + 10 || laser.x < 10 || laser.x > innerWidth + 10) {
@@ -1577,13 +1639,16 @@
             var laser = new Sprite(resources["sprites/laser.png"].texture);
             laser.good = true;
         } else {
-            /// TODO: Red
             var laser = new Sprite(resources["sprites/enemy-laser.png"].texture);
             laser.good = false;
         }
         laser.x = position.x;
         laser.y = position.y;
         laser.anchor.set(0.5,0.5);
+        laser.speed = 20;
+        if(type === "good" && rocket.tek.leftFlare && rocket.tek.rightFlare) {
+            laser.speed = 40;
+        }
         laser.scale.set(3*scaleFactor);
         laser.rotation = -dir;
         lasers.push(laser);
