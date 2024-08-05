@@ -472,16 +472,16 @@
         rocket.ax = 0;
         rocket.ay = 0;
         if(keys.ArrowUp || keys.w) {
-            rocket.ay += -1;
+            rocket.ay += -1.1;
         }
         if(keys.ArrowDown || keys.s) {
-            rocket.ay += 1;
+            rocket.ay += 1.1;
         }
         if(keys.ArrowLeft || keys.a) {
-            rocket.ax += -1;
+            rocket.ax += -1.1;
         }
         if(keys.ArrowRight || keys.d) {
-            rocket.ax += 1;
+            rocket.ax += 1.1;
         }
         rocket.ar = 0;
         if((rocket.tek.cooldown === 0 || rocket.tek.active) && energyBar.width > 0) {
@@ -792,9 +792,9 @@
                         enemy.y = -400;
                     }
                     if(enemy.x + 15 < rocket.x) {
-                        enemy.x += 10*scaleFactor;
+                        enemy.x += 7.5*scaleFactor;
                     } else if(enemy.x - 15 > rocket.x) {
-                        enemy.x -= 10*scaleFactor;
+                        enemy.x -= 7.5*scaleFactor;
                     } else if(Date.now() - enemy.reloadTime > enemy.lastFire) {
                         shootLaser("bad", {x:enemy.x, y: enemy.y}, pointTowards(enemy.x,enemy.y,rocket.x,rocket.y) * Math.PI/180)
                         launchMissile("bad", {x:enemy.x + enemy.width/3, y: enemy.y}, rocket, 7.5)
