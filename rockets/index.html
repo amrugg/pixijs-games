@@ -269,11 +269,7 @@
     function randVerse() {
         if(chapter) {
             var verseArr = rom18[chapter-1];
-            if(mistakeReview) {
-                var rand = weightedRandInt((params.min ? Number(params.min)-1 : 0), Number(params.max)-1 || verseArr.length-1, (correctAnswer ? Number(correctAnswer.split(".")[1])-1 : -1), chapter);
-            } else {
-                var rand = randInt((params.min ? Number(params.min)-1 : 0), Number(params.max)-1 || verseArr.length-1, (correctAnswer ? Number(correctAnswer.split(".")[1])-1 : -1));
-            }
+            var rand = randInt((params.min ? Number(params.min)-1 : 0), Number(params.max)-1 || verseArr.length-1, (correctAnswer ? Number(correctAnswer.split(".")[1])-1 : -1));
             if(chapter === 7) {
                 var verseNumber = 20 + "." + (rand+1);
             } else {
@@ -471,6 +467,7 @@
         }
         rocket.ax = 0;
         rocket.ay = 0;
+        rocket.ar = 0;
         if(keys.ArrowUp || keys.w) {
             rocket.ay += -1.1;
         }
@@ -479,29 +476,30 @@
         }
         if(keys.ArrowLeft || keys.a) {
             rocket.ax += -1.1;
+            rocket.ar += -0.025;
         }
         if(keys.ArrowRight || keys.d) {
             rocket.ax += 1.1;
+            rocket.ar += 0.025;
         }
-        rocket.ar = 0;
         if((rocket.tek.cooldown === 0 || rocket.tek.active) && energyBar.width > 0) {
             if(keys.z && keys.x) {
-                rocket.ay += -0.5;
+                rocket.ay += -0.75;
                 rocket.tek.cooldown++;
                 rocket.tek.active = 5;
                 rocket.tek.rightFlare = true;
                 rocket.tek.leftFlare = true;
             } else if(keys.z) {
-                rocket.ax += -0.5;
+                rocket.ax += -0.75;
                 rocket.tek.cooldown++;
                 rocket.tek.active = 5;
-                rocket.ar = -0.1;
+                rocket.ar += -0.1;
                 rocket.tek.leftFlare = true;
             } else if(keys.x) {
-                rocket.ax += 0.5;
+                rocket.ax += 0.75;
                 rocket.tek.cooldown++;
                 rocket.tek.active = 5;
-                rocket.ar = 0.1;
+                rocket.ar += 0.1;
                 rocket.tek.rightFlare = true;
             } else {
                 rocket.tek.rightFlare = false;
@@ -595,7 +593,7 @@
         rocket.vy *= 0.9;
         rocket.vr *= 0.9;
         rocket.rotation = rocket.vr;
-        if(Math.abs(rocket.rotation) < 0.05) {
+        if(Math.abs(rocket.rotation) < 0.01 && !Math.abs(rocket.ar)) {
             rocket.rotation = 0;
             rocket.vr = 0;
         }
@@ -1749,11 +1747,7 @@
                             range = storeRange;
                         }
                         var full = true;
-                        if(range.split("-")[0] === "1" && !mistakeReview) {
-                            mistakeReview = true;
-                            storeRange = range;
-                            rangeDiv.innerHTML = "Review"
-                        } else if (range.split("-")[0] === "1") {
+                        if (range.split("-")[0] === "1") {
                             var arr = range.split(/\-|\,/);
                             if(Number(arr[1]) + 3 < rom18[chapter-1].length) {
                                 range = (Number(arr[1])) + "-" + (Number(arr[1]) + 3);
