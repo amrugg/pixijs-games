@@ -65,6 +65,7 @@
     var inputEl = document.getElementById("range");
     var buttonStartEl = document.getElementById("start");
     var invincible = false;
+    var restoreHealthWithQuestion = false;
     chapterEl.style.zIndex = "100";
     levelEl.style.zIndex = "100";
     inputEl.style.zIndex = "100";
@@ -85,8 +86,10 @@
             invincible = true;
         } else if(levelEl.selectedIndex === 1) {
             difficulty = 0.25;
+            restoreHealthWithQuestion = true;
         } else if(levelEl.selectedIndex === 2) {
             difficulty = 0.5;
+            restoreHealthWithQuestion = true;
         } else if(levelEl.selectedIndex === 3) {
             difficulty = 0.75;
         } else if(levelEl.selectedIndex === 4) {
@@ -618,7 +621,6 @@
             }
             --missile.health;
             if((missile.target ? missile.target.health <= 0 : true) || missile.target.level === "nursing-mother" || missile.target.level === "bossattack") {
-                debugger;
                 var closestEnemy;
                 var closestDist = Infinity;
                 for(let i = 0; i < enemies.length; i++) {
@@ -659,7 +661,11 @@
             var rocketRect = {x: rocket.x - rocket.width/2, y: rocket.y - rocket.height/2, width: rocket.width, height: rocket.height};
             if(hitTestRectangle(missileRect, rocketRect) && !missile.good) {
                 if(!invincible) {
-                    healthBar.width -= healthToHit*3;
+                    if(restoreHealthWithQuestion === true) {
+                        healthBar.width -= healthToHit*1.5;
+                    } else {
+                        healthBar.width -= healthToHit*3;
+                    }
                 }
                 explode(20,{x:missile.x - missile.width, y:missile.y + missile.height});
                 app.stage.removeChild(missile);
@@ -1727,7 +1733,7 @@
         }
         if(e.key === "Enter" && !answersLocked) {
             if (numDiv.innerHTML === correctAnswer || (chapter !== false && (correctAnswer.split(".")[1] === numDiv.innerHTML)) || numDiv.innerHTML.replace(" ",".") === correctAnswer || numDiv.innerHTML.replace(":",".") === correctAnswer) { 
-                if(energyBar.width + 40 > 200) {
+                if(energyBar.width + 40 > 200 || restoreHealthWithQuestion === true) {
                     healthBar.width += (energyBar.width + 40 - 200)/3;
                     energyBar.width = 200;
                 } else {
