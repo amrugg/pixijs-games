@@ -47,21 +47,22 @@
     document.body.appendChild(app.view);
     var scalar = canvasLength/800;
     var canvasOffset = (innerWidth - canvasLength)/2;
-    var miscAssets = ["sprites/ground.png", "sprites/tower1.png", "sprites/tower2.png", "sprites/tower3.png", "sprites/coin.png", "sprites/heart.png", "sprites/arrow.png", "sprites/ballista.png", "sprites/rock.png","sprites/cannonball.png"];
-    var enemies = ["sprites/enemy.png", "sprites/enemy-armor.png"];
+    var miscAssets = ["sprites/ground.png", "sprites/tower1.png", "sprites/tower2.png", "sprites/tower3.png", "sprites/coin.png", "sprites/heart.png", "sprites/arrow.png", "sprites/ballista.png", "sprites/rock.png","sprites/cannonball.png", "sprites/exp3.png"];
+    var enemiesAssets = ["sprites/enemy.png", "sprites/enemy-armor.png"];
     var tower1Assets = ["damage","fire","pierce","range","speed","tower1-1","tower1-2","tower1-3","twin", "maxSpeed", "maxRange", "maxPower"];
-    var tower2Assets = ["damage","range","tower2-1","tower2-2","tower2-3","twin","speed", "golddmg","knockback","cannon"];
+    var tower2Assets = ["damage","range","tower2-1","tower2-2","tower2-3","twin","speed", "golddmg","knockback","cannon", "mortar", "maxSpeed"];
     var tower3Assets = ["avalanche","damage","facet","range","tower3-1","tower3-2","twin"];
     loadArray(tower1Assets, "sprites/upgrades/tower1", "png");
     loadArray(tower2Assets, "sprites/upgrades/tower2", "png");
     loadArray(tower3Assets, "sprites/upgrades/tower3", "png");
-    loader.add(miscAssets.concat(enemies)).load(setup);
+    loader.add(miscAssets.concat(enemiesAssets)).load(setup);
     var state;
     var keys = {};
     var mouseX,mouseY;
     var map = [];
     var path = [];
     var enemies = [];
+    var explosions = [];
     var missiles = [];
     var background = new PIXI.Container();
     var foreground = new PIXI.Container();
@@ -125,7 +126,7 @@
                     {desc: "+5 damage.", cost: 50, texture: "sprites/upgrades/tower1/fire.png", apply: function(tower) {
                         tower.dmg += 5;
                     }},
-                    {desc: "Final Upgrade:\nSlow firing, +10 damage.", cost: 40, texture: "sprites/upgrades/tower1/maxPower.png", apply: function(tower) {
+                    {desc: "Final Upgrade:\nSlow firing, +10 damage.", cost: 150, texture: "sprites/upgrades/tower1/maxPower.png", apply: function(tower) {
                         tower.range += 50*scalar;
                         tower.cooldown *= 2;
                         tower.texture = resources["sprites/upgrades/tower1/maxPower.png"].texture;
@@ -138,7 +139,7 @@
                     {desc: "+1 pierce.", cost: 40, texture: "sprites/upgrades/tower1/pierce.png", apply: function(tower) {
                         tower.aPierce++;
                     }},
-                    {desc: "Final Upgrade:\nBetter range and speed.", cost: 40, texture: "sprites/upgrades/tower1/maxRange.png", apply: function(tower) {
+                    {desc: "Final Upgrade:\nBetter range and speed.", cost: 120, texture: "sprites/upgrades/tower1/maxRange.png", apply: function(tower) {
                         tower.range += 100*scalar;
                         tower.cooldown /= 1.5;
                         tower.texture = resources["sprites/upgrades/tower1/maxRange.png"].texture;
@@ -151,7 +152,7 @@
                     {desc: "Shoots two arrows\nat once.", cost: 50, texture: "sprites/upgrades/tower1/twin.png", apply: function(tower) {
                         tower.doubleArrow = true;
                     }},
-                    {desc: "Final Upgrade:\nExtremely fast firing.", cost: 40, texture: "sprites/upgrades/tower1/maxSpeed.png", apply: function(tower) {
+                    {desc: "Final Upgrade:\nExtremely fast firing.", cost: 150, texture: "sprites/upgrades/tower1/maxSpeed.png", apply: function(tower) {
                         tower.cooldown /= 3;
                         tower.texture = resources["sprites/upgrades/tower1/maxSpeed.png"].texture;
                     }},
@@ -162,44 +163,50 @@
         "tower2": {
             upgrades: [
                 [
-                    {desc: "+2 pierce.", cost: 20, texture: "sprites/upgrades/tower2/damage.png", apply: function(tower) {
+                    {desc: "+2 pierce.", cost: 30, texture: "sprites/upgrades/tower2/damage.png", apply: function(tower) {
                         tower.aPierce += 2;
                         tower.pierce += 2;
-                        tower.dmg += 1000;
                     }},
-                    {desc: "+3 damage.", cost: 20, texture: "sprites/upgrades/tower2/golddmg.png", apply: function(tower) {
-                        tower.dmg += 3;
+                    {desc: "+5 damage.", cost: 75, texture: "sprites/upgrades/tower2/golddmg.png", apply: function(tower) {
+                        tower.dmg += 5;
                     }},
-                    {desc: "Final Upgrade:\nCannon shots explode.", cost: 40, texture: "sprites/upgrades/tower2/cannon.png", apply: function(tower) {
+                    {desc: "Final Upgrade:\nCannon shots explode.", cost: 200, texture: "sprites/upgrades/tower2/cannon.png", apply: function(tower) {
                         tower.range += 50*scalar;
                         tower.cooldown *= 2;
+                        tower.dmg += 10 + tower.pierce;
                         tower.pierce = 1;
-                        tower.dmg += 10;
                         tower.texture = resources["sprites/upgrades/tower2/cannon.png"].texture;
                         tower.cannonball = true;
                     }},
                 ],
                 [
-                    {desc: "+100 range.", cost: 10, texture: "sprites/upgrades/tower2/range.png", apply: function(tower) {
+                    {desc: "+100 range.", cost: 20, texture: "sprites/upgrades/tower2/range.png", apply: function(tower) {
                         tower.range += 100 * scalar;
                     }},
-                    {desc: "Bolts slow enemies\ndown slightly.", cost: 10, texture: "sprites/upgrades/tower2/knockback.png", apply: function(tower) {
+                    {desc: "Bolts slow enemies\ndown slightly.", cost: 60, texture: "sprites/upgrades/tower2/knockback.png", apply: function(tower) {
                         tower.slowdown = 50;
                     }},
-                    {desc: "Final upgrade: Shots stun enemies.", cost: 10, texture: "sprites/upgrades/tower2/knockback.png", apply: function(tower) {
-                        tower.stun = 75;
+                    {desc: "Final upgrade: Shots stun enemies.", cost: 130, texture: "sprites/upgrades/tower2/mortar.png", apply: function(tower) {
+                        tower.stun = 240;
+                        tower.dmg += tower.pierce + 2;
                         tower.pierce = 1;
                         tower.range += 200*scalar;
                         tower.cannonball = true;
+                        tower.texture = resources["sprites/upgrades/tower2/mortar.png"].texture;
                     }},
                 ],
                 [
-                    {desc: "Shoots arrows faster.", cost: 20, texture: "sprites/upgrades/tower2/twin.png", apply: function(tower) {
+                    {desc: "Shoots arrows faster.", cost: 30, texture: "sprites/upgrades/tower2/twin.png", apply: function(tower) {
                         tower.cooldown /= 1.5;
                     }},
-                    {desc: "Bolts fly faster.", cost: 10, texture: "sprites/upgrades/tower2/speed.png", apply: function(tower) {
+                    {desc: "Bolts fly faster.", cost: 75, texture: "sprites/upgrades/tower2/speed.png", apply: function(tower) {
                         tower.pierce += 2;
                         tower.speed = 10;
+                    }},
+                    {desc: "Much faster firing\nand reload.", cost: 150, texture: "sprites/upgrades/tower2/maxSpeed.png", apply: function(tower) {
+                        tower.cooldown /= 3;
+                        tower.speed = 15;
+                        tower.texture = resources["sprites/upgrades/tower2/maxSpeed.png"].texture;
                     }},
                 ]
             ],
@@ -670,6 +677,13 @@
                 upgradeMode.costTxt.text = "";
             }
         }
+        explosions.forEach(function(e,i) {
+            e.alpha -= 0.05;
+            if(e.alpha <= 0) {
+                app.stage.removeChild(e);
+                explosions.splice(i,1);
+            }
+        });
         towers.forEach(function(tower) {
             if(tower.type === "tower1") {
                 var pivotX = tower.x + 40 * scalar;
@@ -799,7 +813,7 @@
             }
             if(enemy.stun) {
                 enemy.stun--;
-            } if(enemy.slowdown) {
+            } else if(enemy.slowdown) {
                 enemy.steps += enemy.slowdown;
                 enemy.slowdown = 0;
             } else if(enemy.steps) {
@@ -839,6 +853,14 @@
             return false;
         }
     }
+    function explode(x,y) {
+        var explosion = new Sprite(resources["sprites/exp3.png"].texture);
+        explosion.x = x;
+        explosion.y = y;
+        explosion.scale.set(3*scalar,3*scalar);
+        app.stage.addChild(explosion);
+        explosions.push(explosion);
+    }
     function handleMissiles() {
         var i;
         var len = missiles.length;
@@ -863,8 +885,13 @@
             });
                 if(getDistance(missilePoint.x, missilePoint.y, target.x, target.y) <= 32*scalar) {
                     target.health -= missile.dmg/Math.max(1,target.armor-missile.aPierce);
-                    if(missile.slowdown) {
+                    if(missile.stun) {
+                        target.stun = missile.stun;
+                    } else if(missile.slowdown) {
                         target.slowdown = missile.slowdown;
+                    }
+                    if(missile.explodes) {
+                        explode(missile.x,missile.y);
                     }
                     if(--missile.pierce < 1) {
                         foreground.removeChild(missile);
@@ -877,6 +904,12 @@
                             targets.forEach(function (enemy){
 
                                 enemy.health -= missile.dmg/Math.max(1,target.armor-missile.aPierce)/3;
+                                if(missile.stun) {
+                                    target.stun = missile.stun/3;
+                                } else if(missile.slowdown) {
+                                    target.slowdown = missile.slowdown/3;
+                                }
+                                explode(enemy.x,enemy.y);
                             });
                         }
                         continue;
