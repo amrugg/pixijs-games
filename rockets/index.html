@@ -1733,7 +1733,10 @@
         }
         if(e.key === "Enter" && !answersLocked) {
             if (numDiv.innerHTML === correctAnswer || (chapter !== false && (correctAnswer.split(".")[1] === numDiv.innerHTML)) || numDiv.innerHTML.replace(" ",".") === correctAnswer || numDiv.innerHTML.replace(":",".") === correctAnswer) { 
-                if(energyBar.width + 40 > 200 || restoreHealthWithQuestion === true) {
+                if(restoreHealthWithQuestion) {
+                    healthBar.width += 10;
+                }
+                if(energyBar.width + 40 > 200) {
                     healthBar.width += (energyBar.width + 40 - 200)/3;
                     energyBar.width = 200;
                 } else {
