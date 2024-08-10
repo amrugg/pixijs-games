@@ -677,15 +677,15 @@
                 var enemy = enemies[j];
                 var enemyRect = {x: enemy.x - enemy.width/2, y: enemy.y - enemy.height/2, width: enemy.width, height: enemy.height};
                 if(hitTestRectangle(missileRect, enemyRect) && missile.good && enemy.level !== "nursing-mother" && enemy.level !== "bossattack") {
-                    enemy.health -= 3;
+                    enemy.health -= 4;
                     explode(10,{x:missile.x - missile.width, y:missile.y - missile.height});
                     if(enemy.health <= 0) {
                         bigExplosion(100,{x:enemy.x,y:enemy.y});
                     }
-                    enemies.forEach(function(enemy){
-                        if(getDistance(enemy.x,enemy.y,missile.x,missile.y) < 200) {
-                            explode(10,{x:enemy.x, y:enemy.y});
-                            enemy.health -= 2;
+                    enemies.forEach(function(enemya){
+                        if(getDistance(enemya.x,enemya.y,missile.x,missile.y) < 200 * scaleFactor && enemya !== enemy) {
+                            explode(10,{x:enemya.x, y:enemya.y});
+                            enemya.health -= 2;
                         }
                     });
                     app.stage.removeChild(missile);
