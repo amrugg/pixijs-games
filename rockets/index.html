@@ -10,13 +10,12 @@
     <script src="howler.core.min.js"></script>
     <div id="central"></div>
     <select style="position:absolute", id="chapter">
-        <option>John 12</option>
-        <option>John 13</option>
-        <option>John 14</option>
-        <option>John 15</option>
-        <option>John 16</option>
-        <option>John 17</option>
-        <option>John 20</option>
+        <option>Daniel 1</option>
+        <option>Daniel 2</option>
+        <option>Daniel 3</option>
+        <option>Daniel 4</option>
+        <option>Daniel 5</option>
+        <option>Daniel 6</option>
     </select>
     <select style="position:absolute; top: 20px", id="level">
         <option>Invincible</option>
@@ -254,7 +253,7 @@
             var rand = Math.random() * sum;
             for(var i = 0; i < weightedArr.length; i++) {
                 if(weightedArr[i] >= rand) {
-                    randomNumber = i;
+                    randomNumber = i;Update index.html
                     i = Infinity;
                 }
             }
