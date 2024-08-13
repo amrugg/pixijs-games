@@ -379,7 +379,7 @@ function restart() {
     lasers = [];
     explosions = [];
     player.tint = 0xFFFFFF;
-    player.activePowerup = false;
+    player.activePowerup = {};
     powerupHolder.visible = false;
     powerupBar.visible = false;
     energyBar.visible = false;
@@ -423,7 +423,9 @@ function handlePowerups() {
             --i;
             --len;
             if(cur.value) {
-                coins += cur.value;
+                player.health += cur.value;
+                player.health = Math.min(player.health,player.maxHealth);
+                updateHealthBar();
                 continue;
             }
             player.tint = cur.tint;

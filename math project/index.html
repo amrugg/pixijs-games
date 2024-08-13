@@ -215,17 +215,18 @@
         "tower3": {
             upgrades: [
                 [
-                    {desc: "+1 damage.", cost: 20, texture: "sprites/upgrades/tower1/damage.png", apply: function(tower) {
+                    {desc: "+1 damage.", cost: 20, texture: "sprites/upgrades/tower3/damage.png", apply: function(tower) {
                         tower.dmg++;
                     }}
                 ],
                 [
-                    {desc: "+50 range.", cost: 10, texture: "sprites/upgrades/tower1/range.png", apply: function(tower) {
-                        tower.range += 100 * scalar;
+                    {desc: "+50 range.", cost: 10, texture: "sprites/upgrades/tower3/facet.png", apply: function(tower) {
+                        tower.facet = 8;
+                        tower.faces = [0,0,0,0,0,0,0,0];
                     }}
                 ],
                 [
-                    {desc: "Faster firing.", cost: 20, texture: "sprites/upgrades/tower1/twin.png", apply: function(tower) {
+                    {desc: "Faster firing.", cost: 20, texture: "sprites/upgrades/tower3/avalanche.png", apply: function(tower) {
                         tower.cooldown /= 1.5;
                     }}
                 ]
@@ -734,28 +735,79 @@
                 var target = getBestEnemyWR({x:pivotX, y: pivotY},tower.range, function(target) {
                     var dx = target.x - pivotX;
                     var dy = target.y - pivotY;
-                    if(dy < 0 && Math.abs(dy/dx) > 1) {
-                        /// Up
-                        if(tower.faces[0] + tower.cooldown < Date.now()) {
-                            return true;
+                    if(tower.facet === 8) {
+                        if(dy < 0 && Math.abs(dy/dx) > 1 && dx >= 0) {
+                            /// Up
+                            if(tower.faces[0] + tower.cooldown < Date.now()) {
+                                return true;
+                            }
                         }
-                    }
-                    if(dy > 0 && Math.abs(dy/dx) > 1) {
-                        /// Down
-                        if(tower.faces[1] + tower.cooldown < Date.now()) {
-                            return true;
+                        if(dy < 0 && Math.abs(dy/dx) > 1 && dx < 0) {
+                            /// Up
+                            if(tower.faces[1] + tower.cooldown < Date.now()) {
+                                return true;
+                            }
                         }
-                    }
-                    if(dx < 0 && Math.abs(dx/dy) > 1) {
-                        /// Left
-                        if(tower.faces[2] + tower.cooldown < Date.now()) {
-                            return true;
+                        if(dy > 0 && Math.abs(dy/dx) > 1 && dx >= 0) {
+                            /// Down
+                            if(tower.faces[2] + tower.cooldown < Date.now()) {
+                                return true;
+                            }
                         }
-                    }
-                    if(dx > 0 && Math.abs(dx/dy) > 1) {
-                        /// Right
-                        if(tower.faces[3] + tower.cooldown < Date.now()) {
-                            return true;
+                        if(dy > 0 && Math.abs(dy/dx) > 1 && dx <= 0) {
+                            /// Down
+                            if(tower.faces[3] + tower.cooldown < Date.now()) {
+                                return true;
+                            }
+                        }
+                        if(dx < 0 && Math.abs(dx/dy) > 1 && dy >= 0) {
+                            /// Left
+                            if(tower.faces[4] + tower.cooldown < Date.now()) {
+                                return true;
+                            }
+                        }
+                        if(dx < 0 && Math.abs(dx/dy) > 1 && dy < 0) {
+                            /// Left
+                            if(tower.faces[5] + tower.cooldown < Date.now()) {
+                                return true;
+                            }
+                        }
+                        if(dx > 0 && Math.abs(dx/dy) > 1 && dy >= 0) {
+                            /// Right
+                            if(tower.faces[6] + tower.cooldown < Date.now()) {
+                                return true;
+                            }
+                        }
+                        if(dx > 0 && Math.abs(dx/dy) > 1 && dy < 0) {
+                            /// Right
+                            if(tower.faces[7] + tower.cooldown < Date.now()) {
+                                return true;
+                            }
+                        }
+                    } else {
+                        if(dy < 0 && Math.abs(dy/dx) > 1) {
+                            /// Up
+                            if(tower.faces[0] + tower.cooldown < Date.now()) {
+                                return true;
+                            }
+                        }
+                        if(dy > 0 && Math.abs(dy/dx) > 1) {
+                            /// Down
+                            if(tower.faces[1] + tower.cooldown < Date.now()) {
+                                return true;
+                            }
+                        }
+                        if(dx < 0 && Math.abs(dx/dy) > 1) {
+                            /// Left
+                            if(tower.faces[2] + tower.cooldown < Date.now()) {
+                                return true;
+                            }
+                        }
+                        if(dx > 0 && Math.abs(dx/dy) > 1) {
+                            /// Right
+                            if(tower.faces[3] + tower.cooldown < Date.now()) {
+                                return true;
+                            }
                         }
                     }
                 });
@@ -763,17 +815,44 @@
                     shootMissile(pivotX,pivotY,normalize(target.x - pivotX, target.y - pivotY, tower.speed*scalar), tower.dmg, tower.pierce, tower.aPierce, "rock", tower.range);
                     var dx = target.x - pivotX;
                     var dy = target.y - pivotY;
-                    if(dy < 0 && Math.abs(dy/dx) > 1) {
-                        tower.faces[0] =  Date.now();
-                    }
-                    if(dy > 0 && Math.abs(dy/dx) > 1) {
-                        tower.faces[1] =  Date.now();
-                    }
-                    if(dx < 0 && Math.abs(dx/dy) > 1) {
-                        tower.faces[2] =  Date.now();
-                    }
-                    if(dx > 0 && Math.abs(dx/dy) > 1) {
-                        tower.faces[3] =  Date.now();
+                    if(tower.facet === 8) {
+                        if(dy < 0 && Math.abs(dy/dx) > 1 && dx >= 0) {
+                            tower.faces[0] =  Date.now();
+                        }
+                        if(dy < 0 && Math.abs(dy/dx) > 1 && dx < 0) {
+                            tower.faces[1] =  Date.now();
+                        }
+                        if(dy > 0 && Math.abs(dy/dx) > 1 && dx >= 0) {
+                            tower.faces[2] =  Date.now();
+                        }
+                        if(dy > 0 && Math.abs(dy/dx) > 1 && dx <= 0) {
+                            tower.faces[3] =  Date.now();                        
+                        }
+                        if(dx < 0 && Math.abs(dx/dy) > 1 && dy >= 0) {
+                            tower.faces[4] =  Date.now();
+                        }
+                        if(dx < 0 && Math.abs(dx/dy) > 1 && dy < 0) {
+                            tower.faces[5] =  Date.now();
+                        }
+                        if(dx > 0 && Math.abs(dx/dy) > 1 && dy >= 0) {
+                            tower.faces[6] =  Date.now();
+                        }
+                        if(dx > 0 && Math.abs(dx/dy) > 1 && dy < 0) {
+                            tower.faces[7] =  Date.now();
+                        }
+                    } else {
+                        if(dy < 0 && Math.abs(dy/dx) > 1) {
+                            tower.faces[0] =  Date.now();
+                        }
+                        if(dy > 0 && Math.abs(dy/dx) > 1) {
+                            tower.faces[1] =  Date.now();
+                        }
+                        if(dx < 0 && Math.abs(dx/dy) > 1) {
+                            tower.faces[2] =  Date.now();
+                        }
+                        if(dx > 0 && Math.abs(dx/dy) > 1) {
+                            tower.faces[3] =  Date.now();
+                        }
                     }
                 }
             }
