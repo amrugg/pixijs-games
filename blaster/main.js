@@ -79,16 +79,26 @@ var sidebar = document.getElementById("sidebar");
 sidebar.style.position = "absolute";
 sidebar.style.zIndex = "100";
 sidebar.style.width = ((innerWidth - canvasLength)/2 - 5*scalar) + "px";
+sidebar.style.height = innerHeight + "px";
 sidebar.style.left = ((innerWidth - canvasLength)/2 + canvasLength + 2.5*scalar) + "px";
 
 /// Make the verse text
 var textDiv = document.createElement("div");
 textDiv.style.position = "relative";
-textDiv.innerHTML = "";
 textDiv.style.fontSize = "30px";
 textDiv.style.color = "white";
 textDiv.innerHTML = questionSet.chooseNewVerse();
 sidebar.appendChild(textDiv);
+
+/// Make a range div
+var rangeDiv = document.createElement("div");
+rangeDiv.style.position = "absolute";
+rangeDiv.style.top = (innerHeight - 50) + "px";
+rangeDiv.style.right = "1px";
+rangeDiv.style.fontSize = "30px";
+rangeDiv.style.color = "white";
+rangeDiv.innerHTML = "1-4"
+sidebar.appendChild(rangeDiv);
 
 /// Make the input number text
 var numDiv = document.createElement("div");
