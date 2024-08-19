@@ -47,11 +47,11 @@
     document.body.appendChild(app.view);
     var scalar = canvasLength/800;
     var canvasOffset = (innerWidth - canvasLength)/2;
-    var miscAssets = ["sprites/ground.png", "sprites/tower1.png", "sprites/tower2.png", "sprites/tower3.png", "sprites/coin.png", "sprites/heart.png", "sprites/arrow.png", "sprites/ballista.png", "sprites/rock.png","sprites/cannonball.png", "sprites/exp3.png"];
+    var miscAssets = ["sprites/ground.png", "sprites/tower1.png", "sprites/tower2.png", "sprites/tower3.png", "sprites/coin.png", "sprites/heart.png", "sprites/arrow.png", "sprites/ballista.png", "sprites/rock.png","sprites/cannonball.png", "sprites/exp3.png", "sprites/fireball.png"];
     var enemiesAssets = ["sprites/enemy.png", "sprites/enemy-armor.png"];
     var tower1Assets = ["damage","fire","pierce","range","speed","tower1-1","tower1-2","tower1-3","twin", "maxSpeed", "maxRange", "maxPower"];
     var tower2Assets = ["damage","range","tower2-1","tower2-2","tower2-3","twin","speed", "golddmg","knockback","cannon", "mortar", "maxSpeed"];
-    var tower3Assets = ["avalanche","damage","facet","range","tower3-1","tower3-2","iron","speed","tower3-3"];
+    var tower3Assets = ["avalanche","damage","facet","range","tower3-1","tower3-2","iron","speed","tower3-3","fire","laser"];
     loadArray(tower1Assets, "sprites/upgrades/tower1", "png");
     loadArray(tower2Assets, "sprites/upgrades/tower2", "png");
     loadArray(tower3Assets, "sprites/upgrades/tower3", "png");
@@ -237,6 +237,14 @@
                     }},
                     {desc: "Even faster firing.", cost: 20, texture: "sprites/upgrades/tower3/speed.png", apply: function(tower) {
                         tower.cooldown /= 1.5;
+                    }},
+                    {desc: "Final Upgrade:\nFire Tower.", cost: 20, texture: "sprites/upgrades/tower3/fire.png", apply: function(tower) {
+                        tower.cooldown /= 5;
+                        tower.dmg /= 2;
+                        tower.speed /= 3;
+                        tower.pierce = 1000;
+                        tower.fireball = true;
+                        tower.texture = resources["sprites/upgrades/tower3/fire.png"].texture;
                     }},
                 ]
             ],
@@ -821,7 +829,11 @@
                     }
                 });
                 if(getDistance(pivotX,pivotY,target.x,target.y) <= tower.range) {
-                    shootMissile(pivotX,pivotY,normalize(target.x - pivotX, target.y - pivotY, tower.speed*scalar), tower.dmg, tower.pierce, tower.aPierce, "rock", tower.range);
+                    if(tower.fireball) { 
+                        shootMissile(pivotX,pivotY,normalize(target.x - pivotX, target.y - pivotY, tower.speed*scalar), tower.dmg, tower.pierce, tower.aPierce, "fireball", tower.range);
+                    } else {
+                        shootMissile(pivotX,pivotY,normalize(target.x - pivotX, target.y - pivotY, tower.speed*scalar), tower.dmg, tower.pierce, tower.aPierce, "rock", tower.range);
+                    }
                     var dx = target.x - pivotX;
                     var dy = target.y - pivotY;
                     if(tower.facet === 8) {
