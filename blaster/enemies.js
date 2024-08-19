@@ -201,9 +201,9 @@ var enemyProperties = {
                 dmgMult: 3,
             }
         ],
-        dropChance: 100,
-        dropWeights: [1],
-        possibleDrops: ["green"]
+        dropChance: 50,
+        dropWeights: [50,50],
+        possibleDrops: ["orange", "green"]
     },
     "enemy-1-3": {
         healthRange: {min: 1, max: 2},
@@ -222,8 +222,8 @@ var enemyProperties = {
             }
         ],
         dropChance: 100,
-        dropWeights: [50,10,30,10],
-        possibleDrops: ["coin", "5coin", "orange","green"],
+        dropWeights: [80,10,10],
+        possibleDrops: ["white", "5coin", "orange"],
         init: function(enemy) {
             enemy.origX = enemy.x;
         }

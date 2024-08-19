@@ -379,6 +379,9 @@ function restart() {
     enemies.forEach(function(enemy) {
         app.stage.removeChild(enemy);
     });
+    powerups.forEach(function(enemy) {
+        app.stage.removeChild(enemy);
+    });
     lasers.forEach(function(laser) {
         app.stage.removeChild(laser);
     });
@@ -386,6 +389,7 @@ function restart() {
         app.stage.removeChild(exp);
     });
     enemies = [];
+    powerups = [];
     lasers = [];
     explosions = [];
     player.tint = 0xFFFFFF;
