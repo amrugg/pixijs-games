@@ -64,6 +64,7 @@
     var inputEl = document.getElementById("range");
     var buttonStartEl = document.getElementById("start");
     var invincible = false;
+    var verseTracking = {"1.1": {correct:0,incorrect:1}};
     var restoreHealthWithQuestion = false;
     chapterEl.style.zIndex = "100";
     levelEl.style.zIndex = "100";
@@ -103,7 +104,6 @@
 
         curVerse = randVerse();
         correctAnswer = curVerse[0];
-        console.log(curVerse);
         curVerse = curVerse[1];
         textDiv.innerHTML = curVerse;
 
@@ -207,7 +207,7 @@
         ["Belshazzar the king made a great feast to a thousand of his lords, and drank wine before the thousand.","Belshazzar, whiles he tasted the wine, commanded to bring the golden and silver vessels which his father Nebuchadnezzar had taken out of the temple which was in Jerusalem; that the king, and his princes, his wives, and his concubines, might drink therein.","Then they brought the golden vessels that were taken out of the temple of the house of God which was at Jerusalem; and the king, and his princes, his wives, and his concubines, drank in them.","They drank wine, and praised the gods of gold, and of silver, of brass, of iron, of wood, and of stone.","In the same hour came forth fingers of a man’s hand, and wrote over against the candlestick upon the plaister of the wall of the king’s palace: and the king saw the part of the hand that wrote.","Then the king’s countenance was changed, and his thoughts troubled him, so that the joints of his loins were loosed, and his knees smote one against another.","The king cried aloud to bring in the astrologers, the Chaldeans, and the soothsayers. And the king spake, and said to the wise men of Babylon, Whosoever shall read this writing, and shew me the interpretation thereof, shall be clothed with scarlet, and have a chain of gold about his neck, and shall be the third ruler in the kingdom.","Then came in all the king’s wise men: but they could not read the writing, nor make known to the king the interpretation thereof.","Then was king Belshazzar greatly troubled, and his countenance was changed in him, and his lords were astonied.","Now the queen, by reason of the words of the king and his lords, came into the banquet house: and the queen spake and said, O king, live for ever: let not thy thoughts trouble thee, nor let thy countenance be changed:","There is a man in thy kingdom, in whom is the spirit of the holy gods; and in the days of thy father light and understanding and wisdom, like the wisdom of the gods, was found in him; whom the king Nebuchadnezzar thy father, the king, I say, thy father, made master of the magicians, astrologers, Chaldeans, and soothsayers;","Forasmuch as an excellent spirit, and knowledge, and understanding, interpreting of dreams, and shewing of hard sentences, and dissolving of doubts, were found in the same Daniel, whom the king named Belteshazzar: now let Daniel be called, and he will shew the interpretation.","Then was Daniel brought in before the king. And the king spake and said unto Daniel, Art thou that Daniel, which art of the children of the captivity of Judah, whom the king my father brought out of Jewry?","I have even heard of thee, that the spirit of the gods is in thee, and that light and understanding and excellent wisdom is found in thee.","And now the wise men, the astrologers, have been brought in before me, that they should read this writing, and make known unto me the interpretation thereof: but they could not shew the interpretation of the thing:","And I have heard of thee, that thou canst make interpretations, and dissolve doubts: now if thou canst read the writing, and make known to me the interpretation thereof, thou shalt be clothed with scarlet, and have a chain of gold about thy neck, and shalt be the third ruler in the kingdom.","Then Daniel answered and said before the king, Let thy gifts be to thyself, and give thy rewards to another; yet I will read the writing unto the king, and make known to him the interpretation.","O thou king, the most high God gave Nebuchadnezzar thy father a kingdom, and majesty, and glory, and honour:","And for the majesty that he gave him, all people, nations, and languages, trembled and feared before him: whom he would he slew; and whom he would he kept alive; and whom he would he set up; and whom he would he put down.","But when his heart was lifted up, and his mind hardened in pride, he was deposed from his kingly throne, and they took his glory from him:","And he was driven from the sons of men; and his heart was made like the beasts, and his dwelling was with the wild asses: they fed him with grass like oxen, and his body was wet with the dew of heaven; till he knew that the most high God ruled in the kingdom of men, and that he appointeth over it whomsoever he will.","And thou his son, O Belshazzar, hast not humbled thine heart, though thou knewest all this;","But hast lifted up thyself against the Lord of heaven; and they have brought the vessels of his house before thee, and thou, and thy lords, thy wives, and thy concubines, have drunk wine in them; and thou hast praised the gods of silver, and gold, of brass, iron, wood, and stone, which see not, nor hear, nor know: and the God in whose hand thy breath is, and whose are all thy ways, hast thou not glorified:","Then was the part of the hand sent from him; and this writing was written.","And this is the writing that was written, MENE, MENE, TEKEL, UPHARSIN.","This is the interpretation of the thing: MENE; God hath numbered thy kingdom, and finished it.","TEKEL; Thou art weighed in the balances, and art found wanting.","PERES; Thy kingdom is divided, and given to the Medes and Persians.","Then commanded Belshazzar, and they clothed Daniel with scarlet, and put a chain of gold about his neck, and made a proclamation concerning him, that he should be the third ruler in the kingdom.","In that night was Belshazzar the king of the Chaldeans slain.","And Darius the Median took the kingdom, being about threescore and two years old."],
         ["It pleased Darius to set over the kingdom an hundred and twenty princes, which should be over the whole kingdom;","And over these three presidents; of whom Daniel was first: that the princes might give accounts unto them, and the king should have no damage.","Then this Daniel was preferred above the presidents and princes, because an excellent spirit was in him; and the king thought to set him over the whole realm.","Then the presidents and princes sought to find occasion against Daniel concerning the kingdom; but they could find none occasion nor fault; forasmuch as he was faithful, neither was there any error or fault found in him.","Then said these men, We shall not find any occasion against this Daniel, except we find it against him concerning the law of his God.","Then these presidents and princes assembled together to the king, and said thus unto him, King Darius, live for ever.","All the presidents of the kingdom, the governors, and the princes, the counsellers, and the captains, have consulted together to establish a royal statute, and to make a firm decree, that whosoever shall ask a petition of any God or man for thirty days, save of thee, O king, he shall be cast into the den of lions.","Now, O king, establish the decree, and sign the writing, that it be not changed, according to the law of the Medes and Persians, which altereth not.","Wherefore king Darius signed the writing and the decree.","Now when Daniel knew that the writing was signed, he went into his house; and his windows being open in his chamber toward Jerusalem, he kneeled upon his knees three times a day, and prayed, and gave thanks before his God, as he did aforetime.","Then these men assembled, and found Daniel praying and making supplication before his God.","Then they came near, and spake before the king concerning the king’s decree; Hast thou not signed a decree, that every man that shall ask a petition of any God or man within thirty days, save of thee, O king, shall be cast into the den of lions? The king answered and said, The thing is true, according to the law of the Medes and Persians, which altereth not.","Then answered they and said before the king, That Daniel, which is of the children of the captivity of Judah, regardeth not thee, O king, nor the decree that thou hast signed, but maketh his petition three times a day.","Then the king, when he heard these words, was sore displeased with himself, and set his heart on Daniel to deliver him: and he laboured till the going down of the sun to deliver him.","Then these men assembled unto the king, and said unto the king, Know, O king, that the law of the Medes and Persians is, That no decree nor statute which the king establisheth may be changed.","Then the king commanded, and they brought Daniel, and cast him into the den of lions. Now the king spake and said unto Daniel, Thy God whom thou servest continually, he will deliver thee.","And a stone was brought, and laid upon the mouth of the den; and the king sealed it with his own signet, and with the signet of his lords; that the purpose might not be changed concerning Daniel.","Then the king went to his palace, and passed the night fasting: neither were instruments of musick brought before him: and his sleep went from him.","Then the king arose very early in the morning, and went in haste unto the den of lions.","And when he came to the den, he cried with a lamentable voice unto Daniel: and the king spake and said to Daniel, O Daniel, servant of the living God, is thy God, whom thou servest continually, able to deliver thee from the lions?","Then said Daniel unto the king, O king, live for ever.","My God hath sent his angel, and hath shut the lions’ mouths, that they have not hurt me: forasmuch as before him innocency was found in me; and also before thee, O king, have I done no hurt.","Then was the king exceeding glad for him, and commanded that they should take Daniel up out of the den. So Daniel was taken up out of the den, and no manner of hurt was found upon him, because he believed in his God.","And the king commanded, and they brought those men which had accused Daniel, and they cast them into the den of lions, them, their children, and their wives; and the lions had the mastery of them, and brake all their bones in pieces or ever they came at the bottom of the den.","Then king Darius wrote unto all people, nations, and languages, that dwell in all the earth; Peace be multiplied unto you.","I make a decree, That in every dominion of my kingdom men tremble and fear before the God of Daniel: for he is the living God, and stedfast for ever, and his kingdom that which shall not be destroyed, and his dominion shall be even unto the end.","He delivereth and rescueth, and he worketh signs and wonders in heaven and in earth, who hath delivered Daniel from the power of the lions.","So this Daniel prospered in the reign of Darius, and in the reign of Cyrus the Persian."]
     ];
-    var chapter = Number(params.chapter) || randInt(1,7);
+    var chapter = Number(params.chapter) || randInt(1,6);
     var currentRandChapter = 0;
     var curVerse = randVerse();
     var correctAnswer = curVerse[0];
@@ -228,10 +228,18 @@
         return num;
     }
     function weightedRandInt(min,max, not, chapter) {
+        console.log("Min:", min, "Max:", max);
         var weightedArr = [];
         var sum = 0;
-        var maxNum = Number(storeRange.split("-")[1]);
+        var maxNum = max;
+        if(min!==0) {
+            debugger;
+        }
         for(var i = 0; i < maxNum; i++) {
+            if(i < min) {
+                weightedArr.push(0);
+                continue;
+            }
             var score = 1;
             if(verseTracking[getRealChapter(chapter) + "." + (i+1).toString()]) {
                 var cur = verseTracking[getRealChapter(chapter) + "." + (i+1).toString()];
@@ -248,9 +256,11 @@
             weightedArr.push(sum+score);
             sum += score;
         }
+        console.log("Sum:", sum);
         var randomNumber = not;
         while(randomNumber === not) {
             var rand = Math.random() * sum;
+            console.log(rand);
             for(var i = 0; i < weightedArr.length; i++) {
                 if(weightedArr[i] >= rand) {
                     randomNumber = i;
@@ -258,34 +268,33 @@
                 }
             }
         }
+        if(randomNumber < min) {
+            console.log(rand,weightedArr);
+            debugger;
+        }
         return randomNumber;
     }
     function getRealChapter(chapter) {
-        if(chapter === 7) {
-            return "20";
-        } else {
-            return (chapter + 11).toString();
-        }
+        return (chapter).toString();
     }
     function randVerse() {
         if(chapter) {
             var verseArr = rom18[chapter-1];
-            var rand = randInt((params.min ? Number(params.min)-1 : 0), Number(params.max)-1 || verseArr.length-1, (correctAnswer ? Number(correctAnswer.split(".")[1])-1 : -1));
+            var rand = weightedRandInt((params.min ? Number(params.min)-1 : 0), Number(params.max)-1 || verseArr.length-1, (correctAnswer ? Number(correctAnswer.split(".")[1])-1 : -1), chapter);
             if(chapter === 7) {
                 var verseNumber = 20 + "." + (rand+1);
             } else {
-                var verseNumber = (chapter + 11) + "." + (rand+1);
+                var verseNumber = (chapter) + "." + (rand+1);
             }
             return [verseNumber, verseArr[rand]];
         } else {
-            var currentRandChapter = randInt(0,7)
+            var currentRandChapter = randInt(0,5)
             var verseArr = rom18[currentRandChapter];
             var rand = randInt(0,verseArr.length-1);
             var verseNumber = (currentRandChapter+1) + "." + (rand+1);
             return [verseNumber, verseArr[rand]];
         }
     }
-    var verseTracking = {};
     // energyHolder.beginFill();
     var state;
     var keys = {};
@@ -1462,13 +1471,11 @@
             set[i].formation = set;
             set[i].formationMovement = {x:0,y:0};
         }
-        console.log(set)
         formations.push(set);
     }
     function spawnNewEnemy(amount, type, position) {
         var y = -200;
         var enemiesAdded = [];
-        console.log(amount, type, position);
         for(let i = 0; i < amount; i++) {
             if(type === "easy") {
                 var enemy = new Sprite(resources["sprites/enemy.png"].texture);
