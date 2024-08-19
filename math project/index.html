@@ -51,7 +51,7 @@
     var enemiesAssets = ["sprites/enemy.png", "sprites/enemy-armor.png"];
     var tower1Assets = ["damage","fire","pierce","range","speed","tower1-1","tower1-2","tower1-3","twin", "maxSpeed", "maxRange", "maxPower"];
     var tower2Assets = ["damage","range","tower2-1","tower2-2","tower2-3","twin","speed", "golddmg","knockback","cannon", "mortar", "maxSpeed"];
-    var tower3Assets = ["avalanche","damage","facet","range","tower3-1","tower3-2","twin"];
+    var tower3Assets = ["avalanche","damage","facet","range","tower3-1","tower3-2","iron","speed","tower3-3"];
     loadArray(tower1Assets, "sprites/upgrades/tower1", "png");
     loadArray(tower2Assets, "sprites/upgrades/tower2", "png");
     loadArray(tower3Assets, "sprites/upgrades/tower3", "png");
@@ -217,21 +217,30 @@
                 [
                     {desc: "+1 damage.", cost: 20, texture: "sprites/upgrades/tower3/damage.png", apply: function(tower) {
                         tower.dmg++;
-                    }}
+                    }},
+                    {desc: "+3 damage.", cost: 20, texture: "sprites/upgrades/tower3/iron.png", apply: function(tower) {
+                        tower.dmg += 3;
+                    }},
                 ],
                 [
-                    {desc: "+50 range.", cost: 10, texture: "sprites/upgrades/tower3/facet.png", apply: function(tower) {
+                    {desc: "Fire more rocks\nat one time.", cost: 10, texture: "sprites/upgrades/tower3/facet.png", apply: function(tower) {
                         tower.facet = 8;
                         tower.faces = [0,0,0,0,0,0,0,0];
-                    }}
+                    }},
+                    {desc: "+100 range.", cost: 10, texture: "sprites/upgrades/tower3/range.png", apply: function(tower) {
+                        tower.range += 75;
+                    }},
                 ],
                 [
                     {desc: "Faster firing.", cost: 20, texture: "sprites/upgrades/tower3/avalanche.png", apply: function(tower) {
                         tower.cooldown /= 1.5;
-                    }}
+                    }},
+                    {desc: "Even faster firing.", cost: 20, texture: "sprites/upgrades/tower3/speed.png", apply: function(tower) {
+                        tower.cooldown /= 1.5;
+                    }},
                 ]
             ],
-            upgradeLevels: ["sprites/upgrades/tower3/tower3-1.png", "sprites/upgrades/tower3/tower3-2.png"]
+            upgradeLevels: ["sprites/upgrades/tower3/tower3-1.png", "sprites/upgrades/tower3/tower3-2.png", "sprites/upgrades/tower3/tower3-3.png"]
         }
     }
     var goldCounter = new PIXI.Text("50", new PIXI.TextStyle({fontSize: 30*scalar}));
