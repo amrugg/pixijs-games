@@ -47,11 +47,11 @@
     document.body.appendChild(app.view);
     var scalar = canvasLength/800;
     var canvasOffset = (innerWidth - canvasLength)/2;
-    var miscAssets = ["sprites/ground.png", "sprites/tower1.png", "sprites/tower2.png", "sprites/tower3.png", "sprites/coin.png", "sprites/heart.png", "sprites/arrow.png", "sprites/ballista.png", "sprites/rock.png","sprites/cannonball.png", "sprites/exp3.png", "sprites/fireball.png"];
+    var miscAssets = ["sprites/ground.png", "sprites/tower1.png", "sprites/tower2.png", "sprites/tower3.png", "sprites/coin.png", "sprites/heart.png", "sprites/arrow.png", "sprites/ballista.png", "sprites/rock.png","sprites/cannonball.png", "sprites/exp3.png", "sprites/fireball.png", "sprites/spike.png"];
     var enemiesAssets = ["sprites/enemy.png", "sprites/enemy-armor.png"];
     var tower1Assets = ["damage","fire","pierce","range","speed","tower1-1","tower1-2","tower1-3","twin", "maxSpeed", "maxRange", "maxPower"];
     var tower2Assets = ["damage","range","tower2-1","tower2-2","tower2-3","twin","speed", "golddmg","knockback","cannon", "mortar", "maxSpeed"];
-    var tower3Assets = ["avalanche","damage","facet","range","tower3-1","tower3-2","iron","speed","tower3-3","fire","laser"];
+    var tower3Assets = ["avalanche","damage","facet","range","tower3-1","tower3-2","iron","speed","tower3-3","fire","laser","spike-tower"];
     loadArray(tower1Assets, "sprites/upgrades/tower1", "png");
     loadArray(tower2Assets, "sprites/upgrades/tower2", "png");
     loadArray(tower3Assets, "sprites/upgrades/tower3", "png");
@@ -221,6 +221,7 @@
                     {desc: "+3 damage.", cost: 20, texture: "sprites/upgrades/tower3/iron.png", apply: function(tower) {
                         tower.dmg += 3;
                     }},
+                    
                 ],
                 [
                     {desc: "Fire more rocks\nat one time.", cost: 10, texture: "sprites/upgrades/tower3/facet.png", apply: function(tower) {
@@ -229,6 +230,12 @@
                     }},
                     {desc: "+100 range.", cost: 10, texture: "sprites/upgrades/tower3/range.png", apply: function(tower) {
                         tower.range += 75;
+                    }},
+                    {desc: "Final Upgrade:\nSpike Tower.", cost: 20, texture: "sprites/upgrades/tower3/spike-tower.png", apply: function(tower) {
+                        tower.spike = true;
+                        tower.cooldown = 250;
+                        tower.lastFire = Date.now();
+                        tower.texture = resources["sprites/upgrades/tower3/spike-tower.png"].texture;
                     }},
                 ],
                 [
@@ -747,6 +754,24 @@
                 }
             }
             if(tower.type === "tower3") {
+                var pivotX = tower.x + 40 * scalar;
+                var pivotY = tower.y + 40 * scalar;
+                if(tower.spike) {
+                    var target = getBestEnemyWR({x:pivotX, y: pivotY},tower.range);
+
+                    if(tower.cooldown + tower.lastFire < Date.now() && target) {
+                        shootMissile(pivotX,pivotY,normalize(1, 1, tower.speed*scalar), tower.dmg, tower.pierce, tower.aPierce, "spike", tower.range);
+                        shootMissile(pivotX,pivotY,normalize(1, 0, tower.speed*scalar), tower.dmg, tower.pierce, tower.aPierce, "spike", tower.range);
+                        shootMissile(pivotX,pivotY,normalize(1, -1, tower.speed*scalar), tower.dmg, tower.pierce, tower.aPierce, "spike", tower.range);
+                        shootMissile(pivotX,pivotY,normalize(0, 1, tower.speed*scalar), tower.dmg, tower.pierce, tower.aPierce, "spike", tower.range);
+                        shootMissile(pivotX,pivotY,normalize(0, -1, tower.speed*scalar), tower.dmg, tower.pierce, tower.aPierce, "spike", tower.range);
+                        shootMissile(pivotX,pivotY,normalize(-1, -1, tower.speed*scalar), tower.dmg, tower.pierce, tower.aPierce, "spike", tower.range);
+                        shootMissile(pivotX,pivotY,normalize(-1, 0, tower.speed*scalar), tower.dmg, tower.pierce, tower.aPierce, "spike", tower.range);
+                        shootMissile(pivotX,pivotY,normalize(-1, 1, tower.speed*scalar), tower.dmg, tower.pierce, tower.aPierce, "spike", tower.range);
+                        tower.lastFire = Date.now();
+                    }
+                    return;
+                }
                 var pivotX = tower.x + 40 * scalar;
                 var pivotY = tower.y + 40 * scalar;            
                 var target = getBestEnemyWR({x:pivotX, y: pivotY},tower.range, function(target) {
