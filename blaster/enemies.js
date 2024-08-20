@@ -221,9 +221,9 @@ var enemyProperties = {
                 shiftingSlope: 1
             }
         ],
-        dropChance: 100,
-        dropWeights: [80,10,10],
-        possibleDrops: ["gold", "5coin", "orange"],
+        dropChance: 10,
+        dropWeights: [65,10,25],
+        possibleDrops: ["coin", "5coin", "orange"],
         init: function(enemy) {
             enemy.origX = enemy.x;
         }
