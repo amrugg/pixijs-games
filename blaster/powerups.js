@@ -45,8 +45,8 @@ var powerupData = {
         maxEnergy: 5,
         tint: 0xFFFFFF,
         onFireHandle: function() {
-            fireLaser(player.x+player.width/2, player.y, -5, 11, "white", player.plasma.damage);
-            fireLaser(player.x-player.width/2, player.y, 5, 11, "white", player.plasma.damage);
+            fireLaser(player.x+player.width/2, player.y + player.height/2, -5, 11, "white", player.plasma.damage);
+            fireLaser(player.x-player.width/2, player.y + player.height/2, 5, 11, "white", player.plasma.damage);
             fireLaser(player.x, player.y - player.height/2, 0, 10, "white", player.plasma.damage);
             player.plasma.lastTime = globalFrameCount;
             player.energy -= player.plasma.damage * 5 / player.plasma.efficiencyScore;
@@ -59,6 +59,36 @@ var powerupData = {
         onFireHandle: function() {
             fireLaser(player.x, player.y - player.height/2, 0, 20, "silver", player.plasma.damage*3);
             player.plasma.lastTime = globalFrameCount - player.plasma.cooldown*0.66;
+            player.energy -= player.plasma.damage * 5 / player.plasma.efficiencyScore;
+            player.powerupEnergy -= 1;
+        }
+    },
+    purple: {
+        maxEnergy: 10,
+        tint: 0xAA33AA,
+        onFireHandle: function() {
+            var target = getClosestEnemy(player);
+            if(target) {
+                fireLaser(player.x, player.y - player.height/2, -pointTowards(player.x,player.y-player.height-2,target.x,target.y), 10, "purple", player.plasma.damage, target);
+            } else {
+                fireLaser(player.x, player.y - player.height/2, 0, 10, "purple", player.plasma.damage);
+            }
+            player.plasma.lastTime = globalFrameCount;
+            player.energy -= player.plasma.damage * 5 / player.plasma.efficiencyScore;
+            player.powerupEnergy -= 1;
+        }
+    },
+    gold: {
+        maxEnergy: 10,
+        tint: 0xFAAA00,
+        onFireHandle: function() {
+            var target = getClosestEnemy(player);
+            if(target) {
+                fireLaser(player.x, player.y - player.height/2, -pointTowards(player.x,player.y-player.height-2,target.x,target.y), 10, "gold", player.plasma.damage, target);
+            } else {
+                fireLaser(player.x, player.y - player.height/2, 0, 10, "gold", player.plasma.damage);
+            }
+            player.plasma.lastTime = globalFrameCount;
             player.energy -= player.plasma.damage * 5 / player.plasma.efficiencyScore;
             player.powerupEnergy -= 1;
         }

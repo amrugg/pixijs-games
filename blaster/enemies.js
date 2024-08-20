@@ -223,7 +223,7 @@ var enemyProperties = {
         ],
         dropChance: 100,
         dropWeights: [80,10,10],
-        possibleDrops: ["white", "5coin", "orange"],
+        possibleDrops: ["gold", "5coin", "orange"],
         init: function(enemy) {
             enemy.origX = enemy.x;
         }

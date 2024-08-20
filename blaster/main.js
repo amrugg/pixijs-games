@@ -302,6 +302,7 @@ function spawnNewEnemy(type, level, positions, seededRandInt,link) {
             if(link.thisSet) {
                 dependencies[0].link = enemy;
                 dependencies.shift();
+                enemy.dependent = true;
             }
         }
     }
@@ -392,8 +393,8 @@ function restart() {
     powerups = [];
     lasers = [];
     explosions = [];
-    player.tint = 0xFFFFFF;
-    player.activePowerup = {};
+    // player.tint = 0xFFFFFF;
+    // player.activePowerup = {};
     powerupHolder.visible = false;
     powerupBar.visible = false;
     energyBar.visible = false;
@@ -467,7 +468,24 @@ function handleLasers() {
     var len = lasers.length;
     for(i = 0; i < len; i++) {
         var laser = lasers[i];
-        console.log(i, laser, len);
+        if(laser.target) {
+            if(laser.target.health > 0) {
+                laser.direction = -pointTowards(laser.x,laser.y,laser.target.x,laser.target.y);
+                laser.rotation = -pointInDirection(laser.direction);
+            } else if(laser.gold) {
+                laser.target = getClosestEnemy(laser, function(enemy) {
+                    if(enemy === laser.lastHit || enemy.dependent) {
+                        return false;
+                    } else {
+                        return true;
+                    }
+                });
+                if(laser.target) {
+                    laser.direction = -pointTowards(laser.x,laser.y,laser.target.x,laser.target.y);
+                    laser.rotation = -pointInDirection(laser.direction);
+                }
+            }
+        }
         if(laser.kill) {
             app.stage.removeChild(laser);
             lasers.splice(i,1);
@@ -495,13 +513,30 @@ function handleLasers() {
         }
         if(laser.good) {
             enemies.forEach(function(enemy){
-                var col = handleLaserCol(laser,enemy);
-                if(col && !laser.alreadyDead) {
-                    laser.alreadyDead = true;
-                    app.stage.removeChild(laser);
-                    lasers.splice(i,1);
-                    --i;
-                    --len;
+                if(laser.lastHit !== enemy && !enemy.dependent) {
+                    var col = handleLaserCol(laser,enemy);
+                    if(col && laser.gold && laser.bounce > 0) {
+                        if(laser.lastHit !== enemy) {
+                            laser.lastHit = enemy;
+                            laser.target = getClosestEnemy(laser, function(enemy) {
+                                if(enemy === laser.lastHit || enemy.dependent) {
+                                    return false;
+                                } else {
+                                    return true;
+                                }
+                            });
+                            if(!laser.target) {
+                                enemy.health -= laser.bounce;
+                            }
+                            --laser.bounce;
+                        }
+                    } else if(col && !laser.alreadyDead) {
+                        laser.alreadyDead = true;
+                        app.stage.removeChild(laser);
+                        lasers.splice(i,1);
+                        --i;
+                        --len;
+                    }
                 }
             });
         } else {
@@ -549,6 +584,20 @@ function handleLaserCol(laser, enemy) {
             return true;
         }
     }
+}
+function getClosestEnemy(sprite,condition) {
+    condition = condition || function(){return true};
+    var bestDist = Infinity;
+    var bestMatch = false;
+    for(var i = 0; i < enemies.length; i++) {
+        var enemy = enemies[i];
+        var dist = getDistance(sprite.x,sprite.y,enemy.x,enemy.y);
+        if(dist < bestDist && condition(enemy)) {
+            bestDist = dist;
+            bestMatch = enemy;
+        }
+    }
+    return bestMatch;
 }
 function updateHealthBar() {
     healthBar.width = (player.health * healthBar.maxWidth) / player.maxHealth;
@@ -622,7 +671,7 @@ function spawnDrop(type, x, y) {
     }
     powerups.push(powerup);
 }
-function fireLaser(x, y, direction, speed, type, damage) {
+function fireLaser(x, y, direction, speed, type, damage, target) {
     if(type !== "red" && type !== "blue") {
         var laser = new Sprite(keysOfSprites["grey-plasma"]);
         laser.tint = powerupData[type].tint;
@@ -634,11 +683,16 @@ function fireLaser(x, y, direction, speed, type, damage) {
     laser.x = x;
     laser.y = y;
     laser.myY = y + globalY;
+    laser.target = target;
     laser.anchor.set(0.5,0.5);
     laser.rotation = pointInDirection(-direction);
     laser.speed = speed * scalar;
     laser.direction = direction;
     laser.damage = damage;
+    if(type === "gold") {
+        laser.gold = true;
+        laser.bounce = 10;
+    }
     app.stage.addChild(laser);
     lasers.push(laser);
     return laser;
