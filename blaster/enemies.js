@@ -178,9 +178,9 @@ var enemyProperties = {
                 dmgMult: 1,
             }
         ],
-        dropChance: 0,
-        dropWeights: [],
-        possibleDrops: []
+        dropChance: 100,
+        dropWeights: [33,33,34],
+        possibleDrops: ["silver","brown","gold"]
     },
     "enemy-1-2": {
         healthRange: {min: 3, max: 5},
@@ -201,9 +201,9 @@ var enemyProperties = {
                 dmgMult: 3,
             }
         ],
-        dropChance: 50,
-        dropWeights: [50,50],
-        possibleDrops: ["orange", "green"]
+        dropChance: 100,
+        dropWeights: [33,33,34],
+        possibleDrops: ["green", "brown", "purple"]
     },
     "enemy-1-3": {
         healthRange: {min: 1, max: 2},
@@ -221,8 +221,8 @@ var enemyProperties = {
                 shiftingSlope: 1
             }
         ],
-        dropChance: 10,
-        dropWeights: [65,10,25],
+        dropChance: 100,
+        dropWeights: [33, 33, 34],
         possibleDrops: ["coin", "5coin", "orange"],
         init: function(enemy) {
             enemy.origX = enemy.x;

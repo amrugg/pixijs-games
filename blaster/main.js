@@ -144,7 +144,7 @@ function setup() {
     }
     player.activePowerup = {};
     player.generator = {
-        energyPerQuestion: 10
+        energyPerQuestion: 25
     }
 
     /// Initialize starfield
@@ -393,8 +393,8 @@ function restart() {
     powerups = [];
     lasers = [];
     explosions = [];
-    // player.tint = 0xFFFFFF;
-    // player.activePowerup = {};
+    player.tint = 0xFFFFFF;
+    player.activePowerup = {};
     powerupHolder.visible = false;
     powerupBar.visible = false;
     energyBar.visible = false;
