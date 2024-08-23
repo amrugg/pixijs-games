@@ -92,17 +92,17 @@
         spawnSeq: [],
         wave: 0,
         curWave: false,
-        waveNum: 10,
+        waveNum: 20,
         levelDiffMin: {
-            enemy: {minHealth: 1, maxHealth: 1, minSpeed: -5, maxSpeed: -5, enemyNum: 5, minGold: 0, maxGold: 0, armor: 0},
+            enemy: {minHealth: 0, maxHealth: 0, minSpeed: -5, maxSpeed: -5, enemyNum: 5, minGold: 0, maxGold: 0, armor: 0},
             "enemy-armor": {minHealth: 1, maxHealth: 1, minSpeed: -5, maxSpeed: -5, enemyNum: 3, minGold: 0, maxGold: 0, armor: 0}
         },
         levelDiffMax: {
-            enemy: {minHealth: 2, maxHealth: 2, minSpeed: -7, maxSpeed: -7, enemyNum: 7, minGold: 0, maxGold: 0, armor: 0},
+            enemy: {minHealth: 0.5, maxHealth: 0.5, minSpeed: -7, maxSpeed: -7, enemyNum: 7, minGold: 0, maxGold: 0, armor: 0},
             "enemy-armor": {minHealth: 2, maxHealth: 2, minSpeed: -5, maxSpeed: -5, enemyNum: 4, minGold: 0, maxGold: 0, armor: 0}
         },
         waves: {
-            enemy: [{minHealth: 10, maxHealth: 20, minSpeed: 110, maxSpeed: 120, enemyNum: 10, minGold: 1, maxGold: 2, armor: 0}],
+            enemy: [{minHealth: 1, maxHealth: 2, minSpeed: 150, maxSpeed: 160, enemyNum: 5, minGold: 1, maxGold: 2, armor: 0}],
             "enemy-armor": [{minHealth: 5, maxHealth: 7, minSpeed: 150, maxSpeed: 170, enemyNum: 3, minGold: 2, maxGold: 3, armor: 3}]
         },
         speed: [1,1,0.9,0.8,0.7,0.6,0.55,0.5,0.75,0.75],
@@ -203,7 +203,7 @@
                         tower.speed = 10;
                     }},
                     {desc: "Much faster firing\nand reload.", cost: 150, texture: "sprites/upgrades/tower2/maxSpeed.png", apply: function(tower) {
-                        tower.cooldown /= 3;
+                        tower.cooldown /= 4;
                         tower.speed = 15;
                         tower.texture = resources["sprites/upgrades/tower2/maxSpeed.png"].texture;
                     }},
@@ -217,10 +217,10 @@
                     {desc: "+1 damage.", cost: 20, texture: "sprites/upgrades/tower3/damage.png", apply: function(tower) {
                         tower.dmg++;
                     }},
-                    {desc: "+3 damage.", cost: 20, texture: "sprites/upgrades/tower3/iron.png", apply: function(tower) {
+                    {desc: "+3 damage.", cost: 50, texture: "sprites/upgrades/tower3/iron.png", apply: function(tower) {
                         tower.dmg += 3;
                     }},
-                    {desc: "Final Upgrade:\Laser Tower.", cost: 20, texture: "sprites/upgrades/tower3/laser.png", apply: function(tower) {
+                    {desc: "Final Upgrade:\Laser Tower.", cost: 200, texture: "sprites/upgrades/tower3/laser.png", apply: function(tower) {
                         tower.laser = new Sprite(resources["sprites/laser.png"].texture);
                         tower.laser.x = tower.x + 40 * scalar;
                         tower.laser.y = tower.y + 40 * scalar;
@@ -233,14 +233,14 @@
                     }},
                 ],
                 [
-                    {desc: "Fire more rocks\nat one time.", cost: 10, texture: "sprites/upgrades/tower3/facet.png", apply: function(tower) {
+                    {desc: "Fire more rocks\nat one time.", cost: 30, texture: "sprites/upgrades/tower3/facet.png", apply: function(tower) {
                         tower.facet = 8;
                         tower.faces = [0,0,0,0,0,0,0,0];
                     }},
-                    {desc: "+75 range.", cost: 10, texture: "sprites/upgrades/tower3/range.png", apply: function(tower) {
+                    {desc: "+75 range.", cost: 40, texture: "sprites/upgrades/tower3/range.png", apply: function(tower) {
                         tower.range += 75 * scalar;
                     }},
-                    {desc: "Final Upgrade:\nSpike Tower.", cost: 20, texture: "sprites/upgrades/tower3/spike-tower.png", apply: function(tower) {
+                    {desc: "Final Upgrade:\nSpike Tower.", cost: 175, texture: "sprites/upgrades/tower3/spike-tower.png", apply: function(tower) {
                         tower.spike = true;
                         tower.cooldown = 250;
                         tower.lastFire = Date.now();
@@ -251,10 +251,10 @@
                     {desc: "Faster firing.", cost: 20, texture: "sprites/upgrades/tower3/avalanche.png", apply: function(tower) {
                         tower.cooldown /= 1.5;
                     }},
-                    {desc: "Even faster firing.", cost: 20, texture: "sprites/upgrades/tower3/speed.png", apply: function(tower) {
+                    {desc: "Even faster firing.", cost: 50, texture: "sprites/upgrades/tower3/speed.png", apply: function(tower) {
                         tower.cooldown /= 1.5;
                     }},
-                    {desc: "Final Upgrade:\nFire Tower.", cost: 20, texture: "sprites/upgrades/tower3/fire.png", apply: function(tower) {
+                    {desc: "Final Upgrade:\nFire Tower.", cost: 200, texture: "sprites/upgrades/tower3/fire.png", apply: function(tower) {
                         tower.cooldown /= 5;
                         tower.dmg /= 2;
                         tower.speed /= 3;
@@ -268,7 +268,7 @@
         }
     }
     var goldCounter = new PIXI.Text("50", new PIXI.TextStyle({fontSize: 30*scalar}));
-    var gold = 50000;
+    var gold = 50;
     goldCounter.anchor.set(1,0.5);
     ui.addChild(goldCounter);
     goldCounter.y = 25*scalar;
@@ -551,8 +551,8 @@
     function showRange(tower) {
         rangeGraphics.clear();
         rangeGraphics.visible = true;
-        rangeGraphics.x = tower.x + tower.width*scalar/2;
-        rangeGraphics.y = tower.y + tower.height*scalar/2;
+        rangeGraphics.x = tower.x + tower.width/2;
+        rangeGraphics.y = tower.y + tower.height/2;
         rangeGraphics.beginFill(0xFFFFFF);
         for(var i = 0; i < 360; i += 15) {
             var vector = direction(tower.range, i);
