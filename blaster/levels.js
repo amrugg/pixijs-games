@@ -1,45 +1,48 @@
 var level1 = {
-    endY: -2300,
-    speed: 5,
-    seed: 37164,
-    startingSeed: 37164,
+    "endY":-3300,
+    "speed":5,
+    "seed":23512,
+    "startingSeed":23512,
     randInt: function(min, max) {
+        /// UPDATE (use this??)
         var x = Math.sin(level1.seed++) * 100000;
         x = x - Math.floor(x);
         return Math.floor(x * (max - min + 1)) + min;
     },
-    enemies: [
+    "enemies":[
         {
-            type: "enemy-1-3",
-            level: 1,
-            positions: [
-                {x: "random", y: -100},
-                {x: 100, y: -300},
-                {x: 700, y: -300},
-                {x: 400, y: -300},
-                {x: 800*0.33, y: -500},
-                {x: 800*0.66, y: -500},
-                {x: "random", y: -700},
-                {x: "random", y: -800},
-
-                {x: 100, y: -1000},
-                {x: 700, y: -1000},
-                {x: 400, y: -1000},
-
-                {x: "random", y: -1300},
-                {x: "random", y: -1300},
-                {x: 400, y: -1400},
-                {x: 100, y: -1500},
-                {x: 700, y: -1500},
+            "type":"enemy-1-1",
+            "level":1,
+            "positions":[
+                {"x":900,"y":-2100},
+                {"x":100,"y":-2100}
             ]
         },
         {
-            type: "enemy-1-1",
-            level: 1,
-            positions: [
-                {x: 400, y: -800, dropChance: 100, dropWeights: [100], possibleDrops: ["orange"]},
+            "type":"enemy-1-2",
+            "level":1,
+            "positions":[
+                {"x":500,"y":-1000}
             ]
-        }
+        },
+        {
+            "type":"enemy-1-3",
+            "level":1,
+            "positions":[
+                {"x":100,"y":-200},
+                {"x":900,"y":-200},
+                {"x":200,"y":-400},
+                {"x":800,"y":-400},
+                {"x":500,"y":-600},
+                {"x":300,"y":-1200},
+                {"x":700,"y":-1200},
+                {"x":200,"y":-2000},
+                {"x":800,"y":-2000},
+                {"x":500,"y":-1800},
+                {"x":100,"y":-2300},
+                {"x":900,"y":-2300}
+            ]
+        },
     ]
 };
 var level2 = {
