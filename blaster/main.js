@@ -36,9 +36,9 @@ document.body.appendChild(app.view);
 
 /// Defining variables
 var spritesToLoad = ["sprites/rocket.png", "sprites/laser.png", "sprites/enemy-laser.png", "sprites/lvl1/enemy1.png", "sprites/lvl1/enemy2.png", "sprites/lvl1/enemy3.png", "sprites/lvl1/asteroid-1.png","sprites/exp1.png", "sprites/exp2.png", "sprites/exp3.png",
-"sprites/ball.png", "sprites/lvl1/plasma-top.png", "sprites/lvl1/plasma-base.png", "sprites/grey-laser.png", "sprites/coin.png","sprites/5coin.png","sprites/10coin.png",];
+"sprites/ball.png", "sprites/lvl1/plasma-top.png", "sprites/lvl1/plasma-base.png", "sprites/grey-laser.png", "sprites/coin.png","sprites/5coin.png","sprites/10coin.png","sprites/lvl1/asteroid-2.png"];
 var spriteNames = ["player", "blue-plasma", "red-plasma", "enemy-1-1", "enemy-1-2", "enemy-1-3", "asteroid-1", "exp-1", "exp-2", "exp-3",
-"upgrade-ball", "plasma-top", "plasma-base", "grey-plasma", "coin", "5coin", "10coin"];
+"upgrade-ball", "plasma-top", "plasma-base", "grey-plasma", "coin", "5coin", "10coin","asteroid-2"];
 
 var keysOfSprites;
 var state;
@@ -245,7 +245,7 @@ function spawnNewEnemy(type, level, positions, seededRandInt,link) {
         var enemy = new Sprite(keysOfSprites[type]);
         var curPos = positions[i];
         var properties = enemyProperties[type];
-
+        console.log(type)
         enemy.scale.set(scalar * properties.scale)
         enemy.anchor.set(0.5,0.5);
         enemy.type = type;
@@ -254,7 +254,6 @@ function spawnNewEnemy(type, level, positions, seededRandInt,link) {
             curPos.x = seededRandInt(0,canvasLength);
         }
         enemy.x = curPos.x * scalar;
-        enemy.x = constrain(enemy.width/2,enemy.x, canvasLength - enemy.width/2);
         enemy.myY = curPos.y * scalar;
         enemy.y = enemy.myY;
         enemy.rotation = pointInDirection(properties.direction)

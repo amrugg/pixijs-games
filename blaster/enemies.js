@@ -86,7 +86,9 @@ var handleEnemyBehaviors = {
         if(enemy.health <= 0) {
             explode(20,enemy, 50);
             app.stage.removeChild(enemy);
-            enemy.link.health = 0;
+            if(enemy.link) {
+                enemy.link.health = 0;
+            }
             /// Return true; the ship was destroyed and should be removed from the array
             return true;
         }
@@ -102,7 +104,44 @@ var handleEnemyBehaviors = {
         }
         if(hitTestRectangle(playerRect, enemy)) {
             player.health -= enemy.damage;
-            enemy.link.health = 0;
+            if(enemy.link) {
+                enemy.link.health = 0;
+            }
+            updateHealthBar();
+            explode(20,{x:(enemy.x+player.x)/2, y: (enemy.y+player.y)/2}, 50);
+            app.stage.removeChild(enemy);
+            /// Return true; the ship was destroyed and should be removed from the array
+            return true;
+        }
+        /// Return false; the ship should not be removed from the array
+        return false;
+    },
+    "asteroid-2": function(enemy) {
+        enemy.y = enemy.myY - globalY;
+        if(enemy.health <= 0) {
+            explode(20,enemy, 50);
+            app.stage.removeChild(enemy);
+            if(enemy.link) {
+                enemy.link.health = 0;
+            }
+            /// Return true; the ship was destroyed and should be removed from the array
+            return true;
+        }
+
+        var playerRect = {
+            x: player.x,
+            y: player.y,
+            width: player.colRect.width,
+            height: player.colRect.height
+        }
+        if(enemy.y < player.y) {
+            playerRect.y += Math.abs(enemy.x-player.x)
+        }
+        if(hitTestRectangle(playerRect, enemy)) {
+            player.health -= enemy.damage;
+            if(enemy.link) {
+                enemy.link.health = 0;
+            }
             updateHealthBar();
             explode(20,{x:(enemy.x+player.x)/2, y: (enemy.y+player.y)/2}, 50);
             app.stage.removeChild(enemy);
@@ -233,6 +272,24 @@ var enemyProperties = {
         scale: 1.75,
         direction: 180,
         damage: 2,
+        cooldown: 120,
+        lastFire: -Infinity,
+        colRects: [
+            {
+                colXPercent: 1,
+                colYPercent: 0.9,
+                dmgMult: 1,
+            }
+        ],
+        dropChance: 0,
+        dropWeights: [],
+        possibleDrops: [],
+    },
+    "asteroid-2": {
+        healthRange: {min: 1, max: 3},
+        scale: 1.75,
+        direction: 180,
+        damage: 1,
         cooldown: 120,
         lastFire: -Infinity,
         colRects: [
