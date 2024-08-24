@@ -104,7 +104,7 @@ function setup() {
 
     indicator = new Sprite(keysOfSprites[enemyNames[enemyIndex]]);
     app.stage.addChild(indicator);
-    indicator.scale.set(1.75,1.75);
+    indicator.scale.set(1.75*scalar,1.75*scalar);
     indicator.anchor.set(0.5,0.5);
     indicator.alpha = 0.5;
     indicator.rotation = Math.PI;
@@ -126,14 +126,14 @@ function editor() {
         indicator.x = mouseX;
         indicator.y = mouseY;
     } else if(keys.shift) {
-        indicator.x = Math.round(mouseX/100)*100;
+        indicator.x = Math.round(mouseX/100/scalar)*100*scalar;
         indicator.y = mouseY;
     } else if(keys.ctrl) {
         indicator.x = mouseX;
-        indicator.y = Math.round(mouseY/100)*100;
+        indicator.y = Math.round(mouseY/100/scalar)*100*scalar;
     } else {
-        indicator.x = Math.round(mouseX/100)*100;
-        indicator.y = Math.round(mouseY/100)*100;
+        indicator.x = Math.round(mouseX/100/scalar)*100*scalar;
+        indicator.y = Math.round(mouseY/100/scalar)*100*scalar;
     }
     if(press("ArrowLeft")) {
         enemyIndex--;
@@ -173,7 +173,7 @@ function deleteEnemy(x,y) {
     for(i = 0; i < len; i++) {
         var enemy = enemies[i];
         if(x > enemy.x - enemy.width/2 && x < enemy.x + enemy.width/2 && y > enemy.y - enemy.height/2 && y < enemy.y + enemy.height/2) {
-            removeFromNewLevel(enemy.x,enemy.y + globalY,enemy.name);
+            removeFromNewLevel(enemy.x,enemy.y + globalY*scalar,enemy.name);
             app.stage.removeChild(enemy);
             enemies.splice(i,1);
             return;
@@ -185,7 +185,7 @@ function removeFromNewLevel(x,y,name) {
     editingLevel.enemies.forEach(function(e) {
         if(e.type === name) {
             e.positions.forEach(function(pos,i) {
-                if(pos.x === x && pos.y === y) {
+                if(pos.x === x/scalar && pos.y === y/scalar) {
                     e.positions.splice(i,1);
                 }
             });
@@ -196,7 +196,7 @@ function updateEnemyPositions() {
     var i;
     var len = enemies.length;
     for(i = 0; i < len; i++) {
-        enemies[i].y = enemies[i].myY - globalY;
+        enemies[i].y = enemies[i].myY - globalY*scalar;
     }
 }
 function createNewEnemy(x,y,name) {
@@ -205,11 +205,11 @@ function createNewEnemy(x,y,name) {
     enemy.y = y;
     enemy.myY = y + globalY;
     enemy.name = name;
-    enemy.scale.set(1.75,1.75);
+    enemy.scale.set(1.75*scalar,1.75*scalar);
     enemy.rotation = Math.PI;
     enemy.anchor.set(0.5,0.5);
     enemies.push(enemy);
-    pushToNewLevel(x, y+globalY,name);
+    pushToNewLevel(x/scalar, y/scalar+globalY,name);
     app.stage.addChild(enemy);
 }
 function pushToNewLevel(x,y,name) {
