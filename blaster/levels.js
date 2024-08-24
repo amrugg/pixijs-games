@@ -48,7 +48,8 @@ var level2 = {
     seed: 3000,
     startingSeed: 3000,
     randInt: function(min, max) {
-        var x = Math.sin(level1.seed++) * 100000;
+        /// UPDATE (use this??)
+        var x = Math.sin(level2.seed++) * 100000;
         x = x - Math.floor(x);
         return Math.floor(x * (max - min + 1)) + min;
     },
@@ -111,7 +112,8 @@ var level3 = {
     seed: 3000,
     startingSeed: 3000,
     randInt: function(min, max) {
-        var x = Math.sin(level1.seed++) * 100000;
+        /// UPDATE (use this??)
+        var x = Math.sin(level3.seed++) * 100000;
         x = x - Math.floor(x);
         return Math.floor(x * (max - min + 1)) + min;
     },
