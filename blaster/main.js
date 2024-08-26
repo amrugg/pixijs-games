@@ -446,6 +446,8 @@ function handlePowerups() {
             player.activePowerup.type = cur.type;
             player.powerupEnergy = cur.energy;
             player.maxPowerupEnergy = cur.maxEnergy;
+            powerupHolder.clear();
+            powerupBar.clear();
             powerupHolder.lineStyle(5, cur.tint,10);
             powerupHolder.beginFill(0x000015);
             powerupHolder.drawRect(0,0,150*scalar,15*scalar)
