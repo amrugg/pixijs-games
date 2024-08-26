@@ -102,7 +102,7 @@
             "enemy-armor": {minHealth: 2, maxHealth: 2, minSpeed: -5, maxSpeed: -5, enemyNum: 4, minGold: 0, maxGold: 0, armor: 0}
         },
         waves: {
-            enemy: [{minHealth: 1, maxHealth: 2, minSpeed: 150, maxSpeed: 160, enemyNum: 5, minGold: 1, maxGold: 2, armor: 0}],
+            enemy: [{minHealth: 1, maxHealth: 2, minSpeed: 1, maxSpeed: 6, enemyNum: 50, minGold: 1, maxGold: 2, armor: 0}],
             "enemy-armor": [{minHealth: 5, maxHealth: 7, minSpeed: 150, maxSpeed: 170, enemyNum: 3, minGold: 2, maxGold: 3, armor: 3}]
         },
         speed: [1,1,0.9,0.8,0.7,0.6,0.55,0.5,0.75,0.75],
@@ -267,6 +267,14 @@
             upgradeLevels: ["sprites/upgrades/tower3/tower3-1.png", "sprites/upgrades/tower3/tower3-2.png", "sprites/upgrades/tower3/tower3-3.png"]
         }
     }
+    var deathText = new PIXI.Text("You Lose!", new PIXI.TextStyle({fontSize: 50*scalar}));
+    deathText.anchor.set(0.5, 0);
+    deathText.x = canvasLength/2;
+    deathText.y = 50*scalar;
+    deathText.visible = false;
+    deathText.scale.set(5,5)
+    ui.addChild(deathText);
+
     var goldCounter = new PIXI.Text("50", new PIXI.TextStyle({fontSize: 30*scalar}));
     var gold = 50;
     goldCounter.anchor.set(1,0.5);
@@ -306,6 +314,7 @@
     }
     var curLevel;
     var rangeGraphics;
+    var deathGraphics;
     function setup() {
         state = prelude;
         curLevel = level1;
@@ -360,6 +369,13 @@
         upgradeMode.bar.alpha = 0.8;
         upgradeMode.bar.visible = false;
         ui.addChild(upgradeMode.bar);
+        
+        deathGraphics = new PIXI.Graphics();
+        deathGraphics.alpha = 0;
+        deathGraphics.beginFill(0x000000);
+        deathGraphics.drawRect(-100, -100, canvasLength + 200, canvasLength + 200);
+        ui.addChild(deathGraphics);
+
         app.ticker.add(delta => gameLoop(delta));
     }
     function generateWaves(level) {
@@ -416,6 +432,9 @@
             if(++enemy.index >= path.length) {
                 health -= 1;
                 updateHealthText();
+                if(health <= 0) {
+                    state = lose;
+                }
                 return -1;
             }
             enemy.dir = path[enemy.index];
@@ -436,6 +455,22 @@
         foreground.addChild(enemy);
         enemies.push(enemy);
         return enemy;
+    }
+    var loseState = 0;
+    function lose() {
+        if(loseState === 0) {
+            deathGraphics.alpha += 0.05;
+            if(deathGraphics.alpha >= 0.5) {
+                loseState = 1;
+                deathText.visible = true;
+            }
+        } else if(loseState === 1) {
+            deathText.scale.x -= 0.1;
+            deathText.scale.y -= 0.1;
+            if(deathText.scale.x < 1.1) {
+                loseState = 2;
+            }
+        }
     }
     function generateMap(level) {
         var x = 4;
