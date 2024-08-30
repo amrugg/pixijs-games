@@ -232,10 +232,7 @@
         var weightedArr = [];
         var sum = 0;
         var maxNum = max;
-        if(min!==0) {
-            debugger;
-        }
-        for(var i = 0; i < maxNum; i++) {
+        for(var i = 0; i <= maxNum; i++) {
             if(i < min) {
                 weightedArr.push(0);
                 continue;
@@ -256,11 +253,10 @@
             weightedArr.push(sum+score);
             sum += score;
         }
-        console.log("Sum:", sum);
+        console.log("Sum:", sum, "arr:", weightedArr, "not", not);
         var randomNumber = not;
         while(randomNumber === not) {
-            var rand = Math.random() * sum;
-            console.log(rand);
+            var rand = Math.random() * (sum+1);
             for(var i = 0; i < weightedArr.length; i++) {
                 if(weightedArr[i] >= rand) {
                     randomNumber = i;
