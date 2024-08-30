@@ -47,7 +47,8 @@
     document.body.appendChild(app.view);
     var scalar = canvasLength/800;
     var canvasOffset = (innerWidth - canvasLength)/2;
-    var miscAssets = ["sprites/ground.png", "sprites/tower1.png", "sprites/tower2.png", "sprites/tower3.png", "sprites/coin.png", "sprites/heart.png", "sprites/arrow.png", "sprites/ballista.png", "sprites/rock.png","sprites/cannonball.png", "sprites/exp3.png", "sprites/fireball.png", "sprites/spike.png", "sprites/laser.png"];    var enemiesAssets = ["sprites/enemy.png", "sprites/enemy-armor.png"];
+    var miscAssets = ["sprites/ground.png", "sprites/tower1.png", "sprites/tower2.png", "sprites/tower3.png", "sprites/coin.png", "sprites/heart.png", "sprites/arrow.png", "sprites/ballista.png", "sprites/rock.png","sprites/cannonball.png", "sprites/exp3.png", "sprites/fireball.png", "sprites/spike.png", "sprites/laser.png"];
+    var enemiesAssets = ["sprites/enemy.png", "sprites/enemy-armor.png", "sprites/shrimp.png", "sprites/spawn.png", "sprites/king.png"];
     var tower1Assets = ["damage","fire","pierce","range","speed","tower1-1","tower1-2","tower1-3","twin", "maxSpeed", "maxRange", "maxPower"];
     var tower2Assets = ["damage","range","tower2-1","tower2-2","tower2-3","twin","speed", "golddmg","knockback","cannon", "mortar", "maxSpeed"];
     var tower3Assets = ["avalanche","damage","facet","range","tower3-1","tower3-2","iron","speed","tower3-3","fire","laser","spike-tower"];
@@ -95,25 +96,34 @@
         waveNum: 20,
         levelDiffMin: {
             enemy: {minHealth: 0, maxHealth: 0, minSpeed: -5, maxSpeed: -5, enemyNum: 5, minGold: 0, maxGold: 0, armor: 0},
-            "enemy-armor": {minHealth: 1, maxHealth: 1, minSpeed: -5, maxSpeed: -5, enemyNum: 3, minGold: 0, maxGold: 0, armor: 0}
+            shrimp: {minHealth: 0, maxHealth: 0, minSpeed: -3, maxSpeed: -3, enemyNum: 3, minGold: 0, maxGold: 0, armor: 0},
+            "enemy-armor": {minHealth: 1, maxHealth: 1, minSpeed: -5, maxSpeed: -5, enemyNum: 3, minGold: 0, maxGold: 0, armor: 0},
+            "spawn": {minHealth: 1, maxHealth: 1, minSpeed: -3, maxSpeed: -3, enemyNum: 1, minGold: 0, maxGold: 0, armor: 0},
+            "king": {minHealth: 2, maxHealth: 2, minSpeed: -5, maxSpeed: -5, enemyNum: 0, minGold: 0, maxGold: 0, armor: 0}
         },
         levelDiffMax: {
             enemy: {minHealth: 0.5, maxHealth: 0.5, minSpeed: -7, maxSpeed: -7, enemyNum: 7, minGold: 0, maxGold: 0, armor: 0},
-            "enemy-armor": {minHealth: 2, maxHealth: 2, minSpeed: -5, maxSpeed: -5, enemyNum: 4, minGold: 0, maxGold: 0, armor: 0}
+            shrimp: {minHealth: 0.3, maxHealth: 0.3, minSpeed: -5, maxSpeed: -5, enemyNum: 5, minGold: 0, maxGold: 0, armor: 0},
+            "enemy-armor": {minHealth: 2, maxHealth: 2, minSpeed: -5, maxSpeed: -5, enemyNum: 4, minGold: 0, maxGold: 0, armor: 0},
+            "spawn": {minHealth: 2, maxHealth: 2, minSpeed: -5, maxSpeed: -5, enemyNum: 2, minGold: 0, maxGold: 0, armor: 0},
+            "king": {minHealth: 2, maxHealth: 2, minSpeed: -5, maxSpeed: -5, enemyNum: 0, minGold: 0, maxGold: 0, armor: 0}
         },
         waves: {
-            enemy: [{minHealth: 1, maxHealth: 2, minSpeed: 1, maxSpeed: 6, enemyNum: 50, minGold: 1, maxGold: 2, armor: 0}],
-            "enemy-armor": [{minHealth: 5, maxHealth: 7, minSpeed: 150, maxSpeed: 170, enemyNum: 3, minGold: 2, maxGold: 3, armor: 3}]
+            enemy: [{minHealth: 1, maxHealth: 2, minSpeed: 120, maxSpeed: 140, enemyNum: 5, minGold: 1, maxGold: 2, armor: 0}],
+            shrimp: [{minHealth: 0.1, maxHealth: 0.5, minSpeed: 50, maxSpeed: 60, enemyNum: 15, minGold: 0, maxGold: 1, armor: 0}],
+            "enemy-armor": [{minHealth: 5, maxHealth: 7, minSpeed: 150, maxSpeed: 170, enemyNum: 3, minGold: 2, maxGold: 3, armor: 5}],
+            "spawn": [{minHealth: 15, maxHealth: 20, minSpeed: 170, maxSpeed: 200, enemyNum: 3, minGold: 5, maxGold: 7, armor: 2}],
+            "king": [{minHealth: 200, maxHealth: 30, minSpeed: 250, maxSpeed: 250, enemyNum: 1, minGold: 200, maxGold: 200, armor: 7.5}],
         },
-        speed: [1,1,0.9,0.8,0.7,0.6,0.55,0.5,0.75,0.75],
+        speed: [1,1,0.9,0.8,0.7,0.6,0.55,0.5,0.75,0.75, 0.5, 0.5, 0.45, 0.45, 0.45, 0.4, 0.4, 0.4, 0.3, 0.5],
         /// Names of all the enemies
-        keys: ["enemy", "enemy-armor"],
-        beginWaves: {"enemy": 0, "enemy-armor": 9},
+        keys: ["enemy", "enemy-armor", "shrimp", "spawn", "king"],
+        beginWaves: {"enemy": 0, "shrimp": 4, "enemy-armor": 6, "spawn": 9, "king": 19},
     }
     var towerData = {
         tower1: {range: 200*scalar, dmg: 1, cooldown: 1000, gold:30, pierce:1, aPierce:0, speed:10},
         tower2: {range: 300*scalar, dmg: 3, cooldown: 6000, gold:50, pierce:3, aPierce:1, speed:5},
-        tower3: {range: 100*scalar, dmg: 1, cooldown: 900, gold:30, pierce:1, aPierce:0, speed:10},
+        tower3: {range: 100*scalar, dmg: 0.5, cooldown: 900, gold:30, pierce:1, aPierce:0, speed:10},
     }
     var upgradeData = {
         "tower1": {
@@ -417,7 +427,7 @@
             play();
         }
     }
-    function spawnEnemy(beginX, beginY, level,type) {
+    function spawnEnemy(beginX, beginY, level,type, index) {
         var enemy = new Sprite(resources["sprites/"+type+".png"].texture);
         var waveProps = level.waves[type][level.wave];
         enemy.scale.set(scalar);
@@ -426,7 +436,8 @@
         enemy.y = (beginY * 80 + 40) * scalar;
         enemy.targetX = enemy.x;
         enemy.targetY = enemy.y;
-        enemy.index = -1;
+        enemy.index = (index !== undefined ? index : -1);
+        enemy.type = type;
         enemy.speed = level.randInt(waveProps.minSpeed, waveProps.maxSpeed);
         enemy.chooseNewDir = function () {
             if(++enemy.index >= path.length) {
@@ -449,7 +460,7 @@
         }
         enemy.chooseNewDir();
         enemy.health = level.randInt(waveProps.minHealth,waveProps.maxHealth);
-        enemy.armor = waveProps.armor
+        enemy.armor = waveProps.armor;
         enemy.gold = level.randInt(waveProps.minGold,waveProps.maxGold);
         enemy.advance = 0;
         foreground.addChild(enemy);
@@ -514,6 +525,28 @@
                 return true;
             }
         }
+    }
+    function getMapX(index) {
+        var x = 4;
+        for(var i = 0; i <= index; i++) {
+            var cur = path[i];
+            if(cur === 0) {
+                x--;
+            } else if(cur === 1) {
+                x++;
+            }
+        }
+        return x;
+    }
+    function getMapY(index) {
+        var y = -1;
+        for(var i = 0; i <= index; i++) {
+            var cur = path[i];
+            if(cur === 2) {
+                y++;
+            }
+        }
+        return y;
     }
     function clearUpdateMenu() {
         upgradeMode.bar.visible = false;
@@ -979,6 +1012,30 @@
         for(i = 0; i < len; i++) {
             var enemy = enemies[i];
             if(enemy.health <= 0) {
+                if(enemy.type === "spawn") {
+                    /// x / scalar + 40 = beginX * 80
+                    spawnEnemy(getMapX(enemy.index), getMapY(enemy.index), level1, "shrimp", enemy.index);
+                    spawnEnemy(getMapX(enemy.index), getMapY(enemy.index), level1, "shrimp", enemy.index);
+                    spawnEnemy(getMapX(enemy.index), getMapY(enemy.index), level1, "shrimp", enemy.index);
+                    spawnEnemy(getMapX(enemy.index), getMapY(enemy.index), level1, "shrimp", enemy.index);
+                    spawnEnemy(getMapX(enemy.index), getMapY(enemy.index), level1, "shrimp", enemy.index);
+                    spawnEnemy(getMapX(enemy.index-1), getMapY(enemy.index-1), level1, "shrimp", enemy.index);
+                    spawnEnemy(getMapX(enemy.index-1), getMapY(enemy.index-1), level1, "shrimp", enemy.index);
+                    spawnEnemy(getMapX(enemy.index-1), getMapY(enemy.index-1), level1, "shrimp", enemy.index);
+                    spawnEnemy(getMapX(enemy.index-1), getMapY(enemy.index-1), level1, "shrimp", enemy.index);
+                    spawnEnemy(getMapX(enemy.index-1), getMapY(enemy.index-1), level1, "shrimp", enemy.index);
+                } else if(enemy.type === "king") {
+                    spawnEnemy(getMapX(enemy.index-1), getMapY(enemy.index-1), level1, "spawn", enemy.index);
+                    spawnEnemy(getMapX(enemy.index-1), getMapY(enemy.index-1), level1, "spawn", enemy.index);
+                    spawnEnemy(getMapX(enemy.index), getMapY(enemy.index), level1, "spawn", enemy.index);
+                    spawnEnemy(getMapX(enemy.index), getMapY(enemy.index), level1, "spawn", enemy.index);
+                    spawnEnemy(getMapX(enemy.index), getMapY(enemy.index), level1, "spawn", enemy.index);
+                    spawnEnemy(getMapX(enemy.index), getMapY(enemy.index), level1, "enemy-armor", enemy.index);
+                    spawnEnemy(getMapX(enemy.index-1), getMapY(enemy.index-1), level1, "enemy-armor", enemy.index);
+                    spawnEnemy(getMapX(enemy.index-1), getMapY(enemy.index-1), level1, "enemy-armor", enemy.index);
+                    spawnEnemy(getMapX(enemy.index-1), getMapY(enemy.index-1), level1, "enemy", enemy.index);
+                    spawnEnemy(getMapX(enemy.index), getMapY(enemy.index), level1, "enemy", enemy.index);
+                }
                 gold += enemy.gold;
                 updateGoldText();
                 foreground.removeChild(enemy);
