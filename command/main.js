@@ -49,6 +49,7 @@ var activePowerup;
 var curPowerupTime = 0;
 var keysOfSprites;
 var state;
+var difficulty = "easy";
 var dependencies = [];
 var keys = {};
 var mouseX
@@ -660,8 +661,13 @@ function answerCorrect() {
 function initPowerup() {
     var powerups = Object.keys(powerupData);
     var powerup = powerupData[powerups[randInt(0,powerups.length-1)]]
-    curPowerupTime = powerup.time;
-    maxPowerupTime = powerup.time;
+    if(difficulty === "easy") {
+        curPowerupTime = powerup.time*2;
+        maxPowerupTime = powerup.time*2;
+    } else {
+        curPowerupTime = powerup.time;
+        maxPowerupTime = powerup.time;
+    }
     activePowerup = powerup;
     drawPowerupBar(powerup);
 }
@@ -695,7 +701,11 @@ function answerIncorrect() {
             questionSet.answersLocked = false;
         },1000);
     },1000);
-    xp = 0;
+    if(difficulty === "easy") {
+        xp = constrain(0, xp-1, xp);
+    } else {
+        xp = 0;
+    }
     updateXpBar();
 }
 addEventListener("keyup", function (e){

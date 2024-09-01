@@ -1,6 +1,6 @@
 var level1 = {
     "endY": -3300,
-    "speed": 7.5,
+    "speed": 2.5,
     "seed": 23512,
     "startingSeed": 23512,
     randInt: function(min, max) {
