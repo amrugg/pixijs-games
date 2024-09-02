@@ -26,7 +26,8 @@
         <option>Insane</option>
     </select>
     <input type="text" value="1-4" style="position:absolute; top: 40px", id="range">
-    <button id="start", style="position: absolute; top: 60px">&nbsp;Start&nbsp;</button>
+    <input type="checkbox" style="position: absolute; top: 60px; z-index: 100;" id="checkbox"> <span style="position: absolute; left: 15px; top: 60px; z-index: 100; color:white;" id="gauntlet">Gauntlet</span>
+    <button id="start", style="position: absolute; top: 80px">&nbsp;Start&nbsp;</button>
 <body>
   <script type="text/javascript">
     "use strict";
@@ -66,6 +67,7 @@
     var invincible = false;
     var verseTracking = {"1.1": {correct:0,incorrect:1}};
     var restoreHealthWithQuestion = false;
+    var toCrack = false;
     chapterEl.style.zIndex = "100";
     levelEl.style.zIndex = "100";
     inputEl.style.zIndex = "100";
@@ -101,7 +103,9 @@
         levelEl.remove();
         inputEl.remove();
         buttonStartEl.remove();
-
+        toCrack = document.getElementById("checkbox").checked;
+        document.getElementById("checkbox").remove();
+        document.getElementById("gauntlet").remove()
         curVerse = randVerse();
         correctAnswer = curVerse[0];
         curVerse = curVerse[1];
@@ -282,14 +286,32 @@
             } else {
                 var verseNumber = (chapter) + "." + (rand+1);
             }
-            return [verseNumber, verseArr[rand]];
+            if(toCrack) {
+                return [verseNumber, crack(verseArr[rand])];
+            } else {
+                return [verseNumber, verseArr[rand]];
+            }
         } else {
             var currentRandChapter = randInt(0,5)
             var verseArr = rom18[currentRandChapter];
             var rand = randInt(0,verseArr.length-1);
             var verseNumber = (currentRandChapter+1) + "." + (rand+1);
-            return [verseNumber, verseArr[rand]];
+            if(toCrack) {
+                return [verseNumber, crack(verseArr[rand])];
+            } else {
+                return [verseNumber, verseArr[rand]];
+            }
         }
+    }
+    function crack(string) {
+        var arr = string.split(/[\;\,\.\!\?\:]/gi);
+        for(var i = 0; i < 10; i++) {
+            var cur = arr[randInt(0,arr.length-1)];
+            if(cur.split(" ").length > 4) {
+                return cur;
+            }
+        }
+        return string;
     }
     // energyHolder.beginFill();
     var state;
