@@ -230,7 +230,7 @@
                     {desc: "+3 damage.", cost: 50, texture: "sprites/upgrades/tower3/iron.png", apply: function(tower) {
                         tower.dmg += 3;
                     }},
-                    {desc: "Final Upgrade:\Laser Tower.", cost: 200, texture: "sprites/upgrades/tower3/laser.png", apply: function(tower) {
+                    {desc: "Final Upgrade:\nLaser Tower.", cost: 200, texture: "sprites/upgrades/tower3/laser.png", apply: function(tower) {
                         tower.laser = new Sprite(resources["sprites/laser.png"].texture);
                         tower.laser.x = tower.x + 40 * scalar;
                         tower.laser.y = tower.y + 40 * scalar;
@@ -660,6 +660,15 @@
             background.removeChild(map[i]);
         }
     }
+    function resetAllTowerCooldowns() {
+        towers.forEach(function(tower) {
+            if(tower.faces) {
+                tower.faces = [0,0,0,0,0,0,0,0];
+            } else {
+                tower.lastFire = 0;
+            }
+        })
+    }
     function play(){
         handleEnemies();
         if(curLevel.spawnSeq[0]) {
@@ -671,6 +680,7 @@
         }
         if(enemies.length === 0 && curLevel.spawnSeq.length === 0) {
             waveCounter.text = "Next Wave!";
+            resetAllTowerCooldowns();
             if(press(" ") || (keys.mouse && (mouseX > 600*scalar && mouseY > 750*scalar))) {
                 ++curLevel.wave;
                 prepWave(curLevel);
@@ -1019,21 +1029,21 @@
                     spawnEnemy(getMapX(enemy.index), getMapY(enemy.index), level1, "shrimp", enemy.index);
                     spawnEnemy(getMapX(enemy.index), getMapY(enemy.index), level1, "shrimp", enemy.index);
                     spawnEnemy(getMapX(enemy.index), getMapY(enemy.index), level1, "shrimp", enemy.index);
-                    spawnEnemy(getMapX(enemy.index-1), getMapY(enemy.index-1), level1, "shrimp", enemy.index);
-                    spawnEnemy(getMapX(enemy.index-1), getMapY(enemy.index-1), level1, "shrimp", enemy.index);
-                    spawnEnemy(getMapX(enemy.index-1), getMapY(enemy.index-1), level1, "shrimp", enemy.index);
-                    spawnEnemy(getMapX(enemy.index-1), getMapY(enemy.index-1), level1, "shrimp", enemy.index);
-                    spawnEnemy(getMapX(enemy.index-1), getMapY(enemy.index-1), level1, "shrimp", enemy.index);
+                    spawnEnemy(getMapX(enemy.index), getMapY(enemy.index), level1, "shrimp", enemy.index);
+                    spawnEnemy(getMapX(enemy.index), getMapY(enemy.index), level1, "shrimp", enemy.index);
+                    spawnEnemy(getMapX(enemy.index), getMapY(enemy.index), level1, "shrimp", enemy.index);
+                    spawnEnemy(getMapX(enemy.index), getMapY(enemy.index), level1, "shrimp", enemy.index);
+                    spawnEnemy(getMapX(enemy.index), getMapY(enemy.index), level1, "shrimp", enemy.index);
                 } else if(enemy.type === "king") {
-                    spawnEnemy(getMapX(enemy.index-1), getMapY(enemy.index-1), level1, "spawn", enemy.index);
-                    spawnEnemy(getMapX(enemy.index-1), getMapY(enemy.index-1), level1, "spawn", enemy.index);
+                    spawnEnemy(getMapX(enemy.index), getMapY(enemy.index), level1, "spawn", enemy.index);
+                    spawnEnemy(getMapX(enemy.index), getMapY(enemy.index), level1, "spawn", enemy.index);
                     spawnEnemy(getMapX(enemy.index), getMapY(enemy.index), level1, "spawn", enemy.index);
                     spawnEnemy(getMapX(enemy.index), getMapY(enemy.index), level1, "spawn", enemy.index);
                     spawnEnemy(getMapX(enemy.index), getMapY(enemy.index), level1, "spawn", enemy.index);
                     spawnEnemy(getMapX(enemy.index), getMapY(enemy.index), level1, "enemy-armor", enemy.index);
-                    spawnEnemy(getMapX(enemy.index-1), getMapY(enemy.index-1), level1, "enemy-armor", enemy.index);
-                    spawnEnemy(getMapX(enemy.index-1), getMapY(enemy.index-1), level1, "enemy-armor", enemy.index);
-                    spawnEnemy(getMapX(enemy.index-1), getMapY(enemy.index-1), level1, "enemy", enemy.index);
+                    spawnEnemy(getMapX(enemy.index), getMapY(enemy.index), level1, "enemy-armor", enemy.index);
+                    spawnEnemy(getMapX(enemy.index), getMapY(enemy.index), level1, "enemy-armor", enemy.index);
+                    spawnEnemy(getMapX(enemy.index), getMapY(enemy.index), level1, "enemy", enemy.index);
                     spawnEnemy(getMapX(enemy.index), getMapY(enemy.index), level1, "enemy", enemy.index);
                 }
                 gold += enemy.gold;
