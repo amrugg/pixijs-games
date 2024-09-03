@@ -1,6 +1,6 @@
 var level1 = {
     "endY": -3300,
-    "speed": 2.5,
+    "speed": 0.5,
     "seed": 23512,
     "startingSeed": 23512,
     randInt: function(min, max) {
@@ -283,7 +283,7 @@ var level2 = {
 };
 var level3 = {
     endY: -3000,
-    speed: 2.5,
+    speed: 1.5,
     seed: 3000,
     startingSeed: 3000,
     randInt: function(min, max) {
@@ -367,5 +367,5 @@ var level3 = {
         },
     ]
 };
-var levels = [level1, level2, level3];
+var levels = [level1, level1, level1, level1, level3];
 var levelOn = -1;
