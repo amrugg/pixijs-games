@@ -63,6 +63,7 @@
     var path = [];
     var enemies = [];
     var explosions = [];
+    var globalFrameCount = 0;
     var missiles = [];
     var background = new PIXI.Container();
     var foreground = new PIXI.Container();
@@ -115,15 +116,15 @@
             "spawn": [{minHealth: 15, maxHealth: 20, minSpeed: 170, maxSpeed: 200, enemyNum: 3, minGold: 5, maxGold: 7, armor: 2}],
             "king": [{minHealth: 200, maxHealth: 30, minSpeed: 250, maxSpeed: 250, enemyNum: 1, minGold: 200, maxGold: 200, armor: 7.5}],
         },
-        speed: [1,1,0.9,0.8,0.7,0.6,0.55,0.5,0.75,0.75, 0.5, 0.5, 0.45, 0.45, 0.45, 0.4, 0.4, 0.4, 0.3, 0.5],
+        speed: [1,1,0.9,0.8,0.7,0.6,0.55,0.5,0.45,0.45, 0.4, 0.35, 0.3, 0.25, 0.2, 0.1, 0.1, 0.05, 0.05, 0.1],
         /// Names of all the enemies
         keys: ["enemy", "enemy-armor", "shrimp", "spawn", "king"],
         beginWaves: {"enemy": 0, "shrimp": 4, "enemy-armor": 6, "spawn": 9, "king": 19},
     }
     var towerData = {
-        tower1: {range: 200*scalar, dmg: 1, cooldown: 1000, gold:30, pierce:1, aPierce:0, speed:10},
-        tower2: {range: 300*scalar, dmg: 3, cooldown: 6000, gold:50, pierce:3, aPierce:1, speed:5},
-        tower3: {range: 100*scalar, dmg: 0.5, cooldown: 900, gold:30, pierce:1, aPierce:0, speed:10},
+        tower1: {range: 200*scalar, dmg: 1, cooldown: 60, gold:30, pierce:1, aPierce:0, speed:10},
+        tower2: {range: 300*scalar, dmg: 3, cooldown: 360, gold:50, pierce:3, aPierce:1, speed:5},
+        tower3: {range: 100*scalar, dmg: 0.5, cooldown: 55, gold:30, pierce:1, aPierce:0, speed:10},
     }
     var upgradeData = {
         "tower1": {
@@ -135,9 +136,9 @@
                     {desc: "+5 damage.", cost: 50, texture: "sprites/upgrades/tower1/fire.png", apply: function(tower) {
                         tower.dmg += 5;
                     }},
-                    {desc: "Final Upgrade:\nSlow firing, +10 damage.", cost: 150, texture: "sprites/upgrades/tower1/maxPower.png", apply: function(tower) {
+                    {desc: "Final Upgrade:\nSlower firing, +10 damage.", cost: 150, texture: "sprites/upgrades/tower1/maxPower.png", apply: function(tower) {
                         tower.range += 50*scalar;
-                        tower.cooldown *= 2;
+                        tower.cooldown *= 1.5;
                         tower.texture = resources["sprites/upgrades/tower1/maxPower.png"].texture;
                     }},
                 ],
@@ -181,7 +182,7 @@
                     }},
                     {desc: "Final Upgrade:\nCannon shots explode.", cost: 200, texture: "sprites/upgrades/tower2/cannon.png", apply: function(tower) {
                         tower.range += 50*scalar;
-                        tower.cooldown *= 2;
+                        tower.cooldown *= 1.5;
                         tower.dmg += 10 + tower.pierce;
                         tower.pierce = 1;
                         tower.texture = resources["sprites/upgrades/tower2/cannon.png"].texture;
@@ -237,7 +238,7 @@
                         tower.laser.anchor.set(0.5,0.98); 
                         app.stage.addChild(tower.laser);
                         tower.laser.visible = false;
-                        tower.dmg = 12/(tower.cooldown*0.1);
+                        tower.dmg = 1/(tower.cooldown*0.1);
                         tower.range = (200+(tower.facet ? 8 : 0)*20)*scalar;
                         tower.texture = resources["sprites/upgrades/tower3/laser.png"].texture;
                     }},
@@ -252,8 +253,8 @@
                     }},
                     {desc: "Final Upgrade:\nSpike Tower.", cost: 175, texture: "sprites/upgrades/tower3/spike-tower.png", apply: function(tower) {
                         tower.spike = true;
-                        tower.cooldown = 250;
-                        tower.lastFire = Date.now();
+                        tower.cooldown /= 1.5;
+                        tower.lastFire = globalFrameCount;
                         tower.texture = resources["sprites/upgrades/tower3/spike-tower.png"].texture;
                     }},
                 ],
@@ -414,7 +415,7 @@
             var enemyNum = curWave.enemyNum;
             for(var i = 0; i < enemyNum; i++) {
                 if(level.beginWaves[level.keys[enI]] <= curLevel.wave) {
-                    level.spawnSeq.push({time: Date.now() + i * 1000*curLevel.speed[curLevel.wave] + level.randInt(-500,500)*curLevel.speed[curLevel.wave], type: level.keys[enI]});
+                    level.spawnSeq.push({time: globalFrameCount + i * 60*curLevel.speed[curLevel.wave] + level.randInt(-30,30)*curLevel.speed[curLevel.wave], type: level.keys[enI]});
                 }
             }
         }
@@ -608,7 +609,15 @@
         upgradeMode.activeTower = tower;
     }
     function gameLoop(delta) {
-      state(delta)
+        if(keys.e) {
+            state(delta)
+            state(delta)
+            state(delta)
+            state(delta)
+            state(delta)
+        } else {
+            state(delta)
+        }
     }
     function updateGoldText() {
         goldCounter.text = gold.toString();
@@ -670,9 +679,10 @@
         })
     }
     function play(){
+        ++globalFrameCount;
         handleEnemies();
         if(curLevel.spawnSeq[0]) {
-            if(curLevel.spawnSeq[0].time < Date.now()) {
+            if(curLevel.spawnSeq[0].time < globalFrameCount) {
                 spawnEnemy(4,-1, curLevel, curLevel.spawnSeq[0].type);
                 curLevel.spawnSeq.splice(0,1);
             }
@@ -802,18 +812,18 @@
                 var pivotY = tower.y + 40 * scalar;            
                 var target = getBestEnemyWR({x:pivotX, y: pivotY},tower.range);
                 if(getDistance(pivotX,pivotY,target.x,target.y) <= tower.range) {
-                    if(tower.lastFire + tower.cooldown < Date.now()) {
+                    if(tower.lastFire + tower.cooldown < globalFrameCount) {
                         shootMissile(pivotX,pivotY,normalize(target.x - pivotX, target.y - pivotY, tower.speed*scalar), tower.dmg, tower.pierce, tower.aPierce, "arrow", tower.range);
                         if(tower.doubleArrow) {
                             if(tower.secondArrow) {
                                 tower.secondArrow = false;
-                                tower.lastFire = Date.now();
+                                tower.lastFire = globalFrameCount;
                             } else {
-                                tower.lastFire = Date.now() - tower.cooldown + 100;
+                                tower.lastFire = globalFrameCount - tower.cooldown + 6;
                                 tower.secondArrow = true;
                             }
                         } else {
-                            tower.lastFire = Date.now();
+                            tower.lastFire = globalFrameCount;
                         }
                     }
                 }
@@ -823,7 +833,7 @@
                 var pivotY = tower.y + 40 * scalar;            
                 var target = getBestEnemyWR({x:pivotX, y: pivotY},tower.range);
                 if(getDistance(pivotX,pivotY,target.x,target.y) <= tower.range) {
-                    if(tower.lastFire + tower.cooldown < Date.now()) {
+                    if(tower.lastFire + tower.cooldown < globalFrameCount) {
                         if(tower.cannonball) {
                             var missile = shootMissile(pivotX,pivotY,normalize(target.x - pivotX, target.y - pivotY, tower.speed*scalar), tower.dmg, tower.pierce, tower.aPierce, "cannonball", tower.range);
                             missile.explodes = true;
@@ -836,7 +846,7 @@
                         if(tower.stun) {
                             missile.stun = tower.stun;
                         }
-                        tower.lastFire = Date.now();
+                        tower.lastFire = globalFrameCount;
                     }
                 }
             }
@@ -846,12 +856,12 @@
                 if(tower.spike) {
                     var target = getBestEnemyWR({x:pivotX, y: pivotY},tower.range);
 
-                    if(tower.cooldown + tower.lastFire < Date.now() && target) {
+                    if(tower.cooldown + tower.lastFire < globalFrameCount && target) {
                         for(var i = 0; i < 360; i+=45/2) {
                             var vector = direction(1,i);
                             shootMissile(pivotX,pivotY,normalize(vector.x, vector.y, tower.speed*scalar), tower.dmg, tower.pierce, tower.aPierce, "spike", tower.range);
                         }
-                        tower.lastFire = Date.now();
+                        tower.lastFire = globalFrameCount;
                     }
                     return;
                 } else if(tower.laser) {
@@ -874,74 +884,74 @@
                     if(tower.facet === 8) {
                         if(dy < 0 && Math.abs(dy/dx) > 1 && dx >= 0) {
                             /// Up
-                            if(tower.faces[0] + tower.cooldown < Date.now()) {
+                            if(tower.faces[0] + tower.cooldown < globalFrameCount) {
                                 return true;
                             }
                         }
                         if(dy < 0 && Math.abs(dy/dx) > 1 && dx < 0) {
                             /// Up
-                            if(tower.faces[1] + tower.cooldown < Date.now()) {
+                            if(tower.faces[1] + tower.cooldown < globalFrameCount) {
                                 return true;
                             }
                         }
                         if(dy > 0 && Math.abs(dy/dx) > 1 && dx >= 0) {
                             /// Down
-                            if(tower.faces[2] + tower.cooldown < Date.now()) {
+                            if(tower.faces[2] + tower.cooldown < globalFrameCount) {
                                 return true;
                             }
                         }
                         if(dy > 0 && Math.abs(dy/dx) > 1 && dx <= 0) {
                             /// Down
-                            if(tower.faces[3] + tower.cooldown < Date.now()) {
+                            if(tower.faces[3] + tower.cooldown < globalFrameCount) {
                                 return true;
                             }
                         }
                         if(dx < 0 && Math.abs(dx/dy) > 1 && dy >= 0) {
                             /// Left
-                            if(tower.faces[4] + tower.cooldown < Date.now()) {
+                            if(tower.faces[4] + tower.cooldown < globalFrameCount) {
                                 return true;
                             }
                         }
                         if(dx < 0 && Math.abs(dx/dy) > 1 && dy < 0) {
                             /// Left
-                            if(tower.faces[5] + tower.cooldown < Date.now()) {
+                            if(tower.faces[5] + tower.cooldown < globalFrameCount) {
                                 return true;
                             }
                         }
                         if(dx > 0 && Math.abs(dx/dy) > 1 && dy >= 0) {
                             /// Right
-                            if(tower.faces[6] + tower.cooldown < Date.now()) {
+                            if(tower.faces[6] + tower.cooldown < globalFrameCount) {
                                 return true;
                             }
                         }
                         if(dx > 0 && Math.abs(dx/dy) > 1 && dy < 0) {
                             /// Right
-                            if(tower.faces[7] + tower.cooldown < Date.now()) {
+                            if(tower.faces[7] + tower.cooldown < globalFrameCount) {
                                 return true;
                             }
                         }
                     } else {
                         if(dy < 0 && Math.abs(dy/dx) > 1) {
                             /// Up
-                            if(tower.faces[0] + tower.cooldown < Date.now()) {
+                            if(tower.faces[0] + tower.cooldown < globalFrameCount) {
                                 return true;
                             }
                         }
                         if(dy > 0 && Math.abs(dy/dx) > 1) {
                             /// Down
-                            if(tower.faces[1] + tower.cooldown < Date.now()) {
+                            if(tower.faces[1] + tower.cooldown < globalFrameCount) {
                                 return true;
                             }
                         }
                         if(dx < 0 && Math.abs(dx/dy) > 1) {
                             /// Left
-                            if(tower.faces[2] + tower.cooldown < Date.now()) {
+                            if(tower.faces[2] + tower.cooldown < globalFrameCount) {
                                 return true;
                             }
                         }
                         if(dx > 0 && Math.abs(dx/dy) > 1) {
                             /// Right
-                            if(tower.faces[3] + tower.cooldown < Date.now()) {
+                            if(tower.faces[3] + tower.cooldown < globalFrameCount) {
                                 return true;
                             }
                         }
@@ -957,41 +967,41 @@
                     var dy = target.y - pivotY;
                     if(tower.facet === 8) {
                         if(dy < 0 && Math.abs(dy/dx) > 1 && dx >= 0) {
-                            tower.faces[0] =  Date.now();
+                            tower.faces[0] =  globalFrameCount;
                         }
                         if(dy < 0 && Math.abs(dy/dx) > 1 && dx < 0) {
-                            tower.faces[1] =  Date.now();
+                            tower.faces[1] =  globalFrameCount;
                         }
                         if(dy > 0 && Math.abs(dy/dx) > 1 && dx >= 0) {
-                            tower.faces[2] =  Date.now();
+                            tower.faces[2] =  globalFrameCount;
                         }
                         if(dy > 0 && Math.abs(dy/dx) > 1 && dx <= 0) {
-                            tower.faces[3] =  Date.now();                        
+                            tower.faces[3] =  globalFrameCount;                        
                         }
                         if(dx < 0 && Math.abs(dx/dy) > 1 && dy >= 0) {
-                            tower.faces[4] =  Date.now();
+                            tower.faces[4] =  globalFrameCount;
                         }
                         if(dx < 0 && Math.abs(dx/dy) > 1 && dy < 0) {
-                            tower.faces[5] =  Date.now();
+                            tower.faces[5] =  globalFrameCount;
                         }
                         if(dx > 0 && Math.abs(dx/dy) > 1 && dy >= 0) {
-                            tower.faces[6] =  Date.now();
+                            tower.faces[6] =  globalFrameCount;
                         }
                         if(dx > 0 && Math.abs(dx/dy) > 1 && dy < 0) {
-                            tower.faces[7] =  Date.now();
+                            tower.faces[7] =  globalFrameCount;
                         }
                     } else {
                         if(dy < 0 && Math.abs(dy/dx) > 1) {
-                            tower.faces[0] =  Date.now();
+                            tower.faces[0] =  globalFrameCount;
                         }
                         if(dy > 0 && Math.abs(dy/dx) > 1) {
-                            tower.faces[1] =  Date.now();
+                            tower.faces[1] =  globalFrameCount;
                         }
                         if(dx < 0 && Math.abs(dx/dy) > 1) {
-                            tower.faces[2] =  Date.now();
+                            tower.faces[2] =  globalFrameCount;
                         }
                         if(dx > 0 && Math.abs(dx/dy) > 1) {
-                            tower.faces[3] =  Date.now();
+                            tower.faces[3] =  globalFrameCount;
                         }
                     }
                 }
