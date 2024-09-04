@@ -203,7 +203,8 @@ function createNewEnemy(x,y,name) {
     var enemy = new Sprite(keysOfSprites[name]);
     enemy.x = x;
     enemy.y = y;
-    enemy.myY = y + globalY;
+    ///         y = myY - globalY*scalar;
+    enemy.myY = y + globalY*scalar;
     enemy.name = name;
     enemy.scale.set(1.75*scalar,1.75*scalar);
     enemy.rotation = Math.PI;
