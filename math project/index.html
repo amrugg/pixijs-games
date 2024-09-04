@@ -106,14 +106,14 @@
             enemy: {minHealth: 0.5, maxHealth: 0.5, minSpeed: -7, maxSpeed: -7, enemyNum: 7, minGold: 0, maxGold: 0, armor: 0},
             shrimp: {minHealth: 0.3, maxHealth: 0.3, minSpeed: -5, maxSpeed: -5, enemyNum: 5, minGold: 0, maxGold: 0, armor: 0},
             "enemy-armor": {minHealth: 2, maxHealth: 2, minSpeed: -5, maxSpeed: -5, enemyNum: 4, minGold: 0, maxGold: 0, armor: 0},
-            "spawn": {minHealth: 2, maxHealth: 2, minSpeed: -5, maxSpeed: -5, enemyNum: 2, minGold: 0, maxGold: 0, armor: 0},
+            "spawn": {minHealth: 1.5, maxHealth: 1.5, minSpeed: -5, maxSpeed: -5, enemyNum: 2, minGold: 0, maxGold: 0, armor: 0},
             "king": {minHealth: 2, maxHealth: 2, minSpeed: -5, maxSpeed: -5, enemyNum: 0, minGold: 0, maxGold: 0, armor: 0}
         },
         waves: {
             enemy: [{minHealth: 1, maxHealth: 2, minSpeed: 120, maxSpeed: 140, enemyNum: 5, minGold: 1, maxGold: 2, armor: 0}],
             shrimp: [{minHealth: 0.1, maxHealth: 0.5, minSpeed: 50, maxSpeed: 60, enemyNum: 15, minGold: 0, maxGold: 1, armor: 0}],
             "enemy-armor": [{minHealth: 5, maxHealth: 7, minSpeed: 150, maxSpeed: 170, enemyNum: 3, minGold: 2, maxGold: 3, armor: 5}],
-            "spawn": [{minHealth: 15, maxHealth: 20, minSpeed: 170, maxSpeed: 200, enemyNum: 3, minGold: 5, maxGold: 7, armor: 2}],
+            "spawn": [{minHealth: 13, maxHealth: 17, minSpeed: 170, maxSpeed: 200, enemyNum: 3, minGold: 5, maxGold: 7, armor: 2}],
             "king": [{minHealth: 200, maxHealth: 30, minSpeed: 250, maxSpeed: 250, enemyNum: 1, minGold: 200, maxGold: 200, armor: 7.5}],
         },
         speed: [1,1,0.9,0.8,0.7,0.6,0.55,0.5,0.45,0.45, 0.4, 0.35, 0.3, 0.25, 0.2, 0.1, 0.1, 0.05, 0.05, 0.1],
@@ -278,13 +278,13 @@
             upgradeLevels: ["sprites/upgrades/tower3/tower3-1.png", "sprites/upgrades/tower3/tower3-2.png", "sprites/upgrades/tower3/tower3-3.png"]
         }
     }
-    var deathText = new PIXI.Text("You Lose!", new PIXI.TextStyle({fontSize: 50*scalar}));
-    deathText.anchor.set(0.5, 0);
-    deathText.x = canvasLength/2;
-    deathText.y = 50*scalar;
-    deathText.visible = false;
-    deathText.scale.set(5,5)
-    ui.addChild(deathText);
+    var endText = new PIXI.Text("You Lose!", new PIXI.TextStyle({fontSize: 50*scalar}));
+    endText.anchor.set(0.5, 0);
+    endText.x = canvasLength/2;
+    endText.y = 50*scalar;
+    endText.visible = false;
+    endText.scale.set(5,5)
+    ui.addChild(endText);
 
     var goldCounter = new PIXI.Text("50", new PIXI.TextStyle({fontSize: 30*scalar}));
     var gold = 50;
@@ -325,7 +325,7 @@
     }
     var curLevel;
     var rangeGraphics;
-    var deathGraphics;
+    var endGraphics;
     function setup() {
         state = prelude;
         curLevel = level1;
@@ -381,11 +381,11 @@
         upgradeMode.bar.visible = false;
         ui.addChild(upgradeMode.bar);
         
-        deathGraphics = new PIXI.Graphics();
-        deathGraphics.alpha = 0;
-        deathGraphics.beginFill(0x000000);
-        deathGraphics.drawRect(-100, -100, canvasLength + 200, canvasLength + 200);
-        ui.addChild(deathGraphics);
+        endGraphics = new PIXI.Graphics();
+        endGraphics.alpha = 0;
+        endGraphics.beginFill(0x000000);
+        endGraphics.drawRect(-100, -100, canvasLength + 200, canvasLength + 200);
+        ui.addChild(endGraphics);
 
         app.ticker.add(delta => gameLoop(delta));
     }
@@ -445,7 +445,8 @@
                 health -= 1;
                 updateHealthText();
                 if(health <= 0) {
-                    state = lose;
+                    endText.text = "You Lose!"
+                    state = end;
                 }
                 return -1;
             }
@@ -468,19 +469,19 @@
         enemies.push(enemy);
         return enemy;
     }
-    var loseState = 0;
-    function lose() {
-        if(loseState === 0) {
-            deathGraphics.alpha += 0.05;
-            if(deathGraphics.alpha >= 0.5) {
-                loseState = 1;
-                deathText.visible = true;
+    var endState = 0;
+    function end() {
+        if(endState === 0) {
+            endGraphics.alpha += 0.05;
+            if(endGraphics.alpha >= 0.5) {
+                endState = 1;
+                endText.visible = true;
             }
-        } else if(loseState === 1) {
-            deathText.scale.x -= 0.1;
-            deathText.scale.y -= 0.1;
-            if(deathText.scale.x < 1.1) {
-                loseState = 2;
+        } else if(endState === 1) {
+            endText.scale.x -= 0.1;
+            endText.scale.y -= 0.1;
+            if(endText.scale.x < 1.1) {
+                endState = 2;
             }
         }
     }
@@ -615,6 +616,31 @@
             state(delta)
             state(delta)
             state(delta)
+            state(delta)
+            state(delta)
+            state(delta)
+            state(delta)
+            state(delta)
+            state(delta)
+            state(delta)
+            state(delta)
+            state(delta)
+            state(delta)
+            state(delta)
+            state(delta)
+            state(delta)
+            state(delta)
+            state(delta)
+            state(delta)
+            state(delta)
+            state(delta)
+            state(delta)
+            state(delta)
+            state(delta)
+            state(delta)
+            state(delta)
+            state(delta)
+            state(delta)
         } else {
             state(delta)
         }
@@ -689,12 +715,18 @@
             
         }
         if(enemies.length === 0 && curLevel.spawnSeq.length === 0) {
-            waveCounter.text = "Next Wave!";
-            resetAllTowerCooldowns();
-            if(press(" ") || (keys.mouse && (mouseX > 600*scalar && mouseY > 750*scalar))) {
-                ++curLevel.wave;
-                prepWave(curLevel);
-                waveCounter.text = "Wave " + (curLevel.wave + 1) + "/" + (curLevel.waveNum)
+            if(curLevel.wave === 19) {
+                waveCounter.visible = false;
+                endText.text = "You Win!"
+                state = end;
+            } else {
+                waveCounter.text = "Next Wave!";
+                resetAllTowerCooldowns();
+                if(press(" ") || (keys.mouse && (mouseX > 600*scalar && mouseY > 750*scalar))) {
+                    ++curLevel.wave;
+                    prepWave(curLevel);
+                    waveCounter.text = "Wave " + (curLevel.wave + 1) + "/" + (curLevel.waveNum)
+                }
             }
         }
         if(press("q")) {
