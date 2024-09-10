@@ -79,8 +79,8 @@
     ///98945
     var randSeed = randInt(1, 100000)
     var level1 = {
-        seed: 23522,
-        startingSeed: 23522,
+        seed: 1000,
+        startingSeed: 1000,
         randInt: function(min, max) {
             var x = Math.sin(level1.seed++) * 100000;
             x = x - Math.floor(x);
@@ -92,7 +92,7 @@
             return x;
         },
         spawnSeq: [],
-        wave: 0,
+        wave: -1,
         curWave: false,
         waveNum: 20,
         levelDiffMin: {
@@ -112,9 +112,9 @@
         waves: {
             enemy: [{minHealth: 1, maxHealth: 2, minSpeed: 120, maxSpeed: 140, enemyNum: 5, minGold: 1, maxGold: 2, armor: 0}],
             shrimp: [{minHealth: 0.1, maxHealth: 0.5, minSpeed: 50, maxSpeed: 60, enemyNum: 15, minGold: 0, maxGold: 1, armor: 0}],
-            "enemy-armor": [{minHealth: 5, maxHealth: 7, minSpeed: 150, maxSpeed: 170, enemyNum: 3, minGold: 2, maxGold: 3, armor: 5}],
-            "spawn": [{minHealth: 13, maxHealth: 17, minSpeed: 170, maxSpeed: 200, enemyNum: 3, minGold: 5, maxGold: 7, armor: 2}],
-            "king": [{minHealth: 200, maxHealth: 30, minSpeed: 250, maxSpeed: 250, enemyNum: 1, minGold: 200, maxGold: 200, armor: 7.5}],
+            "enemy-armor": [{minHealth: 5, maxHealth: 7, minSpeed: 150, maxSpeed: 170, enemyNum: 3, minGold: 2, maxGold: 3, armor: 10}],
+            "spawn": [{minHealth: 13, maxHealth: 17, minSpeed: 170, maxSpeed: 200, enemyNum: 1, minGold: 5, maxGold: 7, armor: 4}],
+            "king": [{minHealth: 200, maxHealth: 30, minSpeed: 250, maxSpeed: 250, enemyNum: 1, minGold: 200, maxGold: 200, armor: 20}],
         },
         speed: [1,1,0.9,0.8,0.7,0.6,0.55,0.5,0.45,0.45, 0.4, 0.35, 0.3, 0.25, 0.2, 0.1, 0.1, 0.05, 0.05, 0.1],
         /// Names of all the enemies
@@ -122,10 +122,11 @@
         beginWaves: {"enemy": 0, "shrimp": 4, "enemy-armor": 6, "spawn": 9, "king": 19},
     }
     var towerData = {
-        tower1: {range: 200*scalar, dmg: 1, cooldown: 60, gold:30, pierce:1, aPierce:0, speed:10},
-        tower2: {range: 300*scalar, dmg: 3, cooldown: 360, gold:50, pierce:3, aPierce:1, speed:5},
+        tower1: {range: 200*scalar, dmg: 1, cooldown: 60, gold:30, pierce:1, aPierce:1.5, speed:10},
+        tower2: {range: 300*scalar, dmg: 4, cooldown: 300, gold:50, pierce:3, aPierce:3, speed:5},
         tower3: {range: 100*scalar, dmg: 0.5, cooldown: 55, gold:30, pierce:1, aPierce:0, speed:10},
     }
+    var damageDealt = [0,0,0];
     var upgradeData = {
         "tower1": {
             upgrades: [
@@ -136,9 +137,10 @@
                     {desc: "+5 damage.", cost: 50, texture: "sprites/upgrades/tower1/fire.png", apply: function(tower) {
                         tower.dmg += 5;
                     }},
-                    {desc: "Final Upgrade:\nSlower firing, +10 damage.", cost: 150, texture: "sprites/upgrades/tower1/maxPower.png", apply: function(tower) {
+                    {desc: "Final Upgrade:\nSlower firing, +5 damage.", cost: 150, texture: "sprites/upgrades/tower1/maxPower.png", apply: function(tower) {
                         tower.range += 50*scalar;
                         tower.cooldown *= 1.5;
+                        tower.dmg += 5;
                         tower.texture = resources["sprites/upgrades/tower1/maxPower.png"].texture;
                     }},
                 ],
@@ -225,11 +227,11 @@
         "tower3": {
             upgrades: [
                 [
-                    {desc: "+1 damage.", cost: 20, texture: "sprites/upgrades/tower3/damage.png", apply: function(tower) {
-                        tower.dmg++;
+                    {desc: "2x damage.", cost: 20, texture: "sprites/upgrades/tower3/damage.png", apply: function(tower) {
+                        tower.dmg *= 2;
                     }},
-                    {desc: "+3 damage.", cost: 50, texture: "sprites/upgrades/tower3/iron.png", apply: function(tower) {
-                        tower.dmg += 3;
+                    {desc: "3x damage.", cost: 50, texture: "sprites/upgrades/tower3/iron.png", apply: function(tower) {
+                        tower.dmg *= 3;
                     }},
                     {desc: "Final Upgrade:\nLaser Tower.", cost: 200, texture: "sprites/upgrades/tower3/laser.png", apply: function(tower) {
                         tower.laser = new Sprite(resources["sprites/laser.png"].texture);
@@ -266,8 +268,8 @@
                         tower.cooldown /= 1.5;
                     }},
                     {desc: "Final Upgrade:\nFire Tower.", cost: 200, texture: "sprites/upgrades/tower3/fire.png", apply: function(tower) {
-                        tower.cooldown /= 5;
-                        tower.dmg /= 2;
+                        tower.cooldown /= 3;
+                        tower.dmg /= 3;
                         tower.speed /= 3;
                         tower.pierce = 1000;
                         tower.fireball = true;
@@ -285,6 +287,8 @@
     endText.visible = false;
     endText.scale.set(5,5)
     ui.addChild(endText);
+    var endIcons = [];
+    var endValues = [];
 
     var goldCounter = new PIXI.Text("50", new PIXI.TextStyle({fontSize: 30*scalar}));
     var gold = 50;
@@ -305,7 +309,7 @@
     waveCounter.anchor.set(1,1);
     waveCounter.x = canvasLength - 20*scalar;
     waveCounter.y = canvasLength - 20*scalar;
-
+    var frameSpeed = 1;
     var beginText = new PIXI.Text("Begin!", new PIXI.TextStyle({fontSize: 30*scalar}));
     beginText.anchor.set(0,1);
     beginText.x = 20*scalar;
@@ -438,11 +442,16 @@
         enemy.targetX = enemy.x;
         enemy.targetY = enemy.y;
         enemy.index = (index !== undefined ? index : -1);
+        enemy.advance = (index !== undefined ? index : -1)
         enemy.type = type;
         enemy.speed = level.randInt(waveProps.minSpeed, waveProps.maxSpeed);
         enemy.chooseNewDir = function () {
             if(++enemy.index >= path.length) {
-                health -= 1;
+                if(enemy.type === "spawn") {
+                    health -= 5;
+                } else {
+                    health -= 1;
+                }
                 updateHealthText();
                 if(health <= 0) {
                     endText.text = "You Lose!"
@@ -482,6 +491,48 @@
             endText.scale.y -= 0.1;
             if(endText.scale.x < 1.1) {
                 endState = 2;
+            }
+        } else if(endState === 2) {
+            var icon1 = new Sprite(resources["sprites/upgrades/tower1/tower1-1.png"].texture);
+            var icon2 = new Sprite(resources["sprites/upgrades/tower2/tower2-1.png"].texture);
+            var icon3 = new Sprite(resources["sprites/upgrades/tower3/tower3-1.png"].texture);
+            endIcons = [icon1,icon2,icon3];
+            for(var i = 0; i < endIcons.length; i++) {
+                var cur = endIcons[i];
+                app.stage.addChild(cur);
+                cur.scale.set(scalar,scalar);
+                cur.anchor.set(0.5,0.5);
+                cur.y = 200*scalar;
+                cur.x = canvasLength * ((i+1) / (1+endIcons.length))
+                cur.alpha = 0;
+            }
+            endState = 3;
+        } else if (endState === 3) {
+            for(var i = 0; i < endIcons.length; i++) {
+                var cur = endIcons[i];
+                cur.alpha += 0.025;
+                if(cur.alpha >= 1) {
+                    endState = 4;
+                }
+            }
+        } else if(endState === 4) {
+            for(var i = 0; i < damageDealt.length; i++) {
+                var text = new PIXI.Text(Math.round(damageDealt[i]).toString(), new PIXI.TextStyle({fontSize: 50*scalar}));
+                app.stage.addChild(text);
+                text.anchor.set(0.5,0.5);
+                text.y = 275*scalar;
+                text.x = canvasLength * ((i+1) / (1+endIcons.length));
+                text.alpha = 0;
+                endValues.push(text);
+            }
+            endState = 5;
+        } else if(endState === 5) {
+            for(var i = 0; i < endValues.length; i++) {
+                var cur = endValues[i];
+                cur.alpha += 0.025;
+                if(cur.alpha >= 1) {
+                    endState = 6;
+                }
             }
         }
     }
@@ -610,38 +661,7 @@
         upgradeMode.activeTower = tower;
     }
     function gameLoop(delta) {
-        if(keys.e) {
-            state(delta)
-            state(delta)
-            state(delta)
-            state(delta)
-            state(delta)
-            state(delta)
-            state(delta)
-            state(delta)
-            state(delta)
-            state(delta)
-            state(delta)
-            state(delta)
-            state(delta)
-            state(delta)
-            state(delta)
-            state(delta)
-            state(delta)
-            state(delta)
-            state(delta)
-            state(delta)
-            state(delta)
-            state(delta)
-            state(delta)
-            state(delta)
-            state(delta)
-            state(delta)
-            state(delta)
-            state(delta)
-            state(delta)
-            state(delta)
-        } else {
+        for(var i = 0; i < frameSpeed; i++) {
             state(delta)
         }
     }
@@ -673,10 +693,9 @@
                     var worked = generateMap(curLevel);
                 } while (!worked);
             } else if(mouseX < 110*scalar && mouseY > 750*scalar) {
-                ui.removeChild(beginText);
+                beginText.text = "1x speed";
                 state = play;
-                prepWave(curLevel);
-                waveCounter.text = "Wave 1/10";
+                waveCounter.text = "Next Wave!";
             }
         } else if(press(" ")) {
 
@@ -733,6 +752,12 @@
             state = debug;
         }
         if(press("mouse")) {
+            if(mouseX < 150*scalar && mouseY > 750*scalar) {
+                if(++frameSpeed === 6) {
+                    frameSpeed = 1;
+                }
+                beginText.text = frameSpeed+"x speed";
+            }
             if(buildMode.active) {
                 if(mouseX > canvasLength - 160*scalar) {
                     buildMode.active = false;
@@ -845,7 +870,7 @@
                 var target = getBestEnemyWR({x:pivotX, y: pivotY},tower.range);
                 if(getDistance(pivotX,pivotY,target.x,target.y) <= tower.range) {
                     if(tower.lastFire + tower.cooldown < globalFrameCount) {
-                        shootMissile(pivotX,pivotY,normalize(target.x - pivotX, target.y - pivotY, tower.speed*scalar), tower.dmg, tower.pierce, tower.aPierce, "arrow", tower.range);
+                        shootMissile(pivotX,pivotY,normalize(target.x - pivotX, target.y - pivotY, tower.speed*scalar), tower.dmg, tower.pierce, tower.aPierce, "arrow", tower.range, 0);
                         if(tower.doubleArrow) {
                             if(tower.secondArrow) {
                                 tower.secondArrow = false;
@@ -867,10 +892,10 @@
                 if(getDistance(pivotX,pivotY,target.x,target.y) <= tower.range) {
                     if(tower.lastFire + tower.cooldown < globalFrameCount) {
                         if(tower.cannonball) {
-                            var missile = shootMissile(pivotX,pivotY,normalize(target.x - pivotX, target.y - pivotY, tower.speed*scalar), tower.dmg, tower.pierce, tower.aPierce, "cannonball", tower.range);
+                            var missile = shootMissile(pivotX,pivotY,normalize(target.x - pivotX, target.y - pivotY, tower.speed*scalar), tower.dmg, tower.pierce, tower.aPierce, "cannonball", tower.range, 1);
                             missile.explodes = true;
                         } else {
-                            var missile = shootMissile(pivotX,pivotY,normalize(target.x - pivotX, target.y - pivotY, tower.speed*scalar), tower.dmg, tower.pierce, tower.aPierce, "ballista", tower.range);
+                            var missile = shootMissile(pivotX,pivotY,normalize(target.x - pivotX, target.y - pivotY, tower.speed*scalar), tower.dmg, tower.pierce, tower.aPierce, "ballista", tower.range, 1);
                         }
                         if(tower.slowdown) {
                             missile.slowdown = tower.slowdown;
@@ -891,7 +916,7 @@
                     if(tower.cooldown + tower.lastFire < globalFrameCount && target) {
                         for(var i = 0; i < 360; i+=45/2) {
                             var vector = direction(1,i);
-                            shootMissile(pivotX,pivotY,normalize(vector.x, vector.y, tower.speed*scalar), tower.dmg, tower.pierce, tower.aPierce, "spike", tower.range);
+                            shootMissile(pivotX,pivotY,normalize(vector.x, vector.y, tower.speed*scalar), tower.dmg, tower.pierce, tower.aPierce, "spike", tower.range, 2);
                         }
                         tower.lastFire = globalFrameCount;
                     }
@@ -902,7 +927,8 @@
                         tower.laser.visible = true;
                         tower.laser.rotation = pointTowards(pivotX,pivotY,target.x,target.y) * -Math.PI/180;
                         tower.laser.height = getDistance(pivotX,pivotY,target.x,target.y);
-                        target.health -= tower.dmg/Math.max(1,target.armor-tower.aPierce)
+                        damageDealt[2] += Math.min(target.health, tower.dmg/Math.max(1,(target.armor/2)-tower.aPierce));
+                        target.health -= tower.dmg/Math.max(1,(target.armor/2)-tower.aPierce);
                     } else {
                         tower.laser.visible = false;
                     }
@@ -991,9 +1017,9 @@
                 });
                 if(getDistance(pivotX,pivotY,target.x,target.y) <= tower.range) {
                     if(tower.fireball) { 
-                        shootMissile(pivotX,pivotY,normalize(target.x - pivotX, target.y - pivotY, tower.speed*scalar), tower.dmg, tower.pierce, tower.aPierce, "fireball", tower.range);
+                        shootMissile(pivotX,pivotY,normalize(target.x - pivotX, target.y - pivotY, tower.speed*scalar), tower.dmg, tower.pierce, tower.aPierce, "fireball", tower.range, 2);
                     } else {
-                        shootMissile(pivotX,pivotY,normalize(target.x - pivotX, target.y - pivotY, tower.speed*scalar), tower.dmg, tower.pierce, tower.aPierce, "rock", tower.range);
+                        shootMissile(pivotX,pivotY,normalize(target.x - pivotX, target.y - pivotY, tower.speed*scalar), tower.dmg, tower.pierce, tower.aPierce, "rock", tower.range, 2);
                     }
                     var dx = target.x - pivotX;
                     var dy = target.y - pivotY;
@@ -1169,6 +1195,7 @@
                 return true;
             });
                 if(getDistance(missilePoint.x, missilePoint.y, target.x, target.y) <= 32*scalar) {
+                    damageDealt[missile.index] += Math.min(target.health, missile.dmg/Math.max(1,target.armor-missile.aPierce));
                     target.health -= missile.dmg/Math.max(1,target.armor-missile.aPierce);
                     if(missile.stun) {
                         target.stun = missile.stun;
@@ -1184,10 +1211,9 @@
                         --i;
                         --len;
                         if(missile.explodes) {
-                            debugger;
                             var targets = getEnemiesWithinRange(missile, 100*scalar);
                             targets.forEach(function (enemy){
-
+                                damageDealt[missile.index] += Math.min(enemy.health, missile.dmg/Math.max(1,target.armor-missile.aPierce)/3);
                                 enemy.health -= missile.dmg/Math.max(1,target.armor-missile.aPierce)/3;
                                 if(missile.stun) {
                                     target.stun = missile.stun/3;
@@ -1204,7 +1230,7 @@
                 }
         }
     }
-    function shootMissile(x,y, vector, dmg, pierce, aPierce, type, range) {
+    function shootMissile(x,y, vector, dmg, pierce, aPierce, type, range, index) {
         var missile = new Sprite(resources["sprites/" + type + ".png"].texture);
         missile.vector = vector;
         missile.anchor.set(0.5,0.5);
@@ -1216,6 +1242,7 @@
         missile.dmg = dmg;
         missile.pierce = pierce;
         missile.aPierce = aPierce;
+        missile.index = index;
         missile.immune = [];
         missile.rotation = Math.PI * (-pointTowards(0,0,vector.x,vector.y)) / 180;
         missile.scale.set(scalar);
