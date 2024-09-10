@@ -1781,9 +1781,9 @@
             }
         }
         if(!reverse) {
-            e.preventDefault()
             handleNumber(e);
         } else {
+            e.preventDefault();
             handleText(e);
         }
         keys[e.key] = true;
