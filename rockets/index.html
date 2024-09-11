@@ -119,6 +119,9 @@
         curVerse = curVerse[1];
         if(reverse) {
             numDiv.innerHTML = correctAnswer;
+            if(keys.ctrl) {
+                typeBonus = 1;
+            }
         } else {
             textDiv.innerHTML = curVerse;
         }
@@ -159,7 +162,7 @@
     numDiv.style.fontSize = "30px";
     numDiv.style.color = "white";
     central.appendChild(numDiv);
-
+    var typeBonus = 2;
     var rangeDiv = document.createElement("div");
     rangeDiv.style.position = "absolute";
     rangeDiv.style.left = "-100px";
@@ -1798,75 +1801,94 @@
         }
     });
     function handleText(e) {
-        var keystroke = e.key.toLowerCase();
-        var words = curVerse.split(" ");
-        if(keystroke === words[typingIndex][0].toLowerCase()) {
-            textDiv.innerHTML += words[typingIndex++] + " ";
-            if(typingIndex === typingMax || typingIndex >= words.length) {
-                if(restoreHealthWithQuestion) {
-                    healthBar.width += 10;
-                }
-                if(energyBar.width + 40 > 200) {
-                    healthBar.width += (energyBar.width + 40 - 200)/3;
-                    energyBar.width = 200;
-                } else {
-                    energyBar.width += 40;
-                }
-                if(healthBar.width > 200) {
-                    healthBar.width = 200;
-                }
-                if(verseTracking[correctAnswer]) {
-                    verseTracking[correctAnswer].correct++;
-                } else {
-                    verseTracking[correctAnswer] = {correct: 1, incorrect: 0};
-                }
-                numDiv.innerHTML = "";
-                --questionsLeft;
-                if(questionsLeft <= 0) {
-                    if(chapter !== false) {
-                        if(rangeDiv.innerHTML !== "Review") {
-                            var range = rangeDiv.innerHTML;
-                        } else {
-                            range = storeRange;
-                        }
-                        var full = true;
-                        if (range.split("-")[0] === "1") {
-                            var arr = range.split(/\-|\,/);
-                            if(Number(arr[1]) + 3 < rom18[chapter-1].length) {
-                                range = (Number(arr[1])) + "-" + (Number(arr[1]) + 3);
-                            } else if(Number(arr[1]) < rom18[chapter-1].length) {
-                                range = arr[1] + "-" + rom18[chapter-1].length;
-                            }
-                            full = false;
-                            rangeDiv.innerHTML = range;
-                            mistakeReview = false;
-                        } else {
-                            var arr = range.split(/\-|\,/);
-                            range = "1-" + arr[1];
-                            rangeDiv.innerHTML = range;
-                            mistakeReview = false;
-                        }
-                        var cur = range.split(/\-|\,/);
-                        if(Number(cur[0]) < Number(cur[1]) && Number(cur[0]) >= 0) {
-                            if(Number(cur[1]) <= rom18[chapter-1].length) {
-                                params.min = cur[0];
-                                params.max = cur[1];
-                            }
-                        }
-                        if(full && !mistakeReview) {
-                            questionsLeft = params.max/learnSpeed;
-                        } else {
-                            questionsLeft = params.max/(2*learnSpeed);
-                        }
-                    }
-                }
+        if(answersLocked) {
+            return;
+        }
+        if(e.key === "Enter") {
+            answersLocked = true;
+            textDiv.innerHTML = curVerse;
+            textDiv.style.color = "green";
+            setTimeout(function() {
+                textDiv.style.color = "white";
+                answersLocked = false;
                 typingIndex = 0;
                 textDiv.innerHTML = "";
                 curVerse = randVerse();
                 correctAnswer = curVerse[0];
                 curVerse = curVerse[1];
                 numDiv.innerHTML = correctAnswer;
-            }
+            },3000);
+        } else {
+            var keystroke = e.key.toLowerCase();
+            var words = curVerse.split(" ");
+            if(keystroke === words[typingIndex][0].toLowerCase()) {
+                textDiv.innerHTML += words[typingIndex++] + " ";
+                if(typingIndex === typingMax || typingIndex >= words.length) {
+                    if(restoreHealthWithQuestion) {
+                        healthBar.width += 10 * typeBonus;
+                    }
+                    if(energyBar.width + 40 * typeBonus > 200) {
+                        healthBar.width += (energyBar.width + 40 * typeBonus - 200)/3;
+                        energyBar.width = 200;
+                    } else {
+                        energyBar.width += 40 * typeBonus;
+                    }
+                    if(healthBar.width > 200) {
+                        healthBar.width = 200;
+                    }
+                    if(verseTracking[correctAnswer]) {
+                        verseTracking[correctAnswer].correct++;
+                    } else {
+                        verseTracking[correctAnswer] = {correct: 1, incorrect: 0};
+                    }
+                    numDiv.innerHTML = "";
+                    --questionsLeft;
+                    if(questionsLeft <= 0) {
+                        if(chapter !== false) {
+                            if(rangeDiv.innerHTML !== "Review") {
+                                var range = rangeDiv.innerHTML;
+                            } else {
+                                range = storeRange;
+                            }
+                            var full = true;
+                            if (range.split("-")[0] === "1") {
+                                var arr = range.split(/\-|\,/);
+                                if(Number(arr[1]) + 3 < rom18[chapter-1].length) {
+                                    range = (Number(arr[1])) + "-" + (Number(arr[1]) + 3);
+                                } else if(Number(arr[1]) < rom18[chapter-1].length) {
+                                    range = arr[1] + "-" + rom18[chapter-1].length;
+                                }
+                                full = false;
+                                rangeDiv.innerHTML = range;
+                                mistakeReview = false;
+                            } else {
+                                var arr = range.split(/\-|\,/);
+                                range = "1-" + arr[1];
+                                rangeDiv.innerHTML = range;
+                                mistakeReview = false;
+                            }
+                            var cur = range.split(/\-|\,/);
+                            if(Number(cur[0]) < Number(cur[1]) && Number(cur[0]) >= 0) {
+                                if(Number(cur[1]) <= rom18[chapter-1].length) {
+                                    params.min = cur[0];
+                                    params.max = cur[1];
+                                }
+                            }
+                            if(full && !mistakeReview) {
+                                questionsLeft = params.max/learnSpeed;
+                            } else {
+                                questionsLeft = params.max/(2*learnSpeed);
+                            }
+                        }
+                    }
+                    typingIndex = 0;
+                    textDiv.innerHTML = "";
+                    curVerse = randVerse();
+                    correctAnswer = curVerse[0];
+                    curVerse = curVerse[1];
+                    numDiv.innerHTML = correctAnswer;
+                }
+            }   
         }
     }
     function handleNumber(e) {
