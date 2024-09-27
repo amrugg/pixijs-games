@@ -309,7 +309,7 @@
                 var verseNumber = (chapter) + "." + (rand+1);
             }
             if(toCrack) {
-                return [verseNumber, crack(gauntletArr[chapter][rand])];
+                return [verseNumber, crack(gauntletArr[chapter-1][rand])];
             } else {
                 return [verseNumber, verseArr[rand]];
             }
