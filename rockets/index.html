@@ -319,7 +319,7 @@
             var rand = randInt(0,verseArr.length-1);
             var verseNumber = (currentRandChapter+1) + "." + (rand+1);
             if(toCrack) {
-                return [verseNumber, crack(gauntletArr[currentRandChapter-1][rand])];
+                return [verseNumber, crack(gauntletArr[currentRandChapter][rand])];
             } else {
                 return [verseNumber, verseArr[rand]];
             }
