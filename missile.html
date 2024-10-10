@@ -1,0 +1,131 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Direction ship</title>
+</head>
+    <style>* {padding: 0; margin: 0}</style>
+    <script src="pixi/pixi.min.js"></script>
+    <script src="usefulFunctions.js"></script>
+<body>
+  <script type="text/javascript">
+    "use strict";
+    
+    var params = getParams();
+    function getParams() {
+      var params = {};
+      location.search.substr(1).split("&").forEach(function(el) {
+        var data = el.replace(/\+/g, " ").split("=");
+        params[decodeURIComponent(data[0])] = data[1] ? decodeURIComponent(data[1]) : true;
+      });
+      return params;
+    }
+    PIXI.utils.skipHello();
+    PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
+    let Application = PIXI.Application,
+        Container = PIXI.Container,
+        loader = PIXI.loader,
+        resources = PIXI.loader.resources,
+        TextureCache = PIXI.utils.TextureCache,
+        Sprite = PIXI.Sprite,
+        Rectangle = PIXI.Rectangle,
+        Graphics = PIXI.Graphics;
+    let app = new Application({ 
+        width: 800,
+        height: 800,              
+        antialias: true,
+        transparent: true,
+        resolution: 1
+      }
+    );
+    app.renderer.backgroundColor = 0x55DD55;
+    /// Fill the screen 
+    app.renderer.view.style.position = "absolute";
+    app.renderer.view.style.display = "block";
+    app.renderer.autoResize = true;
+    app.renderer.resize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(app.view);
+    loader.add("sprites/rocket.png").load(setup);
+    var state;
+    var keys = {};
+    var mouseX,mouseY;
+    var rockets = [];
+    function setup() {
+        state = play;
+        app.ticker.add(delta => gameLoop(delta));
+    }
+    function gameLoop(delta) {
+      state(delta)
+    }
+    function play(){
+        if(press(" ")) {
+            spawnNewRocket();
+        }
+        for(var i = 0; i < rockets.length; i++) {
+            var rocket = rockets[i];
+            rocket.hp--;
+            var vector = normalize(mouseX-rocket.x, mouseY - rocket.y, 0.5);
+            rocket.vx *= 0.975;
+            rocket.vy *= 0.975;
+            rocket.vx += vector.x;
+            rocket.vy += vector.y;
+            rocket.rotation = -(pointTowards(0, 0, rocket.vx,rocket.vy) + 90)* Math.PI/180
+            if(rocket.hp <= 0) {
+                rockets.splice(i,1);
+                --i;
+                app.stage.removeChild(rocket);
+            }
+            rocket.x += rocket.vx;
+            rocket.y += rocket.vy;
+        }
+    }
+    function spawnNewRocket() {
+        var rocket = new Sprite(resources["sprites/rocket.png"].texture);
+        rocket.anchor.set(0.5,0.5);
+        rocket.y += 32;
+        rocket.x = randInt(32, innerWidth-32);
+        app.stage.addChild(rocket);
+        rocket.hp = 500;
+        rocket.vx = 0;
+        rocket.vy = 0.1;
+        rockets.push(rocket);
+    }
+    function press(key){
+        if(keys[key]){
+            keys[key] = false;
+            return true;
+        }
+        return false;
+    }
+    addEventListener("mousedown",function(e){
+        if(e.button == 0) {
+            keys.mouse = true;
+        } else if(e.button == 2) {
+            keys.rightMouse = true;
+        }
+        mouseX = e.pageX;
+        mouseY = e.pageY;
+    });
+    addEventListener("mouseup",function(e){
+        if(e.button == 0) { 
+            keys.mouse = false;
+        } else if(e.button == 2) {
+            keys.rightMouse = true;
+        }
+    });
+    addEventListener("blur", function (){
+        keys = {};
+    });
+    addEventListener("mousemove",function(e){
+        mouseX = e.pageX;
+        mouseY = e.pageY;
+    });
+    addEventListener("keydown", function (e){
+        keys[e.key] = true;
+    });
+    addEventListener("keyup", function (e){
+        keys[e.key] = false;
+    });
+  </script>
+</body>
+</html>

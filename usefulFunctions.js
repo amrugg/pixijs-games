@@ -77,6 +77,13 @@ Math.probability = function(percent,oneoneHundred){
         return percent > Math.random() * 100;
     }
 }
+function normalize(x,y,speed) {
+    var len = Math.sqrt(x**2 + y**2)
+    if(len === 0) {
+        return {x:0, y:0};
+    }
+    return {x: x/len*speed, y: y/len*speed}
+}
 function generalCommonDenominator(a,b) {
     if(a == 0) {
         return b;
