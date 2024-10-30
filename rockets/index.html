@@ -67,7 +67,7 @@
     var inputEl = document.getElementById("range");
     var buttonStartEl = document.getElementById("start");
     var invincible = false;
-    var verseTracking = {"1.1": {correct:0,incorrect:1}};
+    var verseTracking = {"1.1": {correct:0,incorrect:0}};
     var restoreHealthWithQuestion = false;
     var toCrack = false;
     var reverse = false;
@@ -1863,9 +1863,9 @@
                         healthBar.width = 200;
                     }
                     if(verseTracking[correctAnswer]) {
-                        verseTracking[correctAnswer].correct++;
+                        verseTracking[correctAnswer].correct += 5;
                     } else {
-                        verseTracking[correctAnswer] = {correct: 1, incorrect: 0};
+                        verseTracking[correctAnswer] = {correct: 5, incorrect: 0};
                     }
                     numDiv.innerHTML = "";
                     --questionsLeft;
@@ -1936,9 +1936,9 @@
                     healthBar.width = 200;
                 }
                 if(verseTracking[correctAnswer]) {
-                    verseTracking[correctAnswer].correct++;
+                    verseTracking[correctAnswer].correct += 5;
                 } else {
-                    verseTracking[correctAnswer] = {correct: 1, incorrect: 0};
+                    verseTracking[correctAnswer] = {correct: 5, incorrect: 0};
                 }
                 numDiv.innerHTML = "";
                 --questionsLeft;
@@ -1982,9 +1982,9 @@
                 }
             } else {
                 if(verseTracking[correctAnswer]) {
-                    verseTracking[correctAnswer].incorrect++;
+                    verseTracking[correctAnswer].incorrect += 5;
                 } else {
-                    verseTracking[correctAnswer] = {correct: 0, incorrect: 1};
+                    verseTracking[correctAnswer] = {correct: 0, incorrect: 5};
                 }
                 answersLocked = true;
                 numDiv.style.color = "red";
