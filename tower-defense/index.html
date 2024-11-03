@@ -752,7 +752,7 @@
             state = debug;
         }
         if(press("mouse")) {
-            if(mouseX < 150*scalar && mouseY > 750*scalar) {
+            if(mouseX < 150*scalar && mouseY > 750*scalar && !upgradeMode.active) {
                 if(++frameSpeed === 6) {
                     frameSpeed = 1;
                 }
