@@ -36,10 +36,15 @@ document.body.appendChild(app.view);
 
 /// Defining variables
 var spritesToLoad = ["sprites/rocket.png", "sprites/laser.png", "sprites/enemy-laser.png", "sprites/lvl1/enemy1.png", "sprites/lvl1/enemy2.png", "sprites/lvl1/enemy3.png", "sprites/lvl1/asteroid-1.png","sprites/exp1.png", "sprites/exp2.png", "sprites/exp3.png",
-"sprites/ball.png", "sprites/lvl1/plasma-top.png", "sprites/lvl1/plasma-base.png", "sprites/grey-laser.png", "sprites/coin.png","sprites/5coin.png","sprites/10coin.png","sprites/lvl1/asteroid-2.png"];
+"sprites/ball.png", "sprites/lvl1/plasma-top.png", "sprites/lvl1/plasma-base.png", "sprites/grey-laser.png", "sprites/coin.png","sprites/5coin.png","sprites/10coin.png","sprites/lvl1/asteroid-2.png",
+"sprites/weapons/missiles/heat.png","sprites/weapons/smoke.png","sprites/weapons/missiles/dumb.png"];
 var spriteNames = ["player", "blue-plasma", "red-plasma", "enemy-1-1", "enemy-1-2", "enemy-1-3", "asteroid-1", "exp-1", "exp-2", "exp-3",
-"upgrade-ball", "plasma-top", "plasma-base", "grey-plasma", "coin", "5coin", "10coin","asteroid-2"];
+"upgrade-ball", "plasma-top", "plasma-base", "grey-plasma", "coin", "5coin", "10coin","asteroid-2",
+"heat", "smoke", "DF"];
 
+var ui;
+var background;
+var foreground;
 var keysOfSprites;
 var state;
 var dependencies = [];
@@ -50,6 +55,7 @@ var player;
 var enemies = [];
 var explosions = [];
 var lasers = [];
+var missiles = [];
 var powerups = [];
 var globalFrameCount = 0;
 var healthBar;
@@ -57,10 +63,21 @@ var healthHolder;
 var powerupBar;
 var powerupHolder;
 var energyBar;
+var battleMode = "locked";
 var energyHolder;
 var starfield;
+var targetLock;
 var curLevel;
 var coins = 0;
+var missileData = {
+    "heat": {radius: 200, primDamage: 3, burstDamage: 1, speed: 5, lockTime: 30},
+    "DF": {radius: 250, primDamage: 3, burstDamage: 1, speed: 10, lockTime: Infinity}
+};
+
+///Handle different weapons
+var weaponIndex = 0;
+var weaponList = ["DF", "heat"];
+var weaponUI = [];
 
 /// Scale the sprites for different screens
 var scalar = innerHeight/800;
@@ -69,7 +86,7 @@ var scalar = innerHeight/800;
 var canvasLength = app.renderer.view.width
 
 /// Store custom key-mappings
-var keyMappings = {up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight", fire: " ", switch: "z", special: "x"}
+var keyMappings = {up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight", fire: " ", switch: "z", special: "x", target: "c"};
 
 /// Define globalY
 var globalY = 0;
@@ -111,19 +128,32 @@ sidebar.appendChild(numDiv);
 /// Load sprites and setup stage
 loader.add(spritesToLoad).load(setup);
 function setup() {
+    background = new PIXI.Container();
+    foreground = new PIXI.Container();
+    ui = new PIXI.Container();
+    app.stage.addChild(background);
+    app.stage.addChild(foreground);
+    app.stage.addChild(ui);
     starfield = new PIXI.Graphics();
-    app.stage.addChild(starfield);
+    background.addChild(starfield);
+    targetLock = new PIXI.Graphics();
+    ui.addChild(targetLock);
     keysOfSprites = keySpritesTo(spriteNames, spritesToLoad);
     player = new Sprite(keysOfSprites.player);
     player.visible = false;
-    app.stage.addChild(player);
+    foreground.addChild(player);
     player.scale.set(1.75 * scalar);
     player.anchor.set(0.5,0.5);
     player.x = canvasLength/2;
-    player.y = innerHeight - player.height/2 - 30;
+    player.y = canvasLength - player.height/2 - 30;
+    player.ax = 0;
+    player.ay = 0;
+    player.ar = 0;
     player.vx = 0;
     player.vy = 0;
-    player.speed = 5 * scalar;
+    player.vr = 0;
+    player.speed = 1 * scalar;
+    player.turnSpeed = 0.05;
     player.health = 10;
     player.maxHealth = 10;
 
@@ -142,6 +172,19 @@ function setup() {
         damage: 1,
         efficiencyScore: 1
     }
+    player.target = {
+        enemy: false,
+        index: -1,
+        locking: -1,
+        locked: false,
+        border: 20 * scalar,
+    }
+    player.launcher = {
+        cooldown: 30,
+        lastTime: -1000,
+        targetSpeed: 1,
+        efficiencyScore: 1
+    }
     player.activePowerup = {};
     player.generator = {
         energyPerQuestion: 25
@@ -154,7 +197,7 @@ function setup() {
     healthHolder.lineStyle(5, 0xFF0000,10);
     healthHolder.beginFill(0x000015);
     healthHolder.drawRect(0,0,150*scalar,15*scalar)
-    app.stage.addChild(healthHolder);
+    ui.addChild(healthHolder);
     healthHolder.x = canvasLength - 175*scalar;
     healthHolder.y = canvasLength - 50*scalar;
     healthBar = new PIXI.Graphics();
@@ -164,14 +207,14 @@ function setup() {
     healthBar.x = canvasLength - 175*scalar;
     healthBar.y = canvasLength - 50*scalar;
     healthBar.maxWidth = 150*scalar;
-    app.stage.addChild(healthBar);
+    ui.addChild(healthBar);
 
     /// Build energy bar
     energyHolder = new PIXI.Graphics();
     energyHolder.lineStyle(5, 0x00FFFF,10);
     energyHolder.beginFill(0x000015);
     energyHolder.drawRect(0,0,150*scalar,15*scalar)
-    app.stage.addChild(energyHolder);
+    ui.addChild(energyHolder);
     energyHolder.x = canvasLength - 175*scalar;
     energyHolder.y = canvasLength - 25*scalar;
     energyBar = new PIXI.Graphics();
@@ -181,20 +224,37 @@ function setup() {
     energyBar.x = canvasLength - 175*scalar;
     energyBar.y = canvasLength - 25*scalar;
     energyBar.maxWidth = 150*scalar;
-    app.stage.addChild(energyBar);
+    ui.addChild(energyBar);
 
 
     /// Prepare powerup bar
     powerupHolder = new PIXI.Graphics();
-    app.stage.addChild(powerupHolder);
+    ui.addChild(powerupHolder);
     powerupBar = new PIXI.Graphics();
-    app.stage.addChild(powerupBar);
+    ui.addChild(powerupBar);
     powerupHolder.visible = false;
     powerupBar.visible = false;
     energyBar.visible = false;
     energyHolder.visible = false;
     healthBar.visible = false;
     healthHolder.visible = false;
+    
+    var DF = new Sprite(keysOfSprites["DF"]);
+    DF.scale.set(1.25* scalar);
+    ui.addChild(DF);
+    DF.x = 20 * scalar;
+    DF.anchor.set(0,1)
+    DF.y = canvasLength - 20*scalar;
+
+    var heatF = new Sprite(keysOfSprites["heat"]);
+    heatF.scale.set(scalar);
+    ui.addChild(heatF);
+    heatF.x = 50 * scalar;
+    heatF.y = canvasLength - 20*scalar;
+    heatF.alpha = 0.5;
+    heatF.anchor.set(0,1)
+    weaponUI = [DF, heatF];
+
     state = overworld;
     app.ticker.add(delta => gameLoop(delta));
 }
@@ -217,7 +277,7 @@ function prepareLevel(level) {
 
     /// Reset player and progress
     player.x = canvasLength/2;
-    player.y = innerHeight - player.height/2 - 30;
+    player.y = canvasLength - player.height/2 - 30;
     globalY = 0;
     healthBar.visible = true;
     healthHolder.visible = true;
@@ -256,7 +316,7 @@ function spawnNewEnemy(type, level, positions, seededRandInt,link) {
         enemy.x = curPos.x * scalar;
         enemy.myY = curPos.y * scalar;
         enemy.y = enemy.myY;
-        enemy.rotation = pointInDirection(properties.direction)
+        enemy.rotation = properties.direction
         
         enemy.health = seededRandInt(properties.healthRange.min, properties.healthRange.max);
         enemy.damage = properties.damage;
@@ -288,8 +348,10 @@ function spawnNewEnemy(type, level, positions, seededRandInt,link) {
         });
         enemy.dropWeights = positions[i].dropWeights || properties.dropWeights;
         enemy.dropChance = positions[i].dropChance || properties.dropChance;
+        enemy.noTarget = positions[i].noTarget || properties.noTarget;
         enemy.possibleDrops = positions[i].possibleDrops || properties.possibleDrops;
-        app.stage.addChild(enemy);
+        enemy.lockResist = positions[i].lockResist || properties.lockResist || 30;
+        foreground.addChild(enemy);
         enemies.push(enemy);
         if(properties.init) {
             properties.init(enemy);
@@ -315,55 +377,185 @@ function gameLoop(delta) {
 function play(){
     ++globalFrameCount;
     var userInput = readKeyMappings(keyMappings, keys);
-    player.vx = 0;
-    player.vy = 0;
+    player.ax = 0;
+    player.ay = 0;
+    player.ar = 0;
     if(userInput.up && player.y > player.height/2) {
-        player.vy--;
+        player.ay -= player.speed;
     }
     if(userInput.down && player.y < canvasLength - player.height/2) {
-        player.vy++;
+        player.ay += player.speed;
     }
     if(userInput.left && player.x > player.width/2) {
-        player.vx--;
+        player.ax -= player.speed;
+        player.ar -= player.turnSpeed;
     }
     if(userInput.right && player.x < canvasLength - player.width/2) {
-        player.vx++;
+        player.ax += player.speed;
+        player.ar += player.turnSpeed;
     }
 
+    player.vx += player.ax;
+    player.vy += player.ay;
+    player.vr += player.ar;
+    player.vx *= 0.9;
+    player.vy *= 0.9;
+    player.vr *= 0.9;
+    if(Math.abs(player.vx) < 0.01) {
+        player.vx = 0;
+    }
+    if(Math.abs(player.vy) < 0.01) {
+        player.vy = 0;
+    }
+    if(Math.abs(player.vr) < 0.01) {
+        player.vr = 0;
+    }
+    var energyToSpend = (Math.abs(player.ax) + Math.abs(player.ay))/player.efficiencyScore;
+    if(player.energy > energyToSpend) {
+        player.x += player.vx;
+        player.y += player.vy;
+        if(battleMode === "locked") {
+            player.rotation = player.vr;
+        } else {
+            player.rotation += player.vr;
+        }
+        player.energy -= energyToSpend;
+        updateEnergyBar();
+    }
+    player.x = constrain(player.width/2, player.x, canvasLength - player.width/2);
+    player.y = constrain(player.height/2, player.y, canvasLength - player.height/2);
+    if(userInput.switch) {
+        disableUserInput("switch");
+        resetLockProgress();
+        weaponIndex++;
+        if(weaponIndex >= weaponList.length) {
+            weaponIndex = 0;
+        }
+        weaponUI.forEach(function(weapon, i) {
+            if(i === weaponIndex) {
+                weapon.alpha = 1;
+                weapon.scale.set(scalar * 1.25);
+            } else {
+                weapon.alpha = 0.5;
+                weapon.scale.set(scalar * 1);
+            }
+        })
+    }
     if(userInput.fire) {
+        player.firePoint = direction(player.rotation, player.height/2);
         if(player.plasma.lastTime + player.plasma.cooldown < globalFrameCount && player.energy > player.plasma.damage * 5 / player.plasma.efficiencyScore) {
             if(player.activePowerup.type) {
                 powerupData[player.activePowerup.type].onFireHandle();
                 updateEnergyBar();
                 updatePowerupBar();
             } else {
-                fireLaser(player.x, player.y - player.height/2, 0, 10, "blue", player.plasma.damage);
+                fireLaser(player.x + player.firePoint.x, player.y + player.firePoint.y, player.rotation, 10, "blue", player.plasma.damage);
                 player.plasma.lastTime = globalFrameCount;
                 player.energy -= player.plasma.damage * 5 / player.plasma.efficiencyScore;
                 updateEnergyBar();
             }
         }
     }
+    if(userInput.special) {
+        var weapon = weaponList[weaponIndex];
+        if(missileData[weapon]) {
 
-    var vector = normalize(player.vx, player.vy, player.speed)
-    var energyToSpend = (Math.abs(vector.x) + Math.abs(vector.y))/player.efficiencyScore;
-    if(player.energy > energyToSpend) {
-        player.x += vector.x;
-        player.y += vector.y;
-        player.energy -= energyToSpend;
-        updateEnergyBar();
+            player.firePoint = direction(player.rotation, player.height/2);
+            if(weapon === "DF") {
+                if(player.launcher.lastTime + player.launcher.cooldown < globalFrameCount && player.energy > player.launcher.efficiencyScore) {
+                    launchMissile(player.x + player.firePoint.x, player.y + player.firePoint.y, player.rotation, missileData[weapon].speed, "DF");
+                    player.launcher.lastTime = globalFrameCount;
+                }
+            } else {
+                if(player.launcher.lastTime + player.launcher.cooldown < globalFrameCount && player.energy > player.launcher.efficiencyScore) {
+                    if(player.target.locked) {
+                        launchMissile(player.x + player.firePoint.x, player.y + player.firePoint.y, player.rotation, missileData[weapon].speed, "heat", player.target.enemy);
+                    } else {
+                        launchMissile(player.x + player.firePoint.x, player.y + player.firePoint.y, player.rotation, missileData[weapon].speed, "heat", false);
+                    }
+                    player.launcher.lastTime = globalFrameCount;
+                }
+            }
+        }
     }
-    player.x = constrain(player.width/2, player.x, canvasLength - player.width/2);
-    player.y = constrain(player.height/2, player.y, canvasLength - player.height/2);
+    if(userInput.target) {
+        disableUserInput("target");
+        trackEnemy();
+    }
+    if(player.target.enemy) {
+        if(!isValidTarget(player.target.enemy)) {
+            player.target.enemy = false;
+            player.target.index = -1;
+            player.target.locking = -1;
+            player.target.locked = false;
+            targetLock.visible = false;
+        }
+        targetLock.x = player.target.enemy.x - player.target.enemy.width/2 - player.target.border/2;
+        targetLock.y = player.target.enemy.y - player.target.enemy.height/2 - player.target.border/2;
+        player.target.locking++;
+        if(player.target.locking >= player.target.enemy.lockResist + missileData[weaponList[weaponIndex]].lockTime && !player.target.locked) {        
+            targetLock.clear();
+            targetLock.lineStyle(5, 0xAA5555);
+            targetLock.drawRect(0, 0, player.target.enemy.width + player.target.border, player.target.enemy.height + player.target.border);
+            player.target.locked = true;
+        }
+    } else {
+        player.target.locking = 0;
+    }
+    
     globalY -= curLevel.speed * scalar * 0.25;
     if(globalY < curLevel.endY * scalar) {
         state = finish;
     }
     starfield.y += curLevel.speed * 0.25 * scalar * 0.25;
     handleLasers();
+    handleMissiles();
     handleEnemies();
     handleExplosions();
     handlePowerups();
+}
+function resetLockProgress() {
+    player.target.locking = 0;
+    player.target.locked = false;
+    targetLock.lineStyle(5, 0x555555);
+    targetLock.drawRect(0, 0, player.target.enemy.width + player.target.border, player.target.enemy.height + player.target.border);
+}
+function trackEnemy() {
+    if(!findTarget()) {
+        player.target.index = -1;
+        if(!findTarget()) {
+            player.target.enemy = false;
+            player.target.index = -1;
+            player.target.locking = -1;
+            player.target.locked = false;
+            targetLock.visible = false;
+            return;
+        }
+    }
+    player.target.locked = false;
+    player.target.locking = 0;
+    targetLock.visible = true;
+    targetLock.clear();
+    targetLock.lineStyle(5, 0x555555);
+    targetLock.drawRect(0, 0, player.target.enemy.width + player.target.border, player.target.enemy.height + player.target.border);
+    targetLock.x = player.target.enemy.x - player.target.enemy.width/2 - player.target.border/2;
+    targetLock.y = player.target.enemy.y - player.target.enemy.height/2 - player.target.border/2;
+}
+function findTarget() {
+    for(var i = 0; i < enemies.length; i++) {
+        var enemy = enemies[i];
+        if(isValidTarget(enemy)) {
+            if(player.target.index < i) {
+                player.target.enemy = enemy;
+                player.target.index = i;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+function isValidTarget(enemy) {
+    return enemy.x > -enemy.width/2 && enemy.x < canvasLength + enemy.width/2 && enemy.y > -enemy.height/2 && enemy.y < canvasLength + enemy.height/2 && enemy.health > 0;
 }
 function finish() {
     if(player.y < -100) {
@@ -371,22 +563,23 @@ function finish() {
     }
     player.y -= 5;
     handleLasers();
+    handleMissiles();
     handleEnemies();
     handleExplosions();
     handlePowerups();
 }
 function restart() {
     enemies.forEach(function(enemy) {
-        app.stage.removeChild(enemy);
+        foreground.removeChild(enemy);
     });
     powerups.forEach(function(enemy) {
-        app.stage.removeChild(enemy);
+        foreground.removeChild(enemy);
     });
     lasers.forEach(function(laser) {
-        app.stage.removeChild(laser);
+        foreground.removeChild(laser);
     });
     explosions.forEach(function(exp) {
-        app.stage.removeChild(exp);
+        background.removeChild(exp);
     });
     enemies = [];
     powerups = [];
@@ -407,9 +600,9 @@ function restart() {
 function handleExplosions() {
     var len = explosions.length;
     for(var i = 0; i < len; i++) {
-        explosions[i].alpha -= 0.05;
+        explosions[i].alpha -= explosions[i].fadeSpeed || 0.05;
         if(explosions[i].alpha <= 0) {
-            app.stage.removeChild(explosions[i]);
+            background.removeChild(explosions[i]);
             explosions.splice(i,1);
             --i;
             --len;
@@ -432,7 +625,7 @@ function handlePowerups() {
             playerRect.y += Math.abs(cur.x-player.x)
         }
         if(hitTestRectangle(cur,playerRect)) {
-            app.stage.removeChild(cur);
+            foreground.removeChild(cur);
             powerups.splice(i,1);
             --i;
             --len;
@@ -472,7 +665,7 @@ function handleLasers() {
         if(laser.target) {
             if(laser.target.health > 0) {
                 laser.direction = -pointTowards(laser.x,laser.y,laser.target.x,laser.target.y);
-                laser.rotation = -pointInDirection(laser.direction);
+                laser.rotation = laser.direction;
             } else if(laser.gold) {
                 laser.target = getClosestEnemy(laser, function(enemy) {
                     if(enemy === laser.lastHit || enemy.dependent) {
@@ -483,12 +676,12 @@ function handleLasers() {
                 });
                 if(laser.target) {
                     laser.direction = -pointTowards(laser.x,laser.y,laser.target.x,laser.target.y);
-                    laser.rotation = -pointInDirection(laser.direction);
+                    laser.rotation = laser.direction;
                 }
             }
         }
         if(laser.kill) {
-            app.stage.removeChild(laser);
+            foreground.removeChild(laser);
             lasers.splice(i,1);
             --i;
             --len;
@@ -502,7 +695,7 @@ function handleLasers() {
         laser.myY += vector.y;
         laser.y = laser.myY - globalY;
         if(laser.y < -100 * scalar || laser.y > canvasLength + 100 * scalar || laser.x < -100 * scalar || laser.x > canvasLength + 100 * scalar) {
-            app.stage.removeChild(laser);
+            foreground.removeChild(laser);
             lasers.splice(i,1);
             --i;
             --len;
@@ -533,7 +726,7 @@ function handleLasers() {
                         }
                     } else if(col && !laser.alreadyDead) {
                         laser.alreadyDead = true;
-                        app.stage.removeChild(laser);
+                        foreground.removeChild(laser);
                         lasers.splice(i,1);
                         --i;
                         --len;
@@ -552,7 +745,7 @@ function handleLasers() {
                 playerRect.y += Math.abs(laser.x-player.x)
             }
             if(hitTestRectangle(laser,playerRect)) {
-                app.stage.removeChild(laser);
+                foreground.removeChild(laser);
                 lasers.splice(i,1);
                 --i;
                 --len;
@@ -560,6 +753,135 @@ function handleLasers() {
                 player.health -= laser.damage;
                 updateHealthBar();
             }
+        }
+    }
+}
+function handleMissiles() {
+    var i = 0;
+    var len = missiles.length;
+    for(i = 0; i < len; i++) {
+        var missile = missiles[i];
+        if(++missile.trailNum === missile.trailMax) {
+            missile.trailNum = 0;
+            var smoke = new Sprite(keysOfSprites["smoke"]);
+            var tail = normalize(-missile.vector.x, -missile.vector.y, missile.height/2);
+            smoke.x = missile.x + tail.x;
+            smoke.y = missile.y + tail.y;
+            smoke.anchor.set(0.5,0.5);
+            smoke.fadeSpeed = 0.025;
+            background.addChild(smoke);
+            explosions.push(smoke);
+        }
+        // if(laser.target) {
+        //     if(laser.target.health > 0) {
+        //         laser.direction = -pointTowards(laser.x,laser.y,laser.target.x,laser.target.y);
+        //         laser.rotation = laser.direction;
+        //     } else if(laser.gold) {
+        //         laser.target = getClosestEnemy(laser, function(enemy) {
+        //             if(enemy === laser.lastHit || enemy.dependent) {
+        //                 return false;
+        //             } else {
+        //                 return true;
+        //             }
+        //         });
+        //         if(laser.target) {
+        //             laser.direction = -pointTowards(laser.x,laser.y,laser.target.x,laser.target.y);
+        //             laser.rotation = laser.direction;
+        //         }
+        //     }
+        // }
+        // if(laser.kill) {
+        //     foreground.removeChild(laser);
+        //     lasers.splice(i,1);
+        //     --i;
+        //     --len;
+        //     if(laser === player.activePowerup.loadedBullet) {
+        //         player.activePowerup.loadedBullet = false;
+        //     }
+        //     continue;
+        // }
+        if(missile.target) {
+            if(missile.target.health <= 0) {
+                missile.target = false;
+                var force = normalize(missile.vector.x,missile.vector.y,0.3*scalar);
+            } else {
+                var force = normalize(missile.target.x - missile.x, missile.target.y - missile.y, 0.3*scalar);
+            }
+        } else {
+            var force = normalize(missile.vector.x,missile.vector.y,0.3*scalar);
+        }
+        missile.rotation = -pointTowards(0, 0, missile.vector.x,missile.vector.y);
+        missile.vector.x *= 0.975;
+        missile.vector.y *= 0.975;
+        missile.vector.x += force.x;
+        missile.vector.y += force.y;
+        missile.x += missile.vector.x;
+        missile.myY += missile.vector.y;
+        missile.y = missile.myY - globalY;
+        if(missile.y < -100 * scalar || missile.y > canvasLength + 100 * scalar || missile.x < -100 * scalar || missile.x > canvasLength + 100 * scalar) {
+            foreground.removeChild(missile);
+            missiles.splice(i,1);
+            --i;
+            --len;
+
+            if(missile === player.activePowerup.loadedBullet) {
+                player.activePowerup.loadedBullet = false;
+            }
+            continue;
+        }
+        if(missile.good) {
+            enemies.forEach(function(enemy){
+                if(missile.lastHit !== enemy && !enemy.dependent) {
+                    var col = handleMissileCol(missile,enemy);
+                    if(col && !missile.alreadyDead) {
+                        missile.alreadyDead = true;
+                        foreground.removeChild(missile);
+                        missiles.splice(i,1);
+                        --i;
+                        --len;
+                    }
+                }
+            });
+        } else {
+            var playerRect = {
+                x: player.x,
+                y: player.y,
+                width: player.colRect.width,
+                height: player.colRect.height
+            }
+
+            if(missile.y < player.y) {
+                playerRect.y += Math.abs(missile.x-player.x)
+            }
+            if(hitTestRectangle(missile,playerRect)) {
+                foreground.removeChild(missile);
+                missiles.splice(i,1);
+                --i;
+                --len;
+                explode(1,{x: missile.x, y: missile.y-10},20);
+                player.health -= missile.damage;
+                updateHealthBar();
+            }
+        }
+    }
+}
+function handleMissileCol(missile, enemy) {
+    var i;
+    var len = enemy.colRects.length;
+    for(i = 0; i < len; i++) {
+        var enemyRect = {
+            x: enemy.x,
+            y: enemy.y,
+            width: enemy.colRects[i].width,
+            height: enemy.colRects[i].height
+        }
+        if(enemy.colRects[i].shiftingSlope && missile.y > enemy.y) {
+            enemyRect.y -= Math.abs(missile.x-enemy.x) * enemy.colRects[i].shiftingSlope;
+        }
+        if(hitTestRectangle(missile,enemyRect)) {
+            explode(1,{x: missile.x, y: missile.y-10},20);
+            enemy.health -= missile.exp.primDamage * enemy.colRects[i].dmgMult;
+            return true;
         }
     }
 }
@@ -654,7 +976,7 @@ function spawnDrop(type, x, y) {
     }
     powerup.anchor.set(0.5,0.5);
     powerup.scale.set(2);
-    app.stage.addChild(powerup);
+    foreground.addChild(powerup);
     powerup.x = x;
     powerup.y = y;
     powerup.myY = y + globalY;
@@ -686,7 +1008,7 @@ function fireLaser(x, y, direction, speed, type, damage, target) {
     laser.myY = y + globalY;
     laser.target = target;
     laser.anchor.set(0.5,0.5);
-    laser.rotation = pointInDirection(-direction);
+    laser.rotation = direction;
     laser.speed = speed * scalar;
     laser.direction = direction;
     laser.damage = damage;
@@ -694,9 +1016,30 @@ function fireLaser(x, y, direction, speed, type, damage, target) {
         laser.gold = true;
         laser.bounce = 10;
     }
-    app.stage.addChild(laser);
+    foreground.addChild(laser);
     lasers.push(laser);
     return laser;
+}
+function launchMissile(x, y, dir, speed, type, target) {
+    var missile = new Sprite(keysOfSprites[type]);
+    missile.scale.set(scalar);
+    missile.x = x;
+    missile.y = y;
+    missile.myY = y + globalY;
+    missile.target = target;
+    missile.anchor.set(0.5,0.5);
+    missile.good = true;
+    missile.rotation = dir;
+    missile.speed = speed * scalar;
+    missile.direction = dir;
+    missile.vector = direction(speed, dir);
+    missile.exp = missileData[type];
+    missile.trailMax = 5;
+    missile.trailNum = 0;
+    missile.type = type;
+    foreground.addChild(missile);
+    missiles.push(missile);
+    return missile;
 }
 function constrain(min, x, max) {
     x = Math.max(min, x);
@@ -739,7 +1082,7 @@ function explode(amount, position, distance) {
         } else {
             var explosion = new Sprite(resources["sprites/exp3.png"].texture);
         }
-        app.stage.addChild(explosion);
+        background.addChild(explosion);
         explosion.x = position.x + randInt(-distance, distance);
         explosion.y = position.y + randInt(-distance, distance);
         explosions.push(explosion);

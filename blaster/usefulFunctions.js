@@ -222,8 +222,16 @@ function pointTowards(x1,y1,x2,y2) {
     var xDiff = x1 - x2;
     var yDiff = y1 - y2;
     var degree = Math.atan(yDiff/xDiff) * (-180/Math.PI);
+    if(xDiff === 0 && yDiff > 0) {
+        return 0;
+    }
+    if(yDiff === 0 && xDiff > 0) {
+        return 90;
+    }
+    if(yDiff === 0 && xDiff < 0) {
+        return -90;
+    }
     if(xDiff > 0 && yDiff > 0) {
-        degree *= -1*-1;
         degree += 90;
     } else if(xDiff < 0 && yDiff > 0) {
         degree -= 90;
@@ -232,7 +240,7 @@ function pointTowards(x1,y1,x2,y2) {
     } else if(xDiff < 0 && yDiff < 0) {
         degree += 270;
     }
-    return degree;
+    return degree * Math.PI/180;
 }
 function randInt(min, max) {
     if(max === undefined) {
@@ -250,7 +258,6 @@ function randNum(min, max) {
     return num;
 }
 function direction(distance,angle) {
-    angle = (angle * Math.PI) / 180;
     var x = 0;
     var y = 0;
     x = Math.sin(angle) * distance;

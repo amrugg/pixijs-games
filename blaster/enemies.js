@@ -3,13 +3,13 @@ var handleEnemyBehaviors = {
         enemy.y = enemy.myY - globalY;
         if(enemy.health <= 0) {
             explode(20,enemy, 50);
-            app.stage.removeChild(enemy);
+            foreground.removeChild(enemy);
             /// Return true; the ship was destroyed and should be removed from the array
             return true;
         }
         if(enemy.combo.active) {
             if(enemy.combo.lastFire + enemy.combo.fireCooldown < globalFrameCount) {
-                fireLaser(enemy.x, enemy.y + enemy.height/2 - 10 * scalar, 180, 10, "red", enemy.damage);
+                fireLaser(enemy.x, enemy.y + enemy.height/2 - 10 * scalar, Math.PI, 10, "red", enemy.damage);
                 enemy.combo.lastFire = globalFrameCount;
                 if(--enemy.combo.curTicks < 1) {
                     enemy.combo.active = false;
@@ -30,7 +30,7 @@ var handleEnemyBehaviors = {
         enemy.y = enemy.myY - globalY;
         if(enemy.health <= 0) {
             explode(20,enemy, 50);
-            app.stage.removeChild(enemy);
+            foreground.removeChild(enemy);
             /// Return true; the ship was destroyed and should be removed from the array
             return true;
         }
@@ -42,9 +42,9 @@ var handleEnemyBehaviors = {
             }
             if(globalFrameCount - enemy.cooldown > enemy.lastFire) {
                 enemy.lastFire = globalFrameCount;
-                fireLaser(enemy.x, enemy.y + enemy.height/2 - 10 * scalar, 180, 10, "red", enemy.damage);
-                fireLaser(enemy.x, enemy.y + enemy.height/2 - 10 * scalar, 202.5, 10, "red", enemy.damage);
-                fireLaser(enemy.x, enemy.y + enemy.height/2 - 10 * scalar, 157.5, 10, "red", enemy.damage);
+                fireLaser(enemy.x, enemy.y + enemy.height/2 - 10 * scalar, Math.PI, 10, "red", enemy.damage);
+                fireLaser(enemy.x, enemy.y + enemy.height/2 - 10 * scalar, 3.534291735288517, 10, "red", enemy.damage);
+                fireLaser(enemy.x, enemy.y + enemy.height/2 - 10 * scalar, 2.748893571891069, 10, "red", enemy.damage);
             }
         }
 
@@ -55,7 +55,7 @@ var handleEnemyBehaviors = {
         enemy.y = enemy.myY - globalY;
         if(enemy.health <= 0) {
             explode(20,enemy, 50);
-            app.stage.removeChild(enemy);
+            foreground.removeChild(enemy);
             /// Return true; the ship was destroyed and should be removed from the array
             return true;
         }
@@ -68,7 +68,7 @@ var handleEnemyBehaviors = {
                 }
             } else if(globalFrameCount - enemy.cooldown > enemy.lastFire && Math.abs(player.x - enemy.x) <= player.width/2) {
                 enemy.lastFire = globalFrameCount;
-                fireLaser(enemy.x, enemy.y + enemy.height/2 - 10 * scalar, 180, 7.5, "red", enemy.damage);
+                fireLaser(enemy.x, enemy.y + enemy.height/2 - 10 * scalar, Math.PI, 7.5, "red", enemy.damage);
             } else if(Math.abs(enemy.x - enemy.origX) > 10*scalar && Math.abs(player.x - enemy.x) > player.width/2) {
                 if(enemy.origX > enemy.x) {
                     enemy.x += 1 * scalar;
@@ -85,7 +85,7 @@ var handleEnemyBehaviors = {
         enemy.y = enemy.myY - globalY;
         if(enemy.health <= 0) {
             explode(20,enemy, 50);
-            app.stage.removeChild(enemy);
+            foreground.removeChild(enemy);
             if(enemy.link) {
                 enemy.link.health = 0;
             }
@@ -109,7 +109,7 @@ var handleEnemyBehaviors = {
             }
             updateHealthBar();
             explode(20,{x:(enemy.x+player.x)/2, y: (enemy.y+player.y)/2}, 50);
-            app.stage.removeChild(enemy);
+            foreground.removeChild(enemy);
             /// Return true; the ship was destroyed and should be removed from the array
             return true;
         }
@@ -120,7 +120,7 @@ var handleEnemyBehaviors = {
         enemy.y = enemy.myY - globalY;
         if(enemy.health <= 0) {
             explode(20,enemy, 50);
-            app.stage.removeChild(enemy);
+            foreground.removeChild(enemy);
             if(enemy.link) {
                 enemy.link.health = 0;
             }
@@ -144,7 +144,7 @@ var handleEnemyBehaviors = {
             }
             updateHealthBar();
             explode(20,{x:(enemy.x+player.x)/2, y: (enemy.y+player.y)/2}, 50);
-            app.stage.removeChild(enemy);
+            foreground.removeChild(enemy);
             /// Return true; the ship was destroyed and should be removed from the array
             return true;
         }
@@ -156,7 +156,7 @@ var handleEnemyBehaviors = {
         if(enemy.health <= 0) {
             explode(20,enemy, 50);
             enemy.link.health = 0;
-            app.stage.removeChild(enemy);
+            foreground.removeChild(enemy);
             /// Return true; the ship was destroyed and should be removed from the array
             return true;
         }
@@ -182,11 +182,11 @@ var handleEnemyBehaviors = {
         } 
         if(enemy.health <= 0) {
             explode(20,enemy, 50);
-            app.stage.removeChild(enemy);
+            foreground.removeChild(enemy);
             /// Return true; the ship was destroyed and should be removed from the array
             return true;
         }
-        enemy.rotation = -pointTowards(enemy.x,enemy.y,player.x,player.y) * Math.PI/180;
+        enemy.rotation = -pointTowards(enemy.x,enemy.y,player.x,player.y);
         if(globalFrameCount - enemy.cooldown > enemy.lastFire) {
             enemy.lastFire = globalFrameCount;
             fireLaser(enemy.x, enemy.y, -pointTowards(enemy.x,enemy.y,player.x,player.y), 7.5, "red", enemy.damage);
@@ -199,7 +199,7 @@ var enemyProperties = {
     "enemy-1-1": {
         healthRange: {min: 1, max: 3},
         scale: 1.75,
-        direction: 180,
+        direction: Math.PI,
         damage: 1,
         combo: {
             active: false,
@@ -224,7 +224,7 @@ var enemyProperties = {
     "enemy-1-2": {
         healthRange: {min: 3, max: 5},
         scale: 1.75,
-        direction: 180,
+        direction: Math.PI,
         damage: 1,
         cooldown: 200,
         lastFire: -Infinity,
@@ -247,7 +247,7 @@ var enemyProperties = {
     "enemy-1-3": {
         healthRange: {min: 1, max: 2},
         scale: 1.75,
-        direction: 180,
+        direction: Math.PI,
         damage: 1,
         cooldown: 120,
         lastFire: -Infinity,
@@ -261,8 +261,8 @@ var enemyProperties = {
             }
         ],
         dropChance: 100,
-        dropWeights: [33, 33, 34],
-        possibleDrops: ["coin", "5coin", "orange"],
+        dropWeights: [99, 33, 34],
+        possibleDrops: ["gold", "5coin", "orange"],
         init: function(enemy) {
             enemy.origX = enemy.x;
         }
@@ -270,10 +270,11 @@ var enemyProperties = {
     "asteroid-1": {
         healthRange: {min: 3, max: 5},
         scale: 1.75,
-        direction: 180,
+        direction: Math.PI,
         damage: 2,
         cooldown: 120,
         lastFire: -Infinity,
+        noTarget: true,
         colRects: [
             {
                 colXPercent: 1,
@@ -288,10 +289,11 @@ var enemyProperties = {
     "asteroid-2": {
         healthRange: {min: 1, max: 3},
         scale: 1.75,
-        direction: 180,
+        direction: Math.PI,
         damage: 1,
         cooldown: 120,
         lastFire: -Infinity,
+        noTarget: true,
         colRects: [
             {
                 colXPercent: 1,
@@ -307,10 +309,11 @@ var enemyProperties = {
     "plasma-base": {
         healthRange: {min: 3, max: 5},
         scale: 1.75,
-        direction: 180,
+        direction: Math.PI,
         damage: 2,
         cooldown: 120,
         lastFire: -Infinity,
+        noTarget: true,
         colRects: [
             {
                 colXPercent: 1,
@@ -330,7 +333,7 @@ var enemyProperties = {
     "plasma-top": {
         healthRange: {min: 3, max: 5},
         scale: 1.75,
-        direction: 180,
+        direction: Math.PI,
         damage: 0.5,
         cooldown: 120,
         lastFire: -Infinity,
