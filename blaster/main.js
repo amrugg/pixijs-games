@@ -37,10 +37,10 @@ document.body.appendChild(app.view);
 /// Defining variables
 var spritesToLoad = ["sprites/rocket.png", "sprites/laser.png", "sprites/enemy-laser.png", "sprites/lvl1/enemy1.png", "sprites/lvl1/enemy2.png", "sprites/lvl1/enemy3.png", "sprites/lvl1/asteroid-1.png","sprites/exp1.png", "sprites/exp2.png", "sprites/exp3.png",
 "sprites/ball.png", "sprites/lvl1/plasma-top.png", "sprites/lvl1/plasma-base.png", "sprites/grey-laser.png", "sprites/coin.png","sprites/5coin.png","sprites/10coin.png","sprites/lvl1/asteroid-2.png",
-"sprites/weapons/missiles/heat.png","sprites/weapons/smoke.png","sprites/weapons/missiles/dumb.png"];
+"sprites/weapons/missiles/heat.png","sprites/weapons/smoke.png","sprites/weapons/missiles/dumb.png", "sprites/weapons/missiles/radar.png", "sprites/weapons/missiles/torpedo.png", "sprites/weapons/smoke-small.png"];
 var spriteNames = ["player", "blue-plasma", "red-plasma", "enemy-1-1", "enemy-1-2", "enemy-1-3", "asteroid-1", "exp-1", "exp-2", "exp-3",
 "upgrade-ball", "plasma-top", "plasma-base", "grey-plasma", "coin", "5coin", "10coin","asteroid-2",
-"heat", "smoke", "DF"];
+"heat", "smoke", "DF", "radar", "torpedo", "smoke-small"];
 
 var ui;
 var background;
@@ -70,13 +70,15 @@ var targetLock;
 var curLevel;
 var coins = 0;
 var missileData = {
-    "heat": {radius: 200, primDamage: 3, burstDamage: 1, speed: 5, lockTime: 30},
-    "DF": {radius: 250, primDamage: 3, burstDamage: 1, speed: 10, lockTime: Infinity}
+    "heat": {radius: 200, primDamage: 3, burstDamage: 1, speed: 5, acc: 0.3, trailMax: 5, trailType: "smoke", lockTime: 30},
+    "DF": {radius: 250, primDamage: 3, burstDamage: 1, speed: 10, acc: 0.5, trailMax: 4, trailType: "smoke", lockTime: Infinity},
+    "radar": {radius: 300, primDamage: 3, burstDamage: 1, speed: 3, acc: 0.75, trailMax: 3, trailType: "smoke", lockTime: 60},
+    "torpedo": {radius: 0, primDamage: 5, burstDamage: 0, speed: 20, acc: 1, trailMax: 2, trailType: "smoke", lockTime: Infinity},
 };
 
 ///Handle different weapons
 var weaponIndex = 0;
-var weaponList = ["DF", "heat"];
+var weaponList = ["DF", "heat", "radar", "torpedo"];
 var weaponUI = [];
 
 /// Scale the sprites for different screens
@@ -238,27 +240,26 @@ function setup() {
     energyHolder.visible = false;
     healthBar.visible = false;
     healthHolder.visible = false;
-    
-    var DF = new Sprite(keysOfSprites["DF"]);
-    DF.scale.set(1.25* scalar);
-    ui.addChild(DF);
-    DF.x = 20 * scalar;
-    DF.anchor.set(0,1)
-    DF.y = canvasLength - 20*scalar;
-
-    var heatF = new Sprite(keysOfSprites["heat"]);
-    heatF.scale.set(scalar);
-    ui.addChild(heatF);
-    heatF.x = 50 * scalar;
-    heatF.y = canvasLength - 20*scalar;
-    heatF.alpha = 0.5;
-    heatF.anchor.set(0,1)
-    weaponUI = [DF, heatF];
+    createMissileIndex(weaponList)
 
     state = overworld;
     app.ticker.add(delta => gameLoop(delta));
 }
-
+function createMissileIndex(arr) {
+    for(var i = 0; i < arr.length; i++) {
+        var missile = new Sprite(keysOfSprites[arr[i]]);
+        if(i === 0) {
+            missile.scale.set(1.25* scalar);
+        } else {
+            missile.alpha = 0.5;
+        }
+        ui.addChild(missile);
+        missile.x = (20 + (30 * i)) * scalar;
+        missile.anchor.set(0,1)
+        missile.y = canvasLength - 20*scalar;
+        weaponUI.push(missile);
+    }
+}
 
 /// Overly simplified
 function overworld() {
@@ -461,20 +462,13 @@ function play(){
         if(missileData[weapon]) {
 
             player.firePoint = direction(player.rotation, player.height/2);
-            if(weapon === "DF") {
-                if(player.launcher.lastTime + player.launcher.cooldown < globalFrameCount && player.energy > player.launcher.efficiencyScore) {
-                    launchMissile(player.x + player.firePoint.x, player.y + player.firePoint.y, player.rotation, missileData[weapon].speed, "DF");
-                    player.launcher.lastTime = globalFrameCount;
+            if(player.launcher.lastTime + player.launcher.cooldown < globalFrameCount && player.energy > player.launcher.efficiencyScore) {
+                if(player.target.locked) {
+                    launchMissile(player.x + player.firePoint.x, player.y + player.firePoint.y, player.rotation, weapon, player.target.enemy);
+                } else {
+                    launchMissile(player.x + player.firePoint.x, player.y + player.firePoint.y, player.rotation, weapon, false);
                 }
-            } else {
-                if(player.launcher.lastTime + player.launcher.cooldown < globalFrameCount && player.energy > player.launcher.efficiencyScore) {
-                    if(player.target.locked) {
-                        launchMissile(player.x + player.firePoint.x, player.y + player.firePoint.y, player.rotation, missileData[weapon].speed, "heat", player.target.enemy);
-                    } else {
-                        launchMissile(player.x + player.firePoint.x, player.y + player.firePoint.y, player.rotation, missileData[weapon].speed, "heat", false);
-                    }
-                    player.launcher.lastTime = globalFrameCount;
-                }
+                player.launcher.lastTime = globalFrameCount;
             }
         }
     }
@@ -761,9 +755,11 @@ function handleMissiles() {
     var len = missiles.length;
     for(i = 0; i < len; i++) {
         var missile = missiles[i];
+
+        debugger;
         if(++missile.trailNum === missile.trailMax) {
             missile.trailNum = 0;
-            var smoke = new Sprite(keysOfSprites["smoke"]);
+            var smoke = new Sprite(keysOfSprites[missile.trailType]);
             var tail = normalize(-missile.vector.x, -missile.vector.y, missile.height/2);
             smoke.x = missile.x + tail.x;
             smoke.y = missile.y + tail.y;
@@ -803,12 +799,12 @@ function handleMissiles() {
         if(missile.target) {
             if(missile.target.health <= 0) {
                 missile.target = false;
-                var force = normalize(missile.vector.x,missile.vector.y,0.3*scalar);
+                var force = normalize(missile.vector.x,missile.vector.y, missile.acc);
             } else {
-                var force = normalize(missile.target.x - missile.x, missile.target.y - missile.y, 0.3*scalar);
+                var force = normalize(missile.target.x - missile.x, missile.target.y - missile.y, missile.acc);
             }
         } else {
-            var force = normalize(missile.vector.x,missile.vector.y,0.3*scalar);
+            var force = normalize(missile.vector.x,missile.vector.y, missile.acc);
         }
         missile.rotation = -pointTowards(0, 0, missile.vector.x,missile.vector.y);
         missile.vector.x *= 0.975;
@@ -1020,7 +1016,8 @@ function fireLaser(x, y, direction, speed, type, damage, target) {
     lasers.push(laser);
     return laser;
 }
-function launchMissile(x, y, dir, speed, type, target) {
+function launchMissile(x, y, dir, type, target) {
+    debugger;
     var missile = new Sprite(keysOfSprites[type]);
     missile.scale.set(scalar);
     missile.x = x;
@@ -1030,11 +1027,18 @@ function launchMissile(x, y, dir, speed, type, target) {
     missile.anchor.set(0.5,0.5);
     missile.good = true;
     missile.rotation = dir;
-    missile.speed = speed * scalar;
+    var curMissileData = missileData[type];
+    console.log(curMissileData,type)
+    missile.acc = curMissileData.acc * scalar;
+    missile.radius = curMissileData.radius * scalar;
+    missile.primDamage = curMissileData.primDamage;
+    missile.burstDamage = curMissileData.burstDamage;
+    missile.trailMax = curMissileData.trailMax || 5;
+    missile.trailType = curMissileData.trailType || "smoke";
+
     missile.direction = dir;
-    missile.vector = direction(speed, dir);
+    missile.vector = direction(curMissileData.speed, dir);
     missile.exp = missileData[type];
-    missile.trailMax = 5;
     missile.trailNum = 0;
     missile.type = type;
     foreground.addChild(missile);
