@@ -88,7 +88,7 @@ var scalar = innerHeight/800;
 var canvasLength = app.renderer.view.width
 
 /// Store custom key-mappings
-var keyMappings = {up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight", fire: " ", switch: "z", special: "x", target: "c"};
+var keyMappings = {up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight", fire: " ", switch: "z", special: "x", target: "c", leftFlare: "a", rightFlare: "s"};
 
 /// Define globalY
 var globalY = 0;
@@ -148,6 +148,7 @@ function setup() {
     player.anchor.set(0.5,0.5);
     player.x = canvasLength/2;
     player.y = canvasLength - player.height/2 - 30;
+    player.defaultY = canvasLength - player.height/2 - 30;
     player.ax = 0;
     player.ay = 0;
     player.ar = 0;
@@ -155,10 +156,18 @@ function setup() {
     player.vy = 0;
     player.vr = 0;
     player.speed = 1 * scalar;
-    player.turnSpeed = 0.05;
+    player.turnSpeed = 0.03;
     player.health = 10;
     player.maxHealth = 10;
-
+    player.flare = {
+        cooldown: 0,
+        leftFlare: false,
+        rightFlare: false,
+        active: 0,
+        maxCooldown: 120,
+        speed: 0.75,
+        turnSpeed: 0.1
+    }
     player.energy = 100;
     player.maxEnergy = 100;
     player.efficiencyScore = 90;
@@ -382,10 +391,10 @@ function play(){
     player.ay = 0;
     player.ar = 0;
     if(userInput.up && player.y > player.height/2) {
-        player.ay -= player.speed;
+        player.ay -= player.speed*5;
     }
     if(userInput.down && player.y < canvasLength - player.height/2) {
-        player.ay += player.speed;
+        player.ay += player.speed*5;
     }
     if(userInput.left && player.x > player.width/2) {
         player.ax -= player.speed;
@@ -395,12 +404,17 @@ function play(){
         player.ax += player.speed;
         player.ar += player.turnSpeed;
     }
-
+    if((player.flare.cooldown === 0 || player.flare.active) && player.energy > 0) {
+        if(userInput.leftFlare && userInput.rightFlare) {
+            player.ay -= player.flare.speed;
+            player.flare.active = true;
+        }
+    }
     player.vx += player.ax;
     player.vy += player.ay;
     player.vr += player.ar;
     player.vx *= 0.9;
-    player.vy *= 0.9;
+    player.vy *= 0.97;
     player.vr *= 0.9;
     if(Math.abs(player.vx) < 0.01) {
         player.vx = 0;
@@ -414,10 +428,11 @@ function play(){
     var energyToSpend = (Math.abs(player.ax) + Math.abs(player.ay))/player.efficiencyScore;
     if(player.energy > energyToSpend) {
         player.x += player.vx;
-        player.y += player.vy;
         if(battleMode === "locked") {
             player.rotation = player.vr;
+            player.y = player.defaultY + player.vy;
         } else {
+            player.y += player.vy;
             player.rotation += player.vr;
         }
         player.energy -= energyToSpend;
@@ -497,11 +512,11 @@ function play(){
         player.target.locking = 0;
     }
     
-    globalY -= curLevel.speed * scalar * 0.25;
+    globalY -= (curLevel.speed - player.vy/50) * scalar * 0.25;
     if(globalY < curLevel.endY * scalar) {
         state = finish;
     }
-    starfield.y += curLevel.speed * 0.25 * scalar * 0.25;
+    starfield.y += (curLevel.speed - player.vy/50) * 0.25 * scalar * 0.25;
     handleLasers();
     handleMissiles();
     handleEnemies();
@@ -1064,9 +1079,19 @@ function readKeyMappings(mappings, keys) {
     var len = mapKeys.length;
     for(i = 0; i < len; i++) {
         var curKey = mapKeys[i];
-        mappingsActive[curKey] = keys[mappings[curKey]];
+        if(typeof curKey === "string") {
+            mappingsActive[curKey] = keys[mappings[curKey]];
+        } else if(typeof curKey === "object") {
+            var active = false;
+            curKey.forEach(function(e,i) {
+                if(keys[mappings[curKey]]) {
+                    active = true;
+                }
+            });
+            mappingsActive[curKey] = active;
+        }
     }
-    return mappingsActive
+    return mappingsActive;
 }
 function press(key){
     if(keys[key]){

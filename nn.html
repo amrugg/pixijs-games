@@ -1,0 +1,166 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Direction ship</title>
+</head>
+    <style>* {padding: 0; margin: 0}</style>
+    <script src="pixi/pixi.min.js"></script>
+    <script src="usefulFunctions.js"></script>
+<body>
+  <script type="text/javascript">
+    "use strict";
+    
+    var params = getParams();
+    function getParams() {
+      var params = {};
+      location.search.substr(1).split("&").forEach(function(el) {
+        var data = el.replace(/\+/g, " ").split("=");
+        params[decodeURIComponent(data[0])] = data[1] ? decodeURIComponent(data[1]) : true;
+      });
+      return params;
+    }
+    PIXI.utils.skipHello();
+    PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
+    let Application = PIXI.Application,
+        Container = PIXI.Container,
+        loader = PIXI.loader,
+        resources = PIXI.loader.resources,
+        TextureCache = PIXI.utils.TextureCache,
+        Sprite = PIXI.Sprite,
+        Rectangle = PIXI.Rectangle,
+        Graphics = PIXI.Graphics;
+    let app = new Application({ 
+        width: 800,
+        height: 800,              
+        antialias: true,
+        transparent: false,
+        resolution: 1
+      }
+    );
+    // app.renderer.backgroundColor = 0;
+    document.body.appendChild(app.view);
+    loader.add(["sprites/blue-rocket.png","sprites/bullet.png", "sprites/red-rocket.png"]).load(setup);
+    var state;
+    var keys = {};
+    var mouseX,mouseY;
+    var bullets = [];
+    var rockets = [];
+    function setup() {
+        var p1 = new Sprite(resources["sprites/blue-rocket.png"].texture);
+        p1.pivot.x = 16;
+        p1.pivot.y = 16;
+        app.stage.addChild(p1);
+        p1.rotation = Math.PI;
+        p1.x = 32;
+        p1.y = 32;
+        p1.cooldown = 30;
+        p1.getInputs = parseUserInputs;
+        rockets.push(p1);
+
+        var p2 = new Sprite(resources["sprites/red-rocket.png"].texture);
+        p2.pivot.x = 16;
+        p2.pivot.y = 16;
+        app.stage.addChild(p2);
+        p2.x = 800-32;
+        p2.y = 800-32;
+        p2.cooldown = 30;
+        p2.getInputs = parseUserInputs2;
+        rockets.push(p2);
+        app.ticker.add(delta => gameLoop(delta));
+        state = play;
+    }
+    function gameLoop(delta) {
+      state(delta)
+    }
+    function play(){
+        handleRockets();
+        handleBullets();
+    }
+    function handleRockets() {
+        for(var i = 0; i < rockets.length; i++) {
+            var cur = rockets[i];
+            console.log(rockets);
+            var inputs = cur.getInputs();
+            console.log(inputs)
+            cur.x += Math.sin(cur.rotation) * 3 * inputs[0];
+            cur.y += -Math.cos(cur.rotation) * 3 * inputs[0];
+            cur.rotation += (inputs[2] - inputs[1]) * 0.05;
+            cur.x = Math.min(cur.x,800-16);
+            cur.x = Math.max(cur.x,16);
+            cur.y = Math.min(cur.y,800-16);
+            cur.y = Math.max(cur.y,16);
+            if(++cur.cooldown > 29 && inputs[3]) {
+                cur.cooldown = 0;
+                fire(cur.x, cur.y, cur.rotation,cur);
+            }
+        }
+    }
+    function handleBullets() {
+        for(var i = 0; i < bullets.length; i++) {
+            var cur = bullets[i];    
+            cur.x += Math.sin(cur.dir) * 7;
+            cur.y += -Math.cos(cur.dir) * 7;
+            if(cur.x > 800 || cur.x < 0 || cur.y > 800 || cur.y < 0) {
+                app.stage.removeChild(cur);
+                bullets.splice(i--,1);
+            }
+        }
+    }
+    function fire(x,y,rot,owner) {
+        var bullet = new Sprite(resources["sprites/bullet.png"].texture);
+        bullet.anchor.set(0.5,0.5);
+        app.stage.addChild(bullet);
+        bullet.x = x;
+        bullet.y = y;
+        bullet.dir = rot;
+        bullet.owner = owner;
+        bullets.push(bullet);
+    }
+    function parseUserInputs() {
+        /// [thrust, left, right, fire]
+        return [keys["ArrowUp"] ? 1 : 0, keys["ArrowLeft"] ? 1 : 0, keys["ArrowRight"] ? 1 : 0, keys["ArrowDown"] ? 1 : 0,]
+    }
+    function parseUserInputs2() {
+        /// [thrust, left, right, fire]
+        return [keys["w"] ? 1 : 0, keys["a"] ? 1 : 0, keys["d"] ? 1 : 0, keys["s"] ? 1 : 0,]
+    }
+    function press(key){
+        if(keys[key]){
+            keys[key] = false;
+            return true;
+        }
+        return false;
+    }
+    addEventListener("mousedown",function(e){
+        if(e.button == 0) {
+            keys.mouse = true;
+        } else if(e.button == 2) {
+            keys.rightMouse = true;
+        }
+        mouseX = e.pageX;
+        mouseY = e.pageY;
+    });
+    addEventListener("mouseup",function(e){
+        if(e.button == 0) { 
+            keys.mouse = false;
+        } else if(e.button == 2) {
+            keys.rightMouse = true;
+        }
+    });
+    addEventListener("blur", function (){
+        keys = {};
+    });
+    addEventListener("mousemove",function(e){
+        mouseX = e.pageX;
+        mouseY = e.pageY;
+    });
+    addEventListener("keydown", function (e){
+        keys[e.key] = true;
+    });
+    addEventListener("keyup", function (e){
+        keys[e.key] = false;
+    });
+  </script>
+</body>
+</html>
