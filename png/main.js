@@ -58,6 +58,10 @@ var battleRandom = 1;
 function updateBattleRandom() {
     battleRandom = randNum(0.75,1.25);
 };
+
+var animations = [];
+var dialogues = [];
+var dialogueTxt = new PIXI.Text("");
 var frameOuts = [];
 var globalFrameCount = 0;
 var loot = {gold: 0, xp: 0, items: []};
@@ -71,10 +75,15 @@ function setup() {
 
     playerMenu.list = new PIXI.Container();
     ui.addChild(playerMenu.list);
+    ui.addChild(dialogueTxt);
+    dialogueTxt.anchor.set(0.5,0.5);
+    dialogueTxt.x = innerWidth/2;
+    dialogueTxt.y = 25;
+    dialogueTxt.visible = false;
     var tong = {
         name: "Tongarango",
         sprite: new Sprite(resources["sprites/chars/tong.png"].texture),
-        atk: 15,
+        atk: 105,
         def: 15,
         maxHP: 25,
         hp: 25,
@@ -267,7 +276,7 @@ function loadAbilityMenu(ability,charPP) {
     
     updateIcon();
 }
-function setForBattle(good, setup, bad) {
+function setForBattle(good, setup, bad) {   
     for(var i = 0; i < setup.length; i++) {
         good[i].sprite.x = innerWidth * setup[i][0];
         good[i].sprite.y = innerHeight * setup[i][1];
@@ -280,6 +289,8 @@ function setForBattle(good, setup, bad) {
     loot.gold = 0;
     loot.xp = 0;
     loot.items = [];
+    partyActions = [];
+    partyActionsI = [];
     activePartyI = -1;
     nextPlayer();
 }
@@ -364,9 +375,6 @@ function handleFrameouts(frame) {
         }
     }
 }
-var animations = [];
-var dialogues = [];
-var dialogueTxt = new PIXI.Text("I'm a happy little dialogue!");
 function play() {
     playAnimations(animations);
     handleFrameouts(++globalFrameCount);
@@ -522,8 +530,18 @@ function play() {
         }
     } else if(gameState === "action") {
         if(checkEnemyParty()) {
-
-            gameState = "end";
+            dialogues = [];
+            dialogues.push("You were victorious!");
+            dialogues.push("Gained " + loot.gold + " gold");
+            dialogues.push("Gained " + loot.xp + " xp");
+            loot.items.forEach(function(e) {
+                dialogues.push("Gained a " + e);
+            });
+            dialogueTxt.visible = true;
+            gameState = "anim";
+            setFrameout(function() {
+                gameState = "end";
+            }, 60);
             return;
         }
 
@@ -538,12 +556,78 @@ function play() {
         // debugger;
 
         if(curAction.action === "fight") {
+            if(curAction.targets[0].hp <= 0) {
+                curAction.targets = chooseRandomEnemy(enemyParty);
+            }
             runFight(curAction);
         } else if (curAction.action === "special") {
             /// TODO: If the character ran out of PP we need to check again.
-            runSpecial(curAction);
+            if(curAction.char.pp < curAction.ability.pp) {
+                runFight({
+                    char: curAction.char,
+                    targets: chooseRandomEnemy(enemyParty),
+                    action: "fight",
+                })
+            } else {
+                curAction.char.pp -= curAction.ability.pp;
+                if(curAction.targets.length === 1) {
+                    if(curAction.targets[0].hp <= 0) {
+                        curAction.targets = chooseRandomEnemy(enemyParty);
+                    }
+                }
+                runSpecial(curAction);
+            }
+        }
+    } else if(gameState === "end") {
+        if(userInput.confirm && dialogueTxt.text.length > 7) {
+            disableUserInput("confirm");
+            dialogueTxt.text = "";
+            dialogues.shift();
+            if(dialogues.length === 0) {
+                var fade = new PIXI.Graphics();
+                fade.x = -10;
+                fade.y = -10;
+                fade.beginFill(0xFFFFFF);
+                fade.drawRect(0,0,innerWidth + 100, innerHeight + 100);
+                ui.addChild(fade);
+                fade.alpha = 0;
+                animations.push({
+                    sprite: fade,
+                    type: "transform",
+                    props: ["alpha"],
+                    min: [0],
+                    max: [1],
+                    direction: "both",
+                    speed: 20,
+                    destruct: 1,
+                    cb: function() {
+                        ui.removeChild(fade);
+                    },
+                    mode: 1,
+                    i: 0,
+                });
+                setFrameout(function() {
+                    enemyParty = generateEnemyParty(random1);
+                    setForBattle(activeParty, activeSetup, enemyParty);
+                    gameState = "actions";
+                }, 20);
+                gameState = "anim";
+            }
+        } else if(dialogueTxt.text.length !== dialogues[0].length) {
+            if(globalFrameCount % 2 === 0) {
+                dialogueTxt.text += dialogues[0][dialogueTxt.text.length];
+            }
         }
     }
+}
+function chooseRandomEnemy(players) {
+    var living = [];
+    for(var i = 0; i < players.length; i++) {
+        if(players[i].hp > 0) {
+            living.push(players[i]);
+        }
+    }
+    return [living[randInt(0,living.length-1)]]
 }
 function runSpecial(curAction) {
     curAction.ability.charAnim(curAction.char.sprite, curAction.targets);
@@ -630,8 +714,8 @@ function checkEnemyParty() {
     for(i = 0; i < len; i++) {
         var cur = enemyParty[i];
         if(cur.hp <= 0) {
-            loot.gold += cur.gold;
-            loot.xp += cur.xp;
+            loot.gold += monsterpedia[cur.name].gold;
+            loot.xp += monsterpedia[cur.name].xp;
             if(cur.items) {
                 loot.items = loot.items.concat(cur.items);
             }
