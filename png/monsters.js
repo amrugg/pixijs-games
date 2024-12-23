@@ -61,7 +61,7 @@ var random1 = [["Goblin", "Goblin", "Goblin"], ["Dark Goblin"], ["Goblin", "Gobl
 var random2 = [["Dark Goblin", "Dark Goblin", "Dark Goblin"], ["Goblin"], ["Dark Goblin", "Dark Goblin"]];
 var curDialogue = {}; /// Serves as a type of window.
 var cutSceneI = 0;
-var log1 = [
+/*var log1 = [
     function() {
         var tong = new Sprite(resources["sprites/chars/tong.png"].texture);
         foreground.addChild(tong);
@@ -143,7 +143,9 @@ var log1 = [
     function() {
         gameState = "anim";
         clearCharTalk();
-        activeParty.push(addCharNels());
+        var nels = addCharNels();
+        activeParty.push(nels);
+        totalParty.push(nels);
         foreground.removeChild(curDialogue.tong);
         foreground.removeChild(curDialogue.nels);
         ++gamePlayStatus;
@@ -153,7 +155,7 @@ var log1 = [
             foreground.addChild(e.sprite);
         });
     }
-];
+];*/
 
 var log2 = [
     function() {
@@ -394,6 +396,7 @@ var log3 = [
         charTalk("sam", "Sam joined your party.");
         curDialogue.trueCharSam = addCharSam();
         activeParty.push(curDialogue.trueCharSam);
+        totalParty.push(curDialogue.trueCharSam);
         gameState = "dialogue";
     },
     function() {
@@ -401,6 +404,200 @@ var log3 = [
         charTalk("flam", "Flam joined your party.");
         curDialogue.trueCharFlam = addCharFlam();
         activeParty.push(curDialogue.trueCharFlam);
+        totalParty.push(curDialogue.trueCharFlam);
+        curDialogue.trueCharFlam.myTwin = curDialogue.trueCharSam;
+        curDialogue.trueCharSam.myTwin = curDialogue.trueCharFlam;
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        gameState = "anim";
+        setFrameout(function() {
+            foreground.removeChild(curDialogue.tong);
+            foreground.removeChild(curDialogue.nels);
+            foreground.removeChild(curDialogue.flam);
+            foreground.removeChild(curDialogue.sam);
+            ++gamePlayStatus;
+            fadeOut(20);
+            nextScene(20);
+            activeParty.forEach(function(e) {
+                foreground.addChild(e.sprite);
+            });
+        }, 20);
+    }
+];
+
+var log1 = [
+    function() {
+        var tong = new Sprite(resources["sprites/chars/tong.png"].texture);
+        foreground.addChild(tong);
+        tong.anchor.set(0.5,0.5);
+        tong.x = innerWidth * 0.8;
+        tong.y = innerHeight - tong.height/1.9;
+        var nels = new Sprite(resources["sprites/chars/nels.png"].texture);
+        foreground.addChild(nels);
+        nels.anchor.set(0.5,0.5);
+        nels.x = innerWidth * 0.6;
+        nels.y = innerHeight - nels.height/1.9;
+
+        var flam = new Sprite(resources["sprites/chars/flam.png"].texture);
+        foreground.addChild(flam);
+        flam.anchor.set(0.5,0.5);
+        flam.x = innerWidth * 0.4;
+        flam.y = innerHeight-flam.height/1.9;
+        var sam = new Sprite(resources["sprites/chars/sam.png"].texture);
+        foreground.addChild(sam);
+        sam.anchor.set(0.5,0.5);
+        sam.x = innerWidth * 0.2;
+        sam.y = innerHeight-sam.height/1.9;
+
+        curDialogue.tong = tong;
+        curDialogue.nels = nels;
+        curDialogue.sam = sam;
+        curDialogue.flam = flam;
+        setFrameout(function() {
+            log1[1]();
+            ++cutSceneI;
+        },30);
+    },
+    function() {
+        charTalk("nels", "Hello! Is anyone home?");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("nels", ". . .");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("tong", "Maybe if I put a rock over the chimney he'll--");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("nels", "No! Shh! Here he comes.");
+        gameState = "dialogue";
+    },
+    function() {
+        var goat = new Sprite(resources["sprites/chars/goat.png"].texture);
+        foreground.addChild(goat);
+        goat.anchor.set(0.5,0.5);
+        goat.x = innerWidth * 0.5;
+        goat.y = -100;
+        clearCharTalk();
+        curDialogue.goat = goat;
+        animations.push({
+            sprite: goat,
+            type: "transform",
+            props: ["y"],
+            min: [-100],
+            max: [200],
+            direction: "one",
+            speed: 60,
+            destruct: 1,
+            mode: 1,
+            cb: function() {
+                charTalk("goat", "Oh man! What are you guys doing here? You're destroying all my trees!");
+                gameState = "dialogue";
+            },
+            i: 0,
+        });
+    },
+    function() {
+        clearCharTalk();
+        charTalk("nels", "Yes, Guard Tongarango. What are you doing here and why did you jump us?");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("sam", "We were... um... We were actually just looking for adventure.");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("flam", "Yeah, being a dirt farmer is kinda boring.");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("sam", "So we decided to go save the kingdom from the goblins!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("nels", "And then you jumped us.");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("sam", "Yeah, about that...");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("tong", "Hey! You guys could join our party!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("nels", "What?!?");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("tong", "Yeah! They don't like goblins, and we don't like them!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("sam", "Bark?");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("nels", "I'm... not sure if I follow.");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("tong", "Well, I'm sure they could be a great help to us on a mission to save the world!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("nels", "Save the world?!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("tong", "That's pretty much always what we do on RPGs, Nels.");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("nels", "How are a couple of half-dead dogs going to help us figure fight off the goblins?");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("sam", "Oh, don't worry! In RPGs, whenever someone joins your team they get full health!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("sam", "Sam joined your party.");
+        curDialogue.trueCharSam = addCharSam();
+        activeParty.push(curDialogue.trueCharSam);
+        totalParty.push(curDialogue.trueCharSam);
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("flam", "Flam joined your party.");
+        curDialogue.trueCharFlam = addCharFlam();
+        activeParty.push(curDialogue.trueCharFlam);
+        totalParty.push(curDialogue.trueCharFlam);
         curDialogue.trueCharFlam.myTwin = curDialogue.trueCharSam;
         curDialogue.trueCharSam.myTwin = curDialogue.trueCharFlam;
         gameState = "dialogue";
@@ -425,7 +622,7 @@ var log3 = [
 var gamePlayStatus = 0;
 var gamePlayAgenda = [
     {set: random1, encounters: 0},
-    {set: log3, dialogue: true},
+    {set: log1, dialogue: true},
     {set: random2, encounters: 1},
     {set: log2, dialogue: true},
     {set: [["Sam", "Flam"]], encounters: 1},

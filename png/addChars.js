@@ -6,7 +6,7 @@ function addCharNels() {
         def: 7,
         maxHP: 20,
         hp: 20,
-        maxPP: 15,
+        maxPP: 105,
         pp: 105,
         agl: 15,
         evd: 10,
@@ -729,4 +729,87 @@ function addCharFlam() {
     flam.sprite.scale.set(0.75,0.75)
     flam.sprite.anchor.set(0.5,0.5);
     return flam;
+}
+function addCharTux() {
+    var tux = {
+        name: "Tux",
+        sprite: new Sprite(resources["sprites/chars/tux.png"].texture),
+        atk: 13,
+        def: 10,
+        maxHP: 22,
+        hp: 22,
+        maxPP: 20,
+        pp: 20,
+        agl: 13,
+        evd: 12,
+        level: 1,
+        xp: 0,
+        actions: ["Fight", "Frost", "Swap", "Item"],
+        status: [],
+        Frost: {
+            "Finis": {
+                pp: 3,
+                dmgMult: function(target) { 
+                    if(target.maxHP + target.def + target.evd <= tux.agl + tux.atk * battleRandom) {
+                        target.hp = -1;
+                        deathFade(target.sprite);
+                        makeTxt("MORTIS", target.sprite);
+                    } else {
+                        makeTxt("MISS", target.sprite);
+                    }
+                    updateBattleRandom();
+                },
+                target: "one",
+                animLen: 80,
+                charAnim: function(char, target) {
+
+                    animations.push({
+                        sprite: char,
+                        type: "transform",
+                        props: ["x", "y"],
+                        min: [char.x, char.y],
+                        max: [target[0].sprite.x, target[0].sprite.y],
+                        direction: "both",
+                        speed: 15,
+                        mode: 1,
+                        destruct: 1,
+                        play: function(anim) {
+                            if(anim.i % 2 === 0||true) {
+                                for(var i = 0; i < 5; i++) {
+                                    var part = spawnParticle(anim.sprite.x + randInt(-100, 100), anim.sprite.y + randInt(-100, 100), 0xAEB5FB, false, 0);
+                                    part.fadeSpeed = 0.025;
+                                }
+                            }
+                            if(anim.i === anim.speed-1) {
+                                for(var i = 0; i < 100; i++) {
+                                    spawnParticle(anim.max[0] + randInt(-150,150), anim.max[1] + randInt(-150,150), 0xEE402E, false, 0);
+                                }
+                            }
+                            console.log(anim.i,anim.speed);
+                        },
+                        i: 0,
+                    });
+                },
+                targetAnim: function(target) {
+                    setFrameout(function() {
+                        animations.push({
+                            sprite: target,
+                            type: "transform",
+                            props: ["rotation"],
+                            min: [0],
+                            max: [Math.PI*4],
+                            direction: "one",
+                            speed: 40,
+                            mode: 1,
+                            destruct: 1,
+                            i: 0,
+                        });
+                    },20);
+                }
+            }
+        }
+    }
+    tux.sprite.scale.set(0.75,0.75)
+    tux.sprite.anchor.set(0.5,0.5);
+    return tux;
 }

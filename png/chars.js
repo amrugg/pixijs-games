@@ -17,6 +17,15 @@ var levelUpStats = {
         evd: 3,
         ability: {"Finis": 1, "Venegance": 3, "Dynamis": 5, "Shield Breaker": 7, "Swath": 15, "Pentimone": 20},
     },
+    "Tux": {
+        atk: 3,
+        def: 2,
+        maxHP: 3,
+        maxPP: 4,
+        agl: 4,
+        evd: 2,
+        ability: {"Finis": 1},
+    },
     "Sam": {
         atk: 3,
         def: 2,

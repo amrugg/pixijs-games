@@ -34,7 +34,7 @@ app.renderer.view.style.display = "block";
 app.renderer.autoResize = true;
 app.renderer.resize(window.innerWidth, window.innerHeight);
 document.body.appendChild(app.view);
-var charNames = ["tong", "nels", "sam", "flam"];
+var charNames = ["tong", "nels", "sam", "flam", "tux", "will", "goat"];
 var monsterNames = ["Goblin", "Dark Goblin", "Sam", "Flam"];
 loadArray(charNames, "sprites/chars/", "png");
 loadArray(charNames, "sprites/heads/", "png");
@@ -47,6 +47,7 @@ var state;
 var keys = {};
 var mouseX,mouseY;
 var activeParty = [];
+var totalParty = [];
 var activePartyI = 0;
 // var activeSetup = [[0.33,0.85], [0.66,0.85]];
 var enemyParty = [];
@@ -426,6 +427,7 @@ function setup() {
     ui.addChild(iconContainer);
     icon.anchor.set(0.5,0.5);
     activeParty.push(tong);
+    totalParty.push(tong);
     enemyParty = generateEnemyParty(gamePlayAgenda[gamePlayStatus].set);
     setForBattle(activeParty, enemyParty);
     charTalkBox.beginFill(0x3C71F7);
@@ -478,6 +480,9 @@ function loadPlayerMenu(char) {
         el.anchor.set(1,0.5);
         el.x = innerWidth - 25;
         els.push(el);
+        if(i === 2 && activeParty.length === totalParty.length) {
+            el.alpha = 0.5;
+        }
     });
     playerMenu.choices = els;
     playerMenu.char = char;
@@ -528,6 +533,32 @@ function loadAbilityMenu(ability,char) {
     
     updateIcon();
 }
+function loadSwapMenu() {
+    var els = [];
+    playerMenu.targets = [];
+    var trueI = 0;
+    for(var i = 0; i < totalParty.length; i++) {
+        var cur = totalParty[i]
+        if(!activeParty.includes(cur)) {
+            var el = new PIXI.Text(cur.name);
+            playerMenu.list.addChild(el);
+            el.y = 25 + trueI++ * 50;
+            el.anchor.set(1,0.5);
+            el.x = innerWidth - 25;
+            els.push(el);
+            if(cur.hp <= 0) {
+                el.alpha = 0.5;
+                pp.alpha = 0.5;
+            }
+            playerMenu.targets.push(cur);
+        }
+    };
+    playerMenu.choices = els;
+    playerMenu.state = "complex";
+    playerMenu.i = 0;
+    
+    updateIcon();
+}
 function handleParticles(particles) {
     var i;
     var len = particles.length;
@@ -565,33 +596,49 @@ function drawBar(width, length, color) {
     ui.addChild(bar);
     return bar;
 }
-function setForBattle(good, bad) {   
+function createInterface(char) {
+    var hpBack = drawBar(200,10,0x000000);
+    hpBack.x = char.sprite.x - char.sprite.width/2;
+    hpBack.y = char.sprite.y + 10 + char.sprite.height/2;
+    var hpBar = drawBar(200,10,0xEE402E);
+    hpBar.x = hpBack.x;
+    hpBar.y = hpBack.y;
+    var hpText = new PIXI.Text(char.hp);
+    hpText.x = hpBack.x + 210;
+    hpText.y = hpBack.y - 10;
+    ui.addChild(hpText);
+
+    var ppBack = drawBar(200,10,0x000000);
+    ppBack.x = char.sprite.x - char.sprite.width/2;
+    ppBack.y = char.sprite.y + 40 + char.sprite.height/2;
+    var ppBar = drawBar(200,10,0x059494);
+    ppBar.x = ppBack.x;
+    ppBar.y = ppBack.y;
+    var ppText = new PIXI.Text(char.pp);
+    ppText.x = ppBack.x + 210;
+    ppText.y = ppBack.y - 10;
+    ui.addChild(ppText);
+    return {hpBack, hpBar, hpText, ppBack, ppBar, ppText}
+}
+function clearInterface(e) {
+    if(!e.interface) {
+        return;
+    }
+    var keys = Object.keys(e.interface);
+    keys.forEach(function(key){
+        ui.removeChild(e.interface[key]);
+    });
+}
+function setForBattle(good, bad) {
+    while(good.length > 4) {
+        good.pop().sprite.visible = false;
+    }
     for(var i = 0; i < good.length; i++) {
         good[i].sprite.x = innerWidth * (i+1)/(good.length+1);
         good[i].sprite.y = innerHeight - 180;
 
-        var hpBack = drawBar(200,10,0x000000);
-        hpBack.x = good[i].sprite.x - good[i].sprite.width/2;
-        hpBack.y = good[i].sprite.y + 10 + good[i].sprite.height/2;
-        var hpBar = drawBar(200,10,0xEE402E);
-        hpBar.x = hpBack.x;
-        hpBar.y = hpBack.y;
-        var hpText = new PIXI.Text(good[i].hp);
-        hpText.x = hpBack.x + 210;
-        hpText.y = hpBack.y - 10;
-        ui.addChild(hpText);
-
-        var ppBack = drawBar(200,10,0x000000);
-        ppBack.x = good[i].sprite.x - good[i].sprite.width/2;
-        ppBack.y = good[i].sprite.y + 40 + good[i].sprite.height/2;
-        var ppBar = drawBar(200,10,0x059494);
-        ppBar.x = ppBack.x;
-        ppBar.y = ppBack.y;
-        var ppText = new PIXI.Text(good[i].pp);
-        ppText.x = ppBack.x + 210;
-        ppText.y = ppBack.y - 10;
-        ui.addChild(ppText);
-        good[i].interface = {hpBack, hpBar, hpText, ppBack, ppBar, ppText}
+        clearInterface(good[i]);
+        good[i].interface = createInterface(good[i]);
         updateInterface(good[i]);
     }
 
@@ -748,6 +795,10 @@ function play() {
                     clearPlayerMenu();
                     loadAbilityMenu(playerMenu.char[playerMenu.targets[playerMenu.i]], playerMenu.char);
                     playerMenu.state = "complex";
+                } else if(playerMenu.targets[playerMenu.i] === "Swap") {
+                    clearPlayerMenu();
+                    loadSwapMenu();
+                    playerMenu.state = "complex";
                 }
             }
         } else if(playerMenu.state === "complex") {
@@ -765,44 +816,66 @@ function play() {
                 updateIcon();
             } else if(userInput.confirm) {
                 disableUserInput("confirm");
-                var curAbility = playerMenu.targets[playerMenu.i];
-                var twinCheck = true;
-                if(playerMenu.char.myTwin) {
-                    if(playerMenu.char.myTwin.pp < curAbility.pp) {
-                        twinCheck = false;
-                    }
-                }
-                if(playerMenu.char.pp >= curAbility.pp && twinCheck) {
-                    if(curAbility.target === "all") {
-                        playerMenu.choices = [getSprites(enemyParty), getSprites(activeParty)];
-                        playerMenu.targets = [enemyParty, activeParty];
-                        playerMenu.state = "target-all";
-                        playerMenu.action = "special";
-                        playerMenu.i = 0;
-                        playerMenu.ability = curAbility;
-                        loadMultiIcons(playerMenu.choices[0]);
-                    } else if(curAbility.target === "one") {
-                        if(curAbility.allied) {
-                            playerMenu.choices = getSprites(activeParty.concat(enemyParty));
-                            playerMenu.targets = activeParty.concat(enemyParty);
-                        } else {
-                            playerMenu.choices = getSprites(enemyParty.concat(activeParty));
-                            playerMenu.targets = enemyParty.concat(activeParty);
-                        }
-                        playerMenu.state = "target";
-                        playerMenu.action = "special";
-                        playerMenu.i = 0;
-                        playerMenu.ability = curAbility;
-                        updateIcon();
-                    } else if(curAbility.target === "none") {
-                        partyActions.push({
-                            char: playerMenu.char,
-                            targets: [playerMenu.char],
-                            action: "special",
-                            ability: curAbility
+                if(playerMenu.targets[playerMenu.i].sprite) {
+                    /// If our target is a character it should have a sprite, right?
+                    gameState = "anim";
+                    animRetreat(playerMenu.char.sprite, function(){
+                        deathFade(playerMenu.char.sprite, function() {
+                            foreground.removeChild(playerMenu.char.sprite);
+                            clearInterface(playerMenu.char);
+                            playerMenu.targets[playerMenu.i].sprite.x = playerMenu.char.sprite.x;
+                            playerMenu.targets[playerMenu.i].sprite.y = playerMenu.char.sprite.y;
+                            playerMenu.targets[playerMenu.i].sprite.visible = true;
+                            swapInFade(playerMenu.targets[playerMenu.i].sprite, function() {
+                                playerMenu.targets[playerMenu.i].interface = createInterface(playerMenu.targets[playerMenu.i]);
+                                updateInterface(playerMenu.targets[playerMenu.i]);
+                                activeParty.splice(activePartyI,1,playerMenu.targets[playerMenu.i]);
+                                gameState = "actions";
+                                nextPlayer();
+                            });
                         });
-                        animRetreat(playerMenu.char.sprite);
-                        nextPlayer();
+                    });
+                    
+                } else {
+                    var curAbility = playerMenu.targets[playerMenu.i];
+                    var twinCheck = true;
+                    if(playerMenu.char.myTwin) {
+                        if(playerMenu.char.myTwin.pp < curAbility.pp) {
+                            twinCheck = false;
+                        }
+                    }
+                    if(playerMenu.char.pp >= curAbility.pp && twinCheck) {
+                        if(curAbility.target === "all") {
+                            playerMenu.choices = [getSprites(enemyParty), getSprites(activeParty)];
+                            playerMenu.targets = [enemyParty, activeParty];
+                            playerMenu.state = "target-all";
+                            playerMenu.action = "special";
+                            playerMenu.i = 0;
+                            playerMenu.ability = curAbility;
+                            loadMultiIcons(playerMenu.choices[0]);
+                        } else if(curAbility.target === "one") {
+                            if(curAbility.allied) {
+                                playerMenu.choices = getSprites(activeParty.concat(enemyParty));
+                                playerMenu.targets = activeParty.concat(enemyParty);
+                            } else {
+                                playerMenu.choices = getSprites(enemyParty.concat(activeParty));
+                                playerMenu.targets = enemyParty.concat(activeParty);
+                            }
+                            playerMenu.state = "target";
+                            playerMenu.action = "special";
+                            playerMenu.i = 0;
+                            playerMenu.ability = curAbility;
+                            updateIcon();
+                        } else if(curAbility.target === "none") {
+                            partyActions.push({
+                                char: playerMenu.char,
+                                targets: [playerMenu.char],
+                                action: "special",
+                                ability: curAbility
+                            });
+                            animRetreat(playerMenu.char.sprite);
+                            nextPlayer();
+                        }
                     }
                 }
             } else if(userInput.back) {
@@ -1028,6 +1101,9 @@ function nextScene(timeOut) {
             activeParty.forEach(function(e) {
                 foreground.removeChild(e.sprite);
                 // debugger;
+                if(!e.interface) {
+                    return;
+                }
                 var keys = Object.keys(e.interface);
                 keys.forEach(function(key){
                     ui.removeChild(e.interface[key]);
