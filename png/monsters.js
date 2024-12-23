@@ -27,10 +27,25 @@ var monsterpedia = {
         atk: 18,
         def: 10,
         maxHP: 13,
-        maxPP:  0,
+        maxPP:  5,
         agl: 5,
         evd: 5,
-        ai: targetRandomPlayer,
+        ai: function(players, char) {
+            var action = targetRandomPlayer(players,char);
+            if(Math.random() < 0.5 && char.pp >= 3) {
+                action.action = "special";
+                action.name = "Cutthroat";
+                action.ability = createSpecial(3, 1.5);
+                /*
+                                char: playerMenu.char,
+                                targets: [playerMenu.char],
+                                action: "special",
+                                name: curSpecialName,
+                                ability: curAbility,
+                                 */   
+            }
+            return action;
+        },
         gold: 5,
         xp: 5
     },
@@ -58,10 +73,10 @@ var monsterpedia = {
     }
 }
 var random1 = [["Goblin", "Goblin", "Goblin"], ["Dark Goblin"], ["Goblin", "Goblin"]];
-var random2 = [["Dark Goblin", "Dark Goblin", "Dark Goblin"], ["Goblin"], ["Dark Goblin", "Dark Goblin"]];
+var random2 = [["Goblin", "Dark Goblin", "Goblin"], ["Dark Goblin"], ["Goblin", "Goblin"]];
 var curDialogue = {}; /// Serves as a type of window.
 var cutSceneI = 0;
-/*var log1 = [
+var log1 = [
     function() {
         var tong = new Sprite(resources["sprites/chars/tong.png"].texture);
         foreground.addChild(tong);
@@ -155,8 +170,7 @@ var cutSceneI = 0;
             foreground.addChild(e.sprite);
         });
     }
-];*/
-
+];
 var log2 = [
     function() {
         var tong = new Sprite(resources["sprites/chars/tong.png"].texture);
@@ -426,8 +440,7 @@ var log3 = [
         }, 20);
     }
 ];
-
-var log1 = [
+var log4 = [
     function() {
         var tong = new Sprite(resources["sprites/chars/tong.png"].texture);
         foreground.addChild(tong);
@@ -456,7 +469,7 @@ var log1 = [
         curDialogue.sam = sam;
         curDialogue.flam = flam;
         setFrameout(function() {
-            log1[1]();
+            log4[1]();
             ++cutSceneI;
         },30);
     },
@@ -484,122 +497,158 @@ var log1 = [
         foreground.addChild(goat);
         goat.anchor.set(0.5,0.5);
         goat.x = innerWidth * 0.5;
-        goat.y = -100;
+        goat.y = -200;
         clearCharTalk();
         curDialogue.goat = goat;
-        animations.push({
-            sprite: goat,
-            type: "transform",
-            props: ["y"],
-            min: [-100],
-            max: [200],
-            direction: "one",
-            speed: 60,
-            destruct: 1,
-            mode: 1,
-            cb: function() {
-                charTalk("goat", "Oh man! What are you guys doing here? You're destroying all my trees!");
-                gameState = "dialogue";
-            },
-            i: 0,
-        });
+        setFrameout(function() {
+            animations.push({
+                sprite: goat,
+                type: "transform",
+                props: ["y"],
+                min: [-200],
+                max: [400],
+                direction: "one",
+                speed: 90,
+                destruct: 1,
+                mode: 1,
+                cb: function() {
+                    charTalk("goat", "Oh man! What are you guys doing here? You're destroying all my trees!");
+                    gameState = "dialogue";
+                },
+                i: 0,
+            });
+        },30);
     },
     function() {
         clearCharTalk();
-        charTalk("nels", "Yes, Guard Tongarango. What are you doing here and why did you jump us?");
+        charTalk("nels", "Wh-- Tongarango! Don't you have eyes?!");
         gameState = "dialogue";
     },
     function() {
         clearCharTalk();
-        charTalk("sam", "We were... um... We were actually just looking for adventure.");
+        charTalk("tong", "Yeah, but going around the trees takes so much work.");
         gameState = "dialogue";
     },
     function() {
         clearCharTalk();
-        charTalk("flam", "Yeah, being a dirt farmer is kinda boring.");
+        charTalk("nels", "Augh.");
         gameState = "dialogue";
     },
     function() {
         clearCharTalk();
-        charTalk("sam", "So we decided to go save the kingdom from the goblins!");
+        charTalk("sam", "So mister, do you have any idea why there's goblins around here?");
         gameState = "dialogue";
     },
     function() {
         clearCharTalk();
-        charTalk("nels", "And then you jumped us.");
+        charTalk("goat", "Goblins?!? Oh man! And you made a giant trail of dead trees leading them right to me! Oh man!");
         gameState = "dialogue";
     },
     function() {
         clearCharTalk();
-        charTalk("sam", "Yeah, about that...");
+        charTalk("tong", "I thought you said you were a great warrior inside and weren't afraid of a few little goblins.");
         gameState = "dialogue";
     },
     function() {
         clearCharTalk();
-        charTalk("tong", "Hey! You guys could join our party!");
+        charTalk("goat", "Oh yeah, right. <coughs> Well you see, I'm a very poor old hermit. Maybe if you were to pay me something...");
         gameState = "dialogue";
     },
     function() {
         clearCharTalk();
-        charTalk("nels", "What?!?");
+        charTalk("tong", "Oh, Nels here has all the money.");
         gameState = "dialogue";
     },
     function() {
         clearCharTalk();
-        charTalk("tong", "Yeah! They don't like goblins, and we don't like them!");
+        charTalk("nels", "<sighs> Fine. <hands over 20 gold>");
+        partyGold -= 20;
         gameState = "dialogue";
     },
     function() {
         clearCharTalk();
-        charTalk("sam", "Bark?");
+        charTalk("goat", "Great. This is working out perfectly, man. <coughs> Well, you see what you gotta do is kill the River Dragon.");
         gameState = "dialogue";
     },
     function() {
         clearCharTalk();
-        charTalk("nels", "I'm... not sure if I follow.");
+        charTalk("nels", "The River Dragon? But I thought that was just a--");
         gameState = "dialogue";
     },
     function() {
         clearCharTalk();
-        charTalk("tong", "Well, I'm sure they could be a great help to us on a mission to save the world!");
+        charTalk("tong", "The River Dragon! I thought I killed him! Did another one come back?");
         gameState = "dialogue";
     },
     function() {
         clearCharTalk();
-        charTalk("nels", "Save the world?!");
+        charTalk("Nels", "Um, Tongarango--");
         gameState = "dialogue";
     },
     function() {
         clearCharTalk();
-        charTalk("tong", "That's pretty much always what we do on RPGs, Nels.");
+        charTalk("goat", ". . . I guess you could say that. Anyway, you gotta bring me back the eyes of the River Dragon.");
         gameState = "dialogue";
     },
     function() {
         clearCharTalk();
-        charTalk("nels", "How are a couple of half-dead dogs going to help us figure fight off the goblins?");
+        charTalk("tong", "Why do you need the eyes of the River Dragon?");
         gameState = "dialogue";
     },
     function() {
         clearCharTalk();
-        charTalk("sam", "Oh, don't worry! In RPGs, whenever someone joins your team they get full health!");
+        charTalk("goat", "Well, I can use them to make a crystal ball so I can see where the goblins are coming from.");
         gameState = "dialogue";
     },
     function() {
         clearCharTalk();
-        charTalk("sam", "Sam joined your party.");
-        curDialogue.trueCharSam = addCharSam();
-        activeParty.push(curDialogue.trueCharSam);
-        totalParty.push(curDialogue.trueCharSam);
+        charTalk("nels", "A crystal ball?");
         gameState = "dialogue";
     },
     function() {
         clearCharTalk();
-        charTalk("flam", "Flam joined your party.");
-        curDialogue.trueCharFlam = addCharFlam();
-        activeParty.push(curDialogue.trueCharFlam);
-        totalParty.push(curDialogue.trueCharFlam);
-        curDialogue.trueCharFlam.myTwin = curDialogue.trueCharSam;
-        curDialogue.trueCharSam.myTwin = curDialogue.trueCharFlam;
+        charTalk("goat", "Or a telescope or something! You know! Just go get the eyes of the River Dragon and get out of here!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        setFrameout(function() {
+            animations.push({
+                sprite: curDialogue.goat,
+                type: "transform",
+                props: ["y"],
+                min: [400],
+                max: [-200],
+                direction: "one",
+                speed: 30,
+                destruct: 1,
+                mode: 1,
+                cb: function() {
+                    charTalk("tong", "Well, come on, Nels! We've got a river dragon to slay!");
+                    gameState = "dialogue";
+                },
+                i: 0,
+            });
+        },30);
+    },
+    function() {
+        clearCharTalk();
+        charTalk("nels", "Doesn't something sound the least bit suspicious--");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("sam", "Come on, Nels! We've got a River Dragon to slay!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("nels", "Don't tell me it's on the other side of the forest! Augh! More monsters again?");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("tong", "This is an RPG, Nels. The active party always gets attacked by monsters no one else ever sees.");
         gameState = "dialogue";
     },
     function() {
@@ -610,6 +659,7 @@ var log1 = [
             foreground.removeChild(curDialogue.nels);
             foreground.removeChild(curDialogue.flam);
             foreground.removeChild(curDialogue.sam);
+            foreground.removeChild(curDialogue.goat);
             ++gamePlayStatus;
             fadeOut(20);
             nextScene(20);
@@ -627,5 +677,54 @@ var gamePlayAgenda = [
     {set: log2, dialogue: true},
     {set: [["Sam", "Flam"]], encounters: 1},
     {set: log3, dialogue: true},
-    {set: random2, encounters: 4}
+    {set: random2, encounters: 4},
+    {set: log4, dialogue: true},
 ];
+
+function createSpecial(pp, dmgMult) {
+    return {
+        pp: pp,
+        dmgMult: dmgMult,
+        target: "one",
+        animLen: 80,
+        charAnim: function(char, target) {
+
+            animations.push({
+                sprite: char,
+                type: "transform",
+                props: ["x", "y"],
+                min: [char.x, char.y],
+                max: [target[0].sprite.x, target[0].sprite.y],
+                direction: "both",
+                speed: 15,
+                mode: 1,
+                destruct: 1,
+                play: function(anim) {
+                    if(anim.i === anim.speed-1) {
+                        for(var i = 0; i < 100; i++) {
+                            spawnParticle(anim.max[0] + randInt(-150,150), anim.max[1] + randInt(-150,150), 0x111110, randDir(2), 0).fadeSpeed = 0.025;
+                        }
+                    }
+                    console.log(anim.i,anim.speed);
+                },
+                i: 0,
+            });
+        },
+        targetAnim: function(target) {
+            setFrameout(function() {
+                animations.push({
+                    sprite: target,
+                    type: "transform",
+                    props: ["y"],
+                    min: [target.y],
+                    max: [target.y + 25],
+                    direction: "both",
+                    speed: 10,
+                    mode: 1,
+                    destruct: 4,
+                    i: 0,
+                });
+            },20);
+        }
+    };
+}

@@ -6,7 +6,7 @@ var levelUpStats = {
         maxPP: 3,
         agl: 3,
         evd: 1,
-        ability: {"Tremor": 1, "Resuscitate": 1, "Dynamite": 1, "Sumo Finish Flop": 1, },
+        ability: {"Tremor": 1, "Resuscitate": 3, "Dynamite": 5, "Sumo Finish Flop": 20},
     },
     "Nels": {
         atk: 4,

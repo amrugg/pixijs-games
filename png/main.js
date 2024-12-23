@@ -35,7 +35,7 @@ app.renderer.autoResize = true;
 app.renderer.resize(window.innerWidth, window.innerHeight);
 document.body.appendChild(app.view);
 var charNames = ["tong", "nels", "sam", "flam", "tux", "will", "goat"];
-var monsterNames = ["Goblin", "Dark Goblin", "Sam", "Flam"];
+var monsterNames = ["Goblin", "Dark Goblin", "Sam", "Flam", "Cobra", "Bat", "Ice Goblin"];
 loadArray(charNames, "sprites/chars/", "png");
 loadArray(charNames, "sprites/heads/", "png");
 loadArray(monsterNames, "sprites/monsters/", "png");
@@ -76,6 +76,7 @@ var partyItems = [];
 var particles = [];
 var particleContainer = new PIXI.Container();
 var nelsVenegance = false;
+var curSpecialName = "";
 var twinAbility = 0;
 function findActivePartyMember(name, party, verify) {
     verify = verify || function(){};
@@ -85,6 +86,7 @@ function findActivePartyMember(name, party, verify) {
         }
     }
 }
+var statuses = [];
 function setup() {
     updateBattleRandom();
     app.stage.addChild(background);
@@ -439,32 +441,28 @@ function setup() {
     app.ticker.add(delta => gameLoop(delta));
 }
 function newStatus(name, time, target) {
-    if(target.status) {
-        var foundCurStatus;
-        target.status.forEach(function(stat) {
-            if(stat.name === name) {
-                foundCurStatus = stat;
-                stat.time = time;
-            }
-        });
-        if(foundCurStatus) {
-            return foundCurStatus;
+    var foundCurStatus;
+    statuses.forEach(function(stat) {
+        if(stat.name === name) {
+            foundCurStatus = stat;
+            stat.time = time;
         }
+    });
+    if(foundCurStatus) {
+        return foundCurStatus;
     }
-    var status = {name, time, bonus: {}};
+    var status = {name, time, bonus: {}, char: target};
     if(name === "valor") {
         status.bonus.atk = {mult: 2};
+        target.atk *= 2;
     }
-    if(!target.status) {
-        target.status = [status];
-    } else {
-        target.status.push(status);
-    }
+    statuses.push(status);
     return status;
 }
 function loadPlayerMenu(char) {
     var els = [];
     playerMenu.targets = [];
+    playerMenu.names = [];
     char.actions.forEach(function (name, i) {
         if(i === 1) {
             if(char.name === "Sam") {
@@ -475,6 +473,7 @@ function loadPlayerMenu(char) {
         }
         playerMenu.targets.push(name);
         var el = new PIXI.Text(name);
+        playerMenu.names.push(name);
         playerMenu.list.addChild(el);
         el.y = 25 + i * 50;
         el.anchor.set(1,0.5);
@@ -499,10 +498,12 @@ function clearPlayerMenu() {
 function loadAbilityMenu(ability,char) {
     var els = [];
     playerMenu.targets = [];
+    playerMenu.names = [];
     var keys = Object.keys(ability);
     keys.forEach(function (name, i) {
         if(levelUpStats[char.name].ability[name] <= char.level) {
             var el = new PIXI.Text(name);
+            playerMenu.names.push(name);
             playerMenu.list.addChild(el);
             el.y = 25 + i * 50;
             el.anchor.set(1,0.5);
@@ -536,11 +537,13 @@ function loadAbilityMenu(ability,char) {
 function loadSwapMenu() {
     var els = [];
     playerMenu.targets = [];
+    playerMenu.names = [];
     var trueI = 0;
     for(var i = 0; i < totalParty.length; i++) {
         var cur = totalParty[i]
         if(!activeParty.includes(cur)) {
             var el = new PIXI.Text(cur.name);
+            playerMenu.names.push(cur.name);
             playerMenu.list.addChild(el);
             el.y = 25 + trueI++ * 50;
             el.anchor.set(1,0.5);
@@ -712,24 +715,6 @@ function makeTxt(dmg, target) {
 }
 function attack(atk, attacker, defender) {
     var def = defender.def;
-    if(attacker) {
-        if(attacker.status) {
-            attacker.status.forEach(function(status) {
-                if(status.bonus.atk) {
-                    atk *= status.bonus.atk.mult || 1;
-                    atk += status.bonus.atk.plus || 0;
-                }
-            });
-        }
-    }
-    if(defender.status) {
-        defender.status.forEach(function(status) {
-            if(status.bonus.def) {
-                def *= status.bonus.def.mult || 1;
-                def += status.bonus.def.plus || 0;
-            }
-        });
-    }
     var dmg = Math.round(constrain(1, (atk * 1.5 - def) * battleRandom, 9999));
     defender.hp -= dmg;
     makeTxt(dmg, defender.sprite);
@@ -795,11 +780,14 @@ function play() {
                     clearPlayerMenu();
                     loadAbilityMenu(playerMenu.char[playerMenu.targets[playerMenu.i]], playerMenu.char);
                     playerMenu.state = "complex";
-                } else if(playerMenu.targets[playerMenu.i] === "Swap") {
+                } else if(playerMenu.targets[playerMenu.i] === "Swap" && activeParty.length < totalParty.length) {
                     clearPlayerMenu();
                     loadSwapMenu();
                     playerMenu.state = "complex";
                 }
+            } else if(userInput.back) {
+                animRetreat(playerMenu.char.sprite);
+                nextPlayer();
             }
         } else if(playerMenu.state === "complex") {
             if(userInput.up) {
@@ -844,6 +832,7 @@ function play() {
                             twinCheck = false;
                         }
                     }
+                    curSpecialName = playerMenu.names[playerMenu.i];
                     if(playerMenu.char.pp >= curAbility.pp && twinCheck) {
                         if(curAbility.target === "all") {
                             playerMenu.choices = [getSprites(enemyParty), getSprites(activeParty)];
@@ -871,7 +860,8 @@ function play() {
                                 char: playerMenu.char,
                                 targets: [playerMenu.char],
                                 action: "special",
-                                ability: curAbility
+                                name: curSpecialName,
+                                ability: curAbility,
                             });
                             animRetreat(playerMenu.char.sprite);
                             nextPlayer();
@@ -913,6 +903,7 @@ function play() {
                     partyActions.push({
                         char: playerMenu.char,
                         targets: [playerMenu.targets[playerMenu.i]],
+                        name: curSpecialName,
                         action: "special",
                         ability: playerMenu.ability
                     });
@@ -954,6 +945,7 @@ function play() {
                     partyActions.push({
                         char: playerMenu.char,
                         targets: playerMenu.targets[playerMenu.i],
+                        name: curSpecialName,
                         action: "special",
                         ability: playerMenu.ability
                     });
@@ -969,6 +961,7 @@ function play() {
             }
         }
     } else if(gameState === "action") {
+        updatePartyInterface(activeParty);
         if(checkEnemyParty()) {
             dialogues = [];
             dialogues.push("You were victorious!");
@@ -1026,7 +1019,6 @@ function play() {
         } else if (curAction.action === "special") {
             /// TODO: If the character ran out of PP we need to check again.
             if(curAction.char.pp < curAction.ability.pp) {
-                
                 if(activeParty.includes(curAction.char)) {
                     runFight({
                         char: curAction.char,
@@ -1041,8 +1033,6 @@ function play() {
                     });
                 }
             } else {
-                curAction.char.pp -= curAction.ability.pp;
-                updateInterface(curAction.char);
                 if(curAction.targets.length === 1) {
                     if(curAction.targets[0].hp <= 0 && !curAction.ability.healing) {
                         if(activeParty.includes(curAction.char)) {
@@ -1052,13 +1042,23 @@ function play() {
                         }
                     }
                 }
-                if(curAction.ability.repeater) {
-                    runRepeatSpecial(curAction);
-                } else if(curAction.ability.twin) {
-                    runTwin(curAction);
-                } else {
-                    runSpecial(curAction);
-                }
+                gameState = "anim";
+                dialogueTxt.text = curAction.name;
+                dialogueTxt.alpha = 0;
+                dialogueTxt.visible = true;
+                alphaFade(dialogueTxt,0,1,10);
+                setFrameout(function(){
+                    alphaFade(dialogueTxt,1,0,10, function(){dialogueTxt.text = ""; dialogueTxt.visible = false; dialogueTxt.alpha = 1});                    
+                    curAction.char.pp -= curAction.ability.pp;
+                    updateInterface(curAction.char);
+                    if(curAction.ability.repeater) {
+                        runRepeatSpecial(curAction);
+                    } else if(curAction.ability.twin) {
+                        runTwin(curAction);
+                    } else {
+                        runSpecial(curAction);
+                    }
+                },60);
             }
         }
     } else if(gameState === "end") {
@@ -1084,6 +1084,10 @@ function play() {
         } else if(curCharTalkText) {
             if(dialogueTxt.text.length !== curCharTalkText.length) {
                 dialogueTxt.text += curCharTalkText[dialogueTxt.text.length];
+                if(curCharTalkText[dialogueTxt.text.length] === " " && dialogueTxt.width + dialogueTxt.x > (innerWidth-150) * ((dialogueTxt.text.match(/\n/g) || []).length+1)) {
+                    dialogueTxt.text += "\n";
+
+                }
             }
         }
     }
@@ -1150,6 +1154,7 @@ function fadeOut(duration) {
     });
 }
 function charTalk(name, txt) {
+    name = name.toLowerCase();
     ui.removeChild(charTalkBox)
     ui.addChild(charTalkBox)
     var head = new Sprite(resources["sprites/heads/" + name + ".png"].texture);
@@ -1210,8 +1215,15 @@ function runSpecial(curAction) {
         }
         setFrameout(function() {
             gameState = "action";
+            curAction.targets
         }, 60);
     }, curAction.ability.animLen);
+}
+function updatePartyInterface(party) {
+    party = party || activeParty;
+    party.forEach(function(char) {
+        updateInterface(char);
+    })
 }
 function runTwin(curAction) {
     curAction.ability.charAnim(curAction.char.sprite, curAction.targets);
@@ -1279,6 +1291,7 @@ function runFight(curAction) {
             char: curAction.targets[0],
             targets: [curAction.char],
             action: "special",
+            name: "Venegance",
             ability: {
                 pp: 0,
                 dmgMult: 3,
@@ -1378,14 +1391,9 @@ function loadMultiIcons(choices) {
 function resetRound() {
     gameState = "actions";
     partyActions = [];
-    activeParty.forEach(function(char) {
-        if(char.status) {
-            for(let i = 0; i < char.status.length; i++) {
-                if(--char.status[i].time <= 0) {
-                    char.status.splice(i,1);
-                    --i;
-                }
-            }
+    statuses.forEach(function(stat){
+        if(--stat.time <= 0) {
+            removeBuff(stat);
         }
     });
     nelsVenegance = false;
@@ -1393,6 +1401,9 @@ function resetRound() {
     partyActionsI = 0;
     activePartyI = -1;
     nextPlayer();
+}
+function removeBuff(stat) {
+    debugger;
 }
 function checkEnemyParty() {
     var i;
@@ -1513,7 +1524,7 @@ function nextPlayer() {
         clearPlayerMenu();
         loadPlayerMenu(playerMenu.char);
         iconContainer.visible = false;
-        playerMenu.state === "basic";        
+        playerMenu.state = "basic";        
     }
 }
 function playEnemies(party) {

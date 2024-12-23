@@ -61,6 +61,21 @@ function swapInFade(char,cb) {
         i: 0,
     });
 }
+function alphaFade(char,min,max,speed,cb) {
+    animations.push({
+        sprite: char,
+        type: "transform",
+        props: ["alpha"],
+        min: [min],
+        max: [max],
+        direction: "one",
+        speed: speed || 10,
+        destruct: 1,
+        cb: cb||function(){},
+        mode: 1,
+        i: 0,
+    });
+}
 function halfFade(char) {
     animations.push({
         sprite: char,

@@ -8,7 +8,7 @@ function addCharNels() {
         hp: 20,
         maxPP: 105,
         pp: 105,
-        agl: 15,
+        agl: 17,
         evd: 10,
         level: 91,
         xp: 0,
@@ -113,7 +113,7 @@ function addCharNels() {
                 pp: 5,
                 dmgMult: function(target) { 
                     makeTxt("VALOR", target.sprite);
-                    newStatus("valor", 5, target);
+                    newStatus("valor", 1, target);
                 },
                 target: "none",
                 animLen: 120,

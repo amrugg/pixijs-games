@@ -17,6 +17,9 @@ function inside(point, vs) {
     
     return inside;
 };
+function randDir(len) {
+    return direction(len,randNum(0,Math.PI*2));
+}
 function constrain(min, x, max) {
     x = Math.max(min, x);
     x = Math.min(max, x);
