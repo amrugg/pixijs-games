@@ -13,7 +13,7 @@ function targetRandomPlayer(players, char) {
 }
 var monsterpedia = {
     "Goblin": {
-        atk: 13,
+        atk: 10,
         def: 5,
         maxHP: 10,
         maxPP:  0,
@@ -21,11 +21,12 @@ var monsterpedia = {
         evd: 5,
         ai: targetRandomPlayer,
         gold: 3,
-        xp: 3
+        xp: 3,
+        items: [{n: "Barbecue Sauce", r: 1}],
     },
     "Dark Goblin": {
-        atk: 18,
-        def: 10,
+        atk: 10,
+        def: 15,
         maxHP: 13,
         maxPP:  5,
         agl: 5,
@@ -70,10 +71,137 @@ var monsterpedia = {
         ai: targetRandomPlayer,
         gold: 12,
         xp: 10
-    }
+    },
+    "Bat": {
+        atk: 10,
+        def: 13,
+        maxHP: 10,
+        maxPP:  0,
+        agl: 15,
+        evd: 5,
+        ai: targetRandomPlayer,
+        gold: 12,
+        xp: 10
+    },
+    "Cobra": {
+        atk: 16,
+        def: 15,
+        maxHP: 20,
+        maxPP:  10,
+        agl: 18,
+        evd: 5,
+        ai: function(players, char) {
+            var action = targetRandomPlayer(players,char);
+            if(Math.random() < 0.5 && char.pp >= 3) {
+                action.action = "special";
+                action.name = "Poison";
+                action.ability = createSpecial(1, function(target){
+                    newStatus("poison", 3, target)
+                    attack(13,char,target);
+                });
+                /*
+                                char: playerMenu.char,
+                                targets: [playerMenu.char],
+                                action: "special",
+                                name: curSpecialName,
+                                ability: curAbility,
+                                 */   
+            }
+            return action;
+        },
+        gold: 3,
+        xp: 3
+    },
+    "Ice Goblin": {
+        atk: 23,
+        def: 23,
+        maxHP: 23,
+        maxPP:  5,
+        agl: 15,
+        evd: 10,
+        ai: function(players, char) {
+            var action = targetRandomPlayer(players,char);
+            if(Math.random() < 1 && char.pp >= 3) {
+                action.action = "special";
+                action.name = "Wind Chill";
+                action.target = activeParty;
+                action.ability = {
+                    pp: 3,
+                    dmgMult: 0.75,
+                    target: "all",
+                    animLen: 160,
+                    charAnim: function(char, target) {
+                        var track1 = {x: 0, y: innerHeight - 150};
+                        var track2 = {x: innerWidth, y: innerHeight - 150};
+                        animations.push({
+                            sprite: track1,
+                            type: "transform",
+                            props: ["x"],
+                            min: [0],
+                            max: [innerWidth],
+                            direction: "one",
+                            speed: 180,
+                            mode: 1,
+                            destruct: 1,
+                            play: function(anim) {
+                                var tints = [0xB7D9FC, 0x9BCCFD, 0x0F3888, 0x0F3888];
+                                for(var i = 0; i < 10; i++) {
+                                    // console.log(track1.y,innerHeight)
+                                    var randTint = tints[randInt(0,3)];
+                                    spawnParticle(track1.x + randInt(-150,150), track1.y + randInt(-150,150), randTint, randDir(2), 0).fadeSpeed = 0.025;
+                                }
+                            },
+                            i: 0,
+                        });
+                        animations.push({
+                            sprite: track2,
+                            type: "transform",
+                            props: ["x"],
+                            min: [innerWidth],
+                            max: [0],
+                            direction: "one",
+                            speed: 180,
+                            mode: 1,
+                            destruct: 1,
+                            play: function(anim) {
+                                var tints = [0xB7D9FC, 0x9BCCFD, 0x0F3888, 0x0F3888]
+                                for(var i = 0; i < 10; i++) {
+                                    var randTint = tints[randInt(0,3)];
+                                    spawnParticle(track2.x + randInt(-150,150), track2.y + randInt(-150,150), randTint, randDir(2), 0).fadeSpeed = 0.025;
+                                }
+                            },
+                            i: 0,
+                        });
+                    },
+                    targetAnim: function(target) {
+                        setFrameout(function() {
+                            animations.push({
+                                sprite: target,
+                                type: "transform",
+                                props: ["x"],
+                                min: [target.x],
+                                max: [target.x + 25],
+                                direction: "both",
+                                speed: 5,
+                                mode: 1,
+                                destruct: 5,
+                                i: 0,
+                            });
+                        },20);
+                    }
+                };
+            }
+            return action;
+        },
+        gold: 5,
+        xp: 5
+    },
 }
 var random1 = [["Goblin", "Goblin", "Goblin"], ["Dark Goblin"], ["Goblin", "Goblin"]];
-var random2 = [["Goblin", "Dark Goblin", "Goblin"], ["Dark Goblin"], ["Goblin", "Goblin"]];
+var random2 = [["Dark Goblin", "Goblin", "Dark Goblin"], ["Dark Goblin"], ["Dark Goblin", "Dark Goblin"]];
+var random3 = [["Bat", "Dark Goblin", "Bat"], ["Goblin", "Dark Goblin", "Goblin"], ["Cobra"], ["Ice Goblin"]];
+var random4 = [["Cobra", "Dark Goblin"], ["Bat","Bat","Ice Goblin","Bat","Bat"], ["Goblin", "Ice Goblin", "Dark Goblin"]];
+//["Ice Goblin", "Cobra", "Ice Goblin"],
 var curDialogue = {}; /// Serves as a type of window.
 var cutSceneI = 0;
 var log1 = [
@@ -500,6 +628,7 @@ var log4 = [
         goat.y = -200;
         clearCharTalk();
         curDialogue.goat = goat;
+        gameState = "anim";
         setFrameout(function() {
             animations.push({
                 sprite: goat,
@@ -671,14 +800,15 @@ var log4 = [
 ];
 var gamePlayStatus = 0;
 var gamePlayAgenda = [
-    {set: random1, encounters: 0},
+    {set: random1, encounters: 3},
     {set: log1, dialogue: true},
-    {set: random2, encounters: 1},
+    {set: random2, encounters: 4},
     {set: log2, dialogue: true},
     {set: [["Sam", "Flam"]], encounters: 1},
     {set: log3, dialogue: true},
-    {set: random2, encounters: 4},
+    {set: random3, encounters: 4},
     {set: log4, dialogue: true},
+    {set: random4, encounters: 4},
 ];
 
 function createSpecial(pp, dmgMult) {

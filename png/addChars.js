@@ -113,7 +113,7 @@ function addCharNels() {
                 pp: 5,
                 dmgMult: function(target) { 
                     makeTxt("VALOR", target.sprite);
-                    newStatus("valor", 1, target);
+                    newStatus("valor", 5, target);
                 },
                 target: "none",
                 animLen: 120,
