@@ -35,7 +35,7 @@ app.renderer.autoResize = true;
 app.renderer.resize(window.innerWidth, window.innerHeight);
 document.body.appendChild(app.view);
 var charNames = ["tong", "nels", "sam", "flam", "tux", "will", "goat"];
-var monsterNames = ["Goblin", "Dark Goblin", "Sam", "Flam", "Cobra", "Bat", "Ice Goblin"];
+var monsterNames = ["Goblin", "Dark Goblin", "Sam", "Flam", "Cobra", "Bat", "Ice Goblin", "River Dragon"];
 loadArray(charNames, "sprites/chars/", "png");
 loadArray(charNames, "sprites/heads/", "png");
 loadArray(monsterNames, "sprites/monsters/", "png");
@@ -69,10 +69,12 @@ var charTalkBox = new PIXI.Graphics();
 var dialogues = [];
 var dialogueTxt = new PIXI.Text("");
 var frameOuts = [];
+var particleEmitters = [];
 var globalFrameCount = 0;
 var loot = {gold: 0, xp: 0, items: []};
 var partyGold = 0;
 var partyItems = {};
+addPartyItem("Barbecue Sauce");
 var particles = [];
 var particleContainer = new PIXI.Container();
 var nelsVenegance = false;
@@ -451,12 +453,19 @@ function newStatus(name, time, char) {
     if(foundCurStatus) {
         return foundCurStatus;
     }
+    /*
+                poison = 0x398712;
+                heal = 0xD92662;
+                valor = 0xEE402E
+                */
     var status = {name, time, bonus: {}, char: char};
     if(name === "valor") {
         status.bonus.atk = {mult: 2};
         char.atk *= 2;
+        status.emitter = addEmitter(char.sprite.x - 100, char.sprite.x + 100, char.sprite.y - 100, char.sprite.y + 100, function(){return randDir(1)}, 0xEE402E, 1, Infinity, 10);
     } else if(name === "poison") {
         status.bonus.hp = {val: Math.round(char.hp/10)};
+        status.emitter = addEmitter(char.sprite.x - 100, char.sprite.x + 100, char.sprite.y - 100, char.sprite.y + 100, function(){return randDir(1)}, 0x398712, 1, Infinity, 10);
     }
     statuses.push(status);
     return status;
@@ -588,12 +597,15 @@ function loadItemMenu() {
     playerMenu.names = [];
     var keys = Object.keys(partyItems);
     keys.forEach(function (name, i) {
+        if(partyItems[name] <= 0) {
+            return;
+        }
         var el = new PIXI.Text(name);
         playerMenu.names.push(name);
         playerMenu.list.addChild(el);
         el.y = 25 + i * 50;
         el.anchor.set(1,0.5);
-        el.x = innerWidth - 250 + el.width;
+        el.x = innerWidth - 275 + el.width;
         els.push(el);
         var pp = new PIXI.Text(partyItems[name]);
         playerMenu.list.addChild(pp);
@@ -797,6 +809,7 @@ function handleFrameouts(frame) {
 function play() {
     playAnimations(animations);
     handleFrameouts(++globalFrameCount);
+    handleEmitters(particleEmitters)
     handleParticles(particles);
     var userInput = readKeyMappings(keyMappings, keys);
     if(gameState === "actions") {
@@ -873,8 +886,26 @@ function play() {
                             });
                         });
                     });
-                } else if(typeof playerMenu.targets[playerMenu.i] === "string"){ 
-
+                } else if(playerMenu.targets[playerMenu.i].tint){ 
+                    var curItem = playerMenu.targets[playerMenu.i];
+                    curSpecialName = playerMenu.names[playerMenu.i];
+                    if(curItem.target === "all") {
+                        playerMenu.choices = [getSprites(activeParty), getSprites(enemyParty)];
+                        playerMenu.targets = [activeParty, enemyParty];
+                        playerMenu.state = "target-all";
+                        playerMenu.action = "item";
+                        playerMenu.i = 0;
+                        playerMenu.item = curItem;
+                        loadMultiIcons(playerMenu.choices[0]);
+                    } else if(curItem.target === "one") {
+                        playerMenu.choices = getSprites(activeParty.concat(enemyParty));
+                        playerMenu.targets = activeParty.concat(enemyParty);
+                        playerMenu.state = "target";
+                        playerMenu.action = "item";
+                        playerMenu.i = 0;
+                        playerMenu.item = curItem;
+                        updateIcon();
+                    }
                 } else {
                     var curAbility = playerMenu.targets[playerMenu.i];
                     var twinCheck = true;
@@ -958,6 +989,14 @@ function play() {
                         action: "special",
                         ability: playerMenu.ability
                     });
+                } else if(playerMenu.action === "item") {
+                    partyActions.push({
+                        char: playerMenu.char,
+                        targets: [playerMenu.targets[playerMenu.i]],
+                        name: curSpecialName,
+                        action: "item",
+                        ability: playerMenu.item
+                    });
                 }
                 animRetreat(playerMenu.char.sprite);
                 nextPlayer();
@@ -1000,6 +1039,14 @@ function play() {
                         action: "special",
                         ability: playerMenu.ability
                     });
+                } else if(playerMenu.action === "item") {
+                    partyActions.push({
+                        char: playerMenu.char,
+                        targets: [playerMenu.targets[playerMenu.i]],
+                        name: curSpecialName,
+                        action: "item",
+                        ability: playerMenu.item
+                    });
                 }
                 animRetreat(playerMenu.char.sprite);
                 nextPlayer();
@@ -1020,10 +1067,17 @@ function play() {
             partyGold += loot.gold;
             dialogues.push("Gained " + loot.xp + " xp");
             activeParty.forEach(function(char) {
+                if(char.hp <= 0) {
+                    return;
+                }
                 char.xp += loot.xp;
-                if(levelUpReq(char.level) < char.xp) {
+                while(levelUpReq(char.level) < char.xp) {
                     char.level++;
                     dialogues.push(char.name + " reached level " + char.level);
+                    var skillLearned = findNewSkillLearned(levelUpStats[char.name].ability, char.level);
+                    if(skillLearned) {
+                        dialogues.push(char.name + " learned " + skillLearned);
+                    }
                     var curStatBonus = levelUpStats[char.name];
                     char.atk += curStatBonus.atk;
                     char.def += curStatBonus.def;
@@ -1117,6 +1171,19 @@ function play() {
                     }
                 },60);
             }
+        } else if(curAction.action === "item") {
+            gameState = "anim";
+            dialogueTxt.text = curAction.name;
+            dialogueTxt.alpha = 0;
+            dialogueTxt.visible = true;
+            alphaFade(dialogueTxt,0,1,10);
+            setFrameout(function(){
+                alphaFade(dialogueTxt,1,0,10, function(){dialogueTxt.text = ""; dialogueTxt.visible = false; dialogueTxt.alpha = 1});
+                if(!curAction.enemyItem) {
+                    partyItems[curAction.name]--;
+                }
+                runItem(curAction);
+            },60);
         }
     } else if(gameState === "end") {
         if(userInput.confirm && dialogueTxt.text.length > 7) {
@@ -1139,15 +1206,97 @@ function play() {
             disableUserInput("confirm");
             gamePlayAgenda[gamePlayStatus].set[++cutSceneI]();
         } else if(curCharTalkText) {
-            if(dialogueTxt.text.length !== curCharTalkText.length) {
-                dialogueTxt.text += curCharTalkText[dialogueTxt.text.length];
-                if(curCharTalkText[dialogueTxt.text.length] === " " && dialogueTxt.width + dialogueTxt.x > (innerWidth-150) * ((dialogueTxt.text.match(/\n/g) || []).length+1)) {
-                    dialogueTxt.text += "\n";
+            updateCharTalk();
+        }
+    }
+}
+function updateCharTalk() {
+    if(dialogueTxt.text.length !== curCharTalkText.length) {
+        dialogueTxt.text += curCharTalkText[dialogueTxt.text.length];
+        if(curCharTalkText[dialogueTxt.text.length] === " " && dialogueTxt.width + dialogueTxt.x > (innerWidth-150) * ((dialogueTxt.text.match(/\n/g) || []).length+1)) {
+            dialogueTxt.text += "\n";
 
-                }
+        }
+    }
+}
+function handleEmitters(emitters) {
+    var i;
+    var len = emitters.length;
+    for(i = 0; i < len; i++) {
+        if(globalFrameCount % emitters[i].rate === 0) {
+            handleE(emitters[i]);
+            if(--emitters[i].period <= 0) {
+                emitters.splice(i,1);
+                --i;
+                --len;
             }
         }
     }
+}
+function handleE(em) {
+    for(var i = 0; i < em.count; i++) {
+        var vector;
+        if(!em.vector) {
+            vector = randDir(3);
+        } else if(typeof em.vector === "function") {
+            vector = em.vector();
+        } else {
+            vector = em.vector;
+        }
+        spawnParticle(randInt(em.minX,em.maxX),randInt(em.minY,em.maxY),em.tint,vector);
+    }
+}
+function runItem(action) {
+    for(var i = 0; i < action.targets.length; i++) {
+        var cur = action.targets[i];
+        addEmitter(cur.sprite.x - 100, cur.sprite.x + 100, cur.sprite.y - 150, cur.sprite.y - 100, {x:0, y:3}, action.ability.tint, 2,90);
+    }
+    setFrameout(function() {
+        var keys = Object.keys(action.ability.bonus);
+        for(var i = 0; i < action.targets.length; i++) {
+            var curChar = action.targets[i];
+            for(var i = 0; i < keys.length; i++) {
+
+                var cur = action.ability.bonus[keys[i]];
+                if(typeof cur === "function") {
+                    cur(curChar);
+                } else if(curChar.hp > 0) {
+                    if(cur.mult) {
+                        curChar[keys[i]] *= cur.mult;
+                    } else if(cur.val) {
+                        curChar[keys[i]] += cur.val;
+                    }
+                    if(i === 0) {
+                        if(cur.mult) {
+                            makeTxt(curChar[keys[i]] / cur.mult, action.targets[i].sprite);
+                        } else if(cur.val) {
+                            makeTxt(cur.val, action.targets[i].sprite);
+                        }
+                    }
+                } else {
+                    makeTxt("Ecclesiastes 9:4", action.targets[i].sprite);
+                }
+            }
+            curChar.hp = constrain(0, curChar.hp, curChar.maxHP);
+            curChar.pp = constrain(0, curChar.pp, curChar.maxPP);
+        }
+        setFrameout(function() {
+            gameState = "action";
+        }, 30);
+    }, 90);
+}
+function findNewSkillLearned(ability, lvl) {
+    var keys = Object.keys(ability);
+    for(var i = 0; i<keys.length;i++) {
+        if(ability[keys[i]] === lvl) {
+            return keys[i];
+        }
+    }
+}
+function addEmitter(minX,maxX,minY,maxY,vector,tint,count,period,rate) {
+    var emitter = {minX,maxX,minY,maxY,vector,tint,count,period, rate: rate || 1}
+    particleEmitters.push(emitter);
+    return emitter
 }
 function nextScene(timeOut) {
     setFrameout(function() {
@@ -1239,7 +1388,7 @@ function clearCharTalk() {
 var curCharTalkText = "";
 var charTalkHead;
 function levelUpReq(level) {
-    return level ** 1.5 * 10;
+    return level ** 1.75 * 10;
 }
 function chooseRandomEnemy(players) {
     var living = [];
@@ -1457,7 +1606,7 @@ function resetRound() {
 function handleStatus() {
     for(var i = 0; i < statuses.length; i++) {
         var stat = statuses[i];
-        if(--stat.time <= 0) {
+        if(--stat.time <= 0 || stat.char.hp <= 0) {
             removeBuff(stat);
             statuses.splice(i,1);
             --i;
@@ -1482,6 +1631,7 @@ function spawnRandomParticles(x,y,tint,count) {
     }
 }
 function removeBuff(stat) {
+    stat.emitter.period = 0;
     var keys = Object.keys(stat.bonus);
     for(var i = 0; i < keys.length; i++) {
         var cur = stat.bonus[keys[i]];

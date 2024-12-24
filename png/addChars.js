@@ -2,15 +2,15 @@ function addCharNels() {
     var nels = {
         name: "Nels",
         sprite: new Sprite(resources["sprites/chars/nels.png"].texture),
-        atk: 15,
-        def: 7,
-        maxHP: 20,
-        hp: 20,
-        maxPP: 105,
-        pp: 105,
+        atk: 19,
+        def: 8,
+        maxHP: 23,
+        hp: 23,
+        maxPP: 20,
+        pp: 20,
         agl: 17,
-        evd: 10,
-        level: 91,
+        evd: 13,
+        level: 2,
         xp: 0,
         actions: ["Fight", "Swordplay", "Swap", "Item"],
         status: [],
@@ -372,11 +372,11 @@ function addCharSam() {
         maxHP: 25,
         hp: 25,
         maxPP: 15,
-        pp: 105,
+        pp: 15,
         agl: 9,
         evd: 9,
-        level: 91,
-        xp: 0,
+        level: 1,
+        xp: 50,
         actions: ["Fight", "Twin", "Swap", "Item"],
         status: [],
         Twin: {
@@ -558,8 +558,8 @@ function addCharFlam() {
         pp: 25,
         agl: 12,
         evd: 12,
-        level: 91,
-        xp: 0,
+        level: 1,
+        xp: 50,
         actions: ["Fight", "Twin", "Swap", "Item"],
         status: [],
         Twin: {
@@ -812,4 +812,359 @@ function addCharTux() {
     tux.sprite.scale.set(0.75,0.75)
     tux.sprite.anchor.set(0.5,0.5);
     return tux;
+}
+function addCharGoat() {
+    var goat = {
+        name: "Goat",
+        sprite: new Sprite(resources["sprites/chars/goat.png"].texture),
+        atk: 19,
+        def: 8,
+        maxHP: 23,
+        hp: 23,
+        maxPP: 20,
+        pp: 20,
+        agl: 17,
+        evd: 13,
+        level: 1,
+        xp: 500,
+        actions: ["Fight", "G.O.A.T", "Swap", "Item"],
+        status: [],
+        "G.O.A.T": {
+            "Horn": {
+                pp: 7,
+                dmgMult: 2,
+                target: "one",
+                animLen: 80,
+                charAnim: function(char, target) {
+
+                    animations.push({
+                        sprite: char,
+                        type: "transform",
+                        props: ["x", "y"],
+                        min: [char.x, char.y],
+                        max: [target[0].sprite.x, target[0].sprite.y],
+                        direction: "both",
+                        speed: 15,
+                        mode: 1,
+                        destruct: 3,
+                        play: function(anim) {
+                            if(anim.i % 2 === 0||true) {
+                                for(var i = 0; i < 5; i++) {
+                                    var part = spawnParticle(anim.sprite.x + randInt(-100, 100), anim.sprite.y + randInt(-100, 100), 0xAEB5FB, false, 0);
+                                    part.fadeSpeed = 0.025;
+                                }
+                            }
+                            if(anim.i === anim.speed-1) {
+                                spawnRandomParticles(anim.sprite.x,anim.sprite,y,0xB9B9B9, 30);
+                            }
+                            console.log(anim.i,anim.speed);
+                        },
+                        i: 0,
+                    });
+                },
+                targetAnim: function(target) {
+                }
+            },
+            "Venegance": {
+                pp: 3,
+                dmgMult: function(target) { 
+                    makeTxt("COUNTER", target.sprite);
+                    goatVenegance = true;
+                },
+                target: "none",
+                actionSpeed: 99,
+                animLen: 120,
+                charAnim: function(char) {
+                    animations.push({
+                        sprite: char,
+                        type: "transform",
+                        props: [],
+                        min: [],
+                        max: [],
+                        direction: "both",
+                        speed: 50,
+                        mode: 1,
+                        destruct: 1,
+                        play: function(anim) {
+                            if(anim.i % 2 === 0||true) {
+                                for(var i = 0; i < 5; i++) {
+                                    var part = spawnParticle(char.x + randInt(-200, 200), char.y + randInt(-200, 200), 0xF2DF0D, false, 10);
+                                    part.vector = {x: 0, y: 3};
+                                    part.fadeSpeed = 0.025;
+                                }
+                            }
+                            console.log(anim.i,anim.speed);
+                        },
+                        i: 0,
+                    });
+                },
+            },
+            "Dynamis": {
+                pp: 5,
+                dmgMult: function(target) { 
+                    makeTxt("VALOR", target.sprite);
+                    newStatus("valor", 5, target);
+                },
+                target: "none",
+                animLen: 120,
+                charAnim: function(char) {
+                    animations.push({
+                        sprite: char.scale,
+                        type: "transform",
+                        props: ["x", "y"],
+                        min: [char.scale.x, char.scale.y],
+                        max: [char.scale.x + 0.05, char.scale.y + 0.05],
+                        direction: "both",
+                        speed: 7,
+                        mode: 1,
+                        destruct: 7,
+                        play: function(anim) {
+                            if(anim.i % 2 === 0||true) {
+                                for(var i = 0; i < 5; i++) {
+                                    var part = spawnParticle(char.x + randInt(-200, 200), char.y + randInt(-200, 200), 0xEE402E, false, 10);
+                                    part.vector = normalize(char.x - part.x, char.y - part.y, 3);
+                                    part.fadeSpeed = 0.025;
+                                }
+                            }
+                            console.log(anim.i,anim.speed);
+                        },
+                        i: 0,
+                    });
+                },
+            },
+            "Shield Breaker": {
+                pp: 10,
+                dmgMult: function(target) { 
+                    if(target.maxHP + target.def + target.evd <= goat.agl + goat.atk * 2 * battleRandom) {
+                        target.def = 0;
+                        attack(goat.atk, goat, target);
+                    } else {
+                        makeTxt("MISS", target.sprite);
+                    }
+                    updateBattleRandom();
+                },
+                target: "one",
+                animLen: 150,
+                charAnim: function(char, target) {
+                    animations.push({
+                        sprite: char.scale,
+                        type: "transform",
+                        props: ["x", "y"],
+                        min: [char.scale.x, char.scale.y],
+                        max: [char.scale.x + 0.05, char.scale.y + 0.05],
+                        direction: "both",
+                        speed: 7,
+                        mode: 1,
+                        destruct: 7,
+                        play: function(anim) {
+                            if(anim.i % 2 === 0||true) {
+                                for(var i = 0; i < 5; i++) {
+                                    var part = spawnParticle(char.x + randInt(-200, 200), char.y + randInt(-200, 200), 0xAEB5FB, false, 10);
+                                    part.vector = normalize(char.x - part.x, char.y - part.y, 3);
+                                    part.fadeSpeed = 0.025;
+                                }
+                            }
+                            console.log(anim.i,anim.speed);
+                        },
+                        i: 0,
+                        cb: function() {
+                            setFrameout(function() {
+                                animations.push({
+                                    sprite: char,
+                                    type: "transform",
+                                    props: ["x", "y"],
+                                    min: [char.x, char.y],
+                                    max: [target[0].sprite.x, target[0].sprite.y],
+                                    direction: "both",
+                                    speed: 15,
+                                    mode: 1,
+                                    destruct: 1,
+                                    play: function(anim) {
+                                        if(anim.i % 2 === 0||true) {
+                                            for(var i = 0; i < 5; i++) {
+                                                var part = spawnParticle(anim.sprite.x + randInt(-100, 100), anim.sprite.y + randInt(-100, 100), 0xAEB5FB, false, 0)
+                                                part.fadeSpeed = 0.025;
+                                            }
+                                        }
+                                        if(anim.mode === -1) {
+                                            for(var i = 0; i < 10; i++) {
+                                                spawnParticle(anim.max[0], anim.max[1], 0xEE402E, direction(3,randNum(0,Math.PI*2)), 0).fadeSpeed = 0.01;
+                                            }
+                                        }
+                                        console.log(anim.i,anim.speed);
+                                    },
+                                    i: 0,
+                                });
+                            },5);
+                        }
+                    });
+                },
+                targetAnim: function(target) {
+                    animations.push({
+                        type: "transform",
+                        props: [],
+                        min: [],
+                        max: [],
+                        direction: "both",
+                        speed: 7,
+                        mode: 1,
+                        destruct: 7,
+                        play: function(anim) {
+                            for(var i = 0; i < 5; i++) {
+                                var part = spawnParticle(target.x + randInt(-200, 200), target.y + randInt(-200, 200), 0xEE402E, false, 10);
+                                part.vector = normalize(target.x - part.x, target.y - part.y, 3);
+                                part.fadeSpeed = 0.025;
+                            }
+                        },
+                        i: 0,
+                    });
+                }
+            },
+            "Swath": {
+                pp: 20,
+                dmgMult: 1,
+                target: "all",
+                animLen: 150,
+                charAnim: function(char, target) {
+                    animations.push({
+                        sprite: char.scale,
+                        type: "transform",
+                        props: ["x", "y"],
+                        min: [char.scale.x, char.scale.y],
+                        max: [char.scale.x + 0.05, char.scale.y + 0.05],
+                        direction: "both",
+                        speed: 7,
+                        mode: 1,
+                        destruct: 7,
+                        play: function(anim) {
+                            if(anim.i % 2 === 0||true) {
+                                for(var i = 0; i < 5; i++) {
+                                    var part = spawnParticle(char.x + randInt(-200, 200), char.y + randInt(-200, 200), 0x0F3888, false, 10);
+                                    part.vector = normalize(char.x - part.x, char.y - part.y, 3);
+                                    part.fadeSpeed = 0.025;
+                                }
+                            }
+                            console.log(anim.i,anim.speed);
+                        },
+                        i: 0,
+                        cb: function() {
+                            setFrameout(function() {
+                                animations.push({
+                                    sprite: char,
+                                    type: "transform",
+                                    props: ["x", "y"],
+                                    min: [char.x, char.y],
+                                    max: [innerWidth/2,innerHeight/2],
+                                    direction: "both",
+                                    speed: 15,
+                                    mode: 1,
+                                    destruct: 1,
+                                    play: function(anim) {
+                                        if(anim.i % 2 === 0||true) {
+                                            for(var i = 0; i < 5; i++) {
+                                                var part = spawnParticle(anim.sprite.x + randInt(-100, 100), anim.sprite.y + randInt(-100, 100), 0x0F3888, {x:Math.random()-0.5, y:3});
+                                                part.fadeSpeed = 0.025;
+                                            }
+                                        }
+                                        if(anim.mode === -1) {
+                                            for(var i = 0; i < 100; i++) {
+                                                spawnParticle(anim.max[0] + randInt(-100, 100), anim.max[1] + randInt(-100, 100), 0x0E1118, direction(13,randNum(-Math.PI/2.1,Math.PI/2.1)), 0).fadeSpeed = 0.01;
+                                            }
+                                        }
+                                        console.log(anim.i,anim.speed);
+                                    },
+                                    i: 0,
+                                });
+                            },5);
+                        }
+                    });
+                },
+                targetAnim: function(target) {
+                    animations.push({
+                        sprite: target,
+                        type: "transform",
+                        props: ["x"],
+                        min: [target.x],
+                        max: [target.x - 5],
+                        direction: "both",
+                        speed: 7,
+                        mode: 1,
+                        destruct: 7,
+                        i: 0,
+                    });
+                }
+            },
+            "Pentimone": {
+                pp: 30,
+                dmgMult: 1.25,
+                target: "all",
+                animLen: 40,
+                repeater: 5,
+                actionSpeed: 0.1,
+                charAnim: function(char, target) {
+
+                    animations.push({
+                        sprite: char,
+                        type: "transform",
+                        props: ["x", "y"],
+                        min: [char.x, char.y],
+                        max: [target[0].sprite.x, target[0].sprite.y],
+                        direction: "both",
+                        speed: 15,
+                        mode: 1,
+                        destruct: 1,
+                        play: function(anim) {
+                            if(anim.i % 2 === 0||true) {
+                                for(var i = 0; i < 5; i++) {
+                                    var part = spawnParticle(anim.sprite.x + randInt(-100, 100), anim.sprite.y + randInt(-100, 100), 0xAEB5FB, false, 0);
+                                    part.fadeSpeed = 0.025;
+                                }
+                            }
+                            if(anim.i === anim.speed-1) {
+                                for(var i = 0; i < 100; i++) {
+                                    spawnParticle(anim.max[0] + randInt(-150,150), anim.max[1] + randInt(-150,150), 0xEE402E, false, 0);
+                                }
+                            }
+                            console.log(anim.i,anim.speed);
+                        },
+                        i: 0,
+                    });
+                },
+                targetAnim: function(target) {
+                    setFrameout(function() {
+                        animations.push({
+                            sprite: target,
+                            type: "transform",
+                            props: ["rotation"],
+                            min: [0],
+                            max: [Math.PI*4],
+                            direction: "one",
+                            speed: 40,
+                            mode: 1,
+                            destruct: 1,
+                            i: 0,
+                        });
+                    },20);
+                }
+            }
+        }
+    }
+    
+    goat.sprite.scale.set(0.75,0.75)
+    goat.sprite.anchor.set(0.5,0.5);
+    return goat;
+}
+function invisLevel(char) {
+    while(levelUpReq(char.level) < char.xp) {
+        char.level++;
+        var curStatBonus = levelUpStats[char.name];
+        char.atk += curStatBonus.atk;
+        char.def += curStatBonus.def;
+        char.maxHP += curStatBonus.maxHP;
+        char.hp += curStatBonus.maxHP;
+        char.maxPP += curStatBonus.maxPP;
+        char.pp += curStatBonus.maxPP;
+        char.agl += curStatBonus.agl;
+        char.evd += curStatBonus.evd;
+    }
 }
