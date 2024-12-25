@@ -41,5 +41,5 @@ var itempedia = {
             hp: {val: 200}
         },
         tint: 0xFECC63
-    }
+    },
 }

@@ -15,7 +15,7 @@ var levelUpStats = {
         maxPP: 5,
         agl: 5,
         evd: 3,
-        ability: {"Finis": 1, "Venegance": 3, "Dynamis": 5, "Shield Breaker": 7, "Swath": 15, "Pentimone": 20},
+        ability: {"Finis": 1, "Venegance": 3, "Dynamis": 5, "Shield Breaker": 7, "Swath": 20, "Pentimone": 30},
     },
     "Tux": {
         atk: 3,
@@ -24,7 +24,16 @@ var levelUpStats = {
         maxPP: 4,
         agl: 4,
         evd: 2,
-        ability: {"Finis": 1},
+        ability: {"Glacier": 1, "Seafood": 10, "Ice Shield": 15, "Eagle Eye": 20},
+    },
+    "Cuddle Robot": {
+        atk: 3,
+        def: 2,
+        maxHP: 3,
+        maxPP: 4,
+        agl: 4,
+        evd: 2,
+        ability: {"Titanium Fist": 1, "Electroshock Therapy": 10, "Flamethrower": 15, "Gigahertz": 20},
     },
     "Goat": {
         atk: 2,
@@ -33,7 +42,7 @@ var levelUpStats = {
         maxPP: 3,
         agl: 2,
         evd: 1,
-        ability: {"Burrito": 1, "Horn": 5, "Poison Flauta": 1},
+        ability: {"Burrito": 1, "Horn": 5, "Poison Flauta": 7, "Christmas Past": 30},
     },
     "Sam": {
         atk: 3,

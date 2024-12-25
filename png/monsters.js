@@ -542,6 +542,312 @@ var monsterpedia = {
         xp: 12,
         items: [{n: "Tuna-flavored Mint", r: 0.1}],
     },
+    "Iron Ogre": {
+        atk: 70,
+        def: 66,
+        maxHP: 150,
+        maxPP:  9,
+        agl: 15,
+        evd: 5,
+        ai: function(players, char) {
+            var action = targetRandomPlayer(players,char);
+            if(Math.random() < 0.5 && char.pp >= 3) {
+                action.action = "special";
+                action.name = "Baseball Bat";
+                action.ability = createSpecial(3, 1.5);
+                /*
+                                char: playerMenu.char,
+                                targets: [playerMenu.char],
+                                action: "special",
+                                name: curSpecialName,
+                                ability: curAbility,
+                                 */   
+            }
+            return action;
+        },
+        gold: 112,
+        xp: 89
+    },
+    "Dark Skeleton": {
+        atk: 45,
+        def: 30,
+        maxHP: 60,
+        maxPP:  10,
+        agl: 38,
+        evd: 5,
+        ai: function(players, char) {
+            var action = targetRandomPlayer(players,char);
+            if(Math.random() < 0.2 && char.pp >= 3 && enemyParty.length > 1) {
+                action.action = "special";
+                action.name = "Possess";
+                action.ability = createSpecial(3, function(target){
+                    char.hp = -1;
+                    deathFade(char.sprite);
+                    makeTxt("MORTIS", char.sprite);
+                    target.hp = -1;
+                    deathFade(target.sprite);
+                    makeTxt("MORTIS", target.sprite);
+                });
+                /*
+                                char: playerMenu.char,
+                                targets: [playerMenu.char],
+                                action: "special",
+                                name: curSpecialName,
+                                ability: curAbility,
+                                 */   
+            }
+            return action;
+        },
+        items: [{n: "Paint", r: 0.1}, {n: "Barbecue Sauce", r: 0.1}],
+        gold: 76,
+        xp: 51,
+    },
+    "Spider": {
+        atk: 36,
+        def: 25,
+        maxHP: 20,
+        maxPP:  10,
+        agl: 48,
+        evd: 5,
+        ai: function(players, char) {
+            var action = targetRandomPlayer(players,char);
+            if(Math.random() < 0.5 && char.pp >= 3) {
+                action.action = "special";
+                action.name = "Poison";
+                action.ability = createSpecial(1, function(target){
+                    newStatus("poison", 10, target)
+                    attack(36,char,target);
+                });
+                /*
+                                char: playerMenu.char,
+                                targets: [playerMenu.char],
+                                action: "special",
+                                name: curSpecialName,
+                                ability: curAbility,
+                                 */   
+            }
+            return action;
+        },
+        items: [{n: "Paint", r: 0.1}, {n: "Barbecue Sauce", r: 0.1}],
+        gold: 50,
+        xp: 39,
+    },
+    "Herbert": {
+        atk: 100,
+        def: 100,
+        maxHP: 5000,
+        maxPP:  3000,
+        agl: 48,
+        evd: 5,
+        ai: function(players, char) {
+            ++herbTurn;
+            var action = targetRandomPlayer(players,char);
+            var rand = Math.random();
+            if(herbTurn === 1) {
+                var action = targetRandomPlayer(players,char);
+                action.action = "special";
+                action.name = "Twisted Fate!";
+                action.targets = [char];
+                action.ability = {
+                    pp: 120,
+                    dmgMult: function(target){
+                        
+                    },
+                    target: "all",
+                    animLen: 160,
+                    charAnim: function(char, target) {
+                        fadeOut(90).tint = 0xEE402E
+                        addEmitter(0,innerWidth,0,innerHeight, function(){return randDir(10)}, 0x1C0D06, 100, 160);
+                    },
+                    targetAnim: function(target) {
+                        
+                    }
+                }
+                return action;
+            }
+            if(rand < 0.25 && char.pp >= 50) {
+                
+                action.action = "special";
+                action.name = "Lightning Hand";
+                action.targets = activeParty;
+                action.ability = {
+                    pp: 50,
+                    dmgMult: 0.5,
+                    target: "all",
+                    animLen: 160,
+                    charAnim: function(char, target) {
+                        var track1 = {x: 0, y: innerHeight/2};
+                        animations.push({
+                            sprite: track1,
+                            type: "transform",
+                            props: ["y"],
+                            min: [innerHeight/2],
+                            max: [innerHeight],
+                            direction: "one",
+                            speed: 180,
+                            mode: 1,
+                            destruct: 1,
+                            play: function(anim) {
+                                var randX = randInt(0,innerWidth);
+                                var randY = randInt(innerHeight - 300,innerHeight);
+                                if(anim.i % 30 === 0) {
+                                    addEmitter(randX - 50, randX + 50, randY - 50, randY + 50, function(){return randDir(5)}, 0x58FAF9, 20, 50);
+                                }
+                            },
+                            i: 0,
+                        });
+                    },
+                    targetAnim: function(target) {
+                    }
+                };
+            } else if(rand < 0.5 && char.pp > 75) {
+                action.action = "special";
+                action.name = "Laser";
+                
+                action.ability = {
+                    pp: 75,
+                    dmgMult: 1.5,
+                    target: "all",
+                    animLen: 160,
+                    charAnim: function(char, target) {
+                        var dir = direction(10, pointTowards(char.x,char.y,target[0].sprite.x,target[0].sprite.y));
+                        addEmitter(char.x-10, char.x+10, char.y, char.y, dir, 0x77EF3D, 10, 100).fadeSpeed = 0.005;
+                    },
+                    targetAnim: function(target) {
+                    }
+                };
+            } else if(rand < 0.75 && char.pp > 100) {
+                action.action = "special";
+                action.name = "Horror";
+                
+                action.ability = {
+                    pp: 100,
+                    dmgMult: function(target){
+                        newStatus("horror", 3, target)
+                        attack(50,char,target);
+                    },
+                    target: "one",
+                    animLen: 160,
+                    charAnim: function(char, target) {
+                        var dir = direction(10, pointTowards(char.x,char.y,target[0].sprite.x,target[0].sprite.y));
+                        addEmitter(char.x-100, char.x+100, char.y, char.y, dir, 0x3B3B3B, 100, 100).fadeSpeed = 0.05;
+                    },
+                    targetAnim: function(target) {
+                    }
+                };
+            } else if(char.pp > 200) {
+                action.action = "special";
+                action.name = "Stinky Tofu";
+                action.targets = activeParty;
+                action.ability = {
+                    pp: 200,
+                    dmgMult: function(target){
+                        newStatus("venom", 3, target)
+                        attack(50,char,target);
+                    },
+                    target: "one",
+                    animLen: 160,
+                    charAnim: function(char, target) {
+                        fadeOut(100).tint = 0x3B3B3B;
+                        var track1 = {x: 0, y: innerHeight/2};
+                        animations.push({
+                            sprite: track1,
+                            type: "transform",
+                            props: ["y"],
+                            min: [innerHeight/2],
+                            max: [innerHeight],
+                            direction: "one",
+                            speed: 180,
+                            mode: 1,
+                            destruct: 1,
+                            play: function(anim) {
+                                var randX = randInt(0,innerWidth);
+                                var randY = randInt(innerHeight - 300,innerHeight);
+                                if(anim.i % 30 === 0) {
+                                    addEmitter(randX - 50, randX + 50, randY - 50, randY + 50, function(){return randDir(1)}, 0x1A4405, 20, 50);
+                                }
+                            },
+                            i: 0,
+                        });
+                    },
+                    targetAnim: function(target) {
+                    }
+                };
+            }
+            return action;
+        },
+        items: [{n: "Paint", r: 0.1}, {n: "Barbecue Sauce", r: 0.1}],
+        gold: 50,
+        xp: 39,
+    },
+    "Green Robot": {
+        atk: 70,
+        def: 40,
+        maxHP: 1000,
+        maxPP:  3000,
+        agl: 48,
+        evd: 5,
+        ai: function(players, char) {
+            var action = targetRandomPlayer(players,char);
+            var rand = Math.random();
+            if(rand < 0.25 && char.pp >= 50) {
+                
+                action.action = "special";
+                action.name = "Electricity";
+                action.targets = activeParty;
+                action.ability = {
+                    pp: 50,
+                    dmgMult: 0.5,
+                    target: "all",
+                    animLen: 160,
+                    charAnim: function(char, target) {
+                        var track1 = {x: 0, y: innerHeight/2};
+                        animations.push({
+                            sprite: track1,
+                            type: "transform",
+                            props: ["y"],
+                            min: [innerHeight/2],
+                            max: [innerHeight],
+                            direction: "one",
+                            speed: 180,
+                            mode: 1,
+                            destruct: 1,
+                            play: function(anim) {
+                                var randX = randInt(0,innerWidth);
+                                var randY = randInt(innerHeight - 300,innerHeight);
+                                if(anim.i % 30 === 0) {
+                                    addEmitter(randX - 50, randX + 50, randY - 50, randY + 50, function(){return randDir(5)}, 0x58FAF9, 20, 50);
+                                }
+                            },
+                            i: 0,
+                        });
+                    },
+                    targetAnim: function(target) {
+                    }
+                };
+            } else if(rand < 0.5 && char.pp > 75) {
+                action.action = "special";
+                action.name = "Saw Edge";
+                action.ability = createSpecial(75, 1.5);
+            }
+            return action;
+        },
+        items: [{n: "Paint", r: 0.1}, {n: "Barbecue Sauce", r: 0.1}],
+        gold: 250,
+        xp: 179,
+    },
+    "Winnie the Hutt": {
+        atk: 100,
+        def: 50,
+        maxHP: 2000,
+        maxPP:  0,
+        agl: 60,
+        evd: 5,
+        ai: targetRandomPlayer,
+        gold: 476,
+        xp: 300,
+        items: [{n: "Pancake", r: 1}],
+    }
 }
 var random1 = [["Goblin", "Goblin", "Goblin"], ["Dark Goblin"], ["Goblin", "Goblin"]];
 var random2 = [["Dark Goblin", "Goblin", "Dark Goblin"], ["Dark Goblin"], ["Dark Goblin", "Dark Goblin"]];
@@ -550,10 +856,56 @@ var random4 = [["Cobra", "Dark Goblin"], ["Bat","Bat","Ice Goblin","Bat","Bat"],
 var random5 = [["Goblin", "Fire Goblin", "Ice Goblin", "Goblin"], ["Ice Goblin", "Fire Goblin", "Ice Goblin"], ["Ice Goblin", "Fire Goblin", "Dark Goblin"]];
 var random6 = [["Ogre"], ["Scorpion", "Crystal Scorpion", "Scorpion"], ["Scorpion", "Scorpion", "Scorpion"], ["Crystal Scorpion"], ["Fire Goblin", "Ice Goblin"], ["Red Bat", "Bat", "Red Bat"],];
 var random7 = [["Ogre", "Ogre"], ["Crystal Scorpion", "Scorpion", "Crystal Scorpion"], ["Scorpion", "Scorpion", "Scorpion"], ["Crystal Scorpion", "Fire Goblin"], ["Fire Goblin", "Dark Goblin", "Ice Goblin"], ["Red Bat", "Red Bat", "Red Bat"],];
+var random8 = [["Iron Ogre"], ["Red Bat","Dark Skeleton","Red Bat"], ["Crystal Scorpion", "Crystal Scorpion", "Crystal Scorpion"], ["Fire Goblin", "Dark Skeleton"], ["Spider", "Ogre", "Spider"], ["Spider", "Spider", "Spider"]];
 
 //["Ice Goblin", "Cobra", "Ice Goblin"],
 var curDialogue = {}; /// Serves as a type of window.
 var cutSceneI = 0;
+var log0 = [
+    function() {
+        var tong = new Sprite(resources["sprites/chars/tong.png"].texture);
+        foreground.addChild(tong);
+        tong.anchor.set(0.5,0.5);
+        tong.x = innerWidth - tong.width/2 - 50;
+        tong.y = innerHeight/2;
+        dialogueTxt.visible = true;
+        curDialogue.tong = tong;
+        setFrameout(function() {
+            log0[1]();
+            ++cutSceneI;
+        },30);
+    },
+    function() {
+        charTalk("tong", "Wow. It looks like there's a big shindig over in that forest.");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("tong", "Heh heh. Those guys kinda look like goblins. It looks like they're busy jumping on a little bear.");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("tong", "Wait a minute. There's not supposed to be goblins in those woods.");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("tong", "I'd better teach them a lesson or two!");
+        gameState = "dialogue";
+    },
+    function() {
+        gameState = "anim";
+        clearCharTalk();
+        foreground.removeChild(curDialogue.tong);
+        ++gamePlayStatus;
+        fadeOut(20);
+        nextScene(20);
+        activeParty.forEach(function(e) {
+            foreground.addChild(e.sprite);
+        });
+    }
+];
 var log1 = [
     function() {
         var tong = new Sprite(resources["sprites/chars/tong.png"].texture);
@@ -2130,6 +2482,10 @@ var log10 = [
         var will = addCharWill();
         activeParty.push(will);
         totalParty.push(will);
+        totalParty.forEach(function(c){
+            c.hp = c.maxHP;
+            c.pp = c.maxPP;
+        });
         setFrameout(function() {
             foreground.removeChild(curDialogue.tong);
             foreground.removeChild(curDialogue.nels);
@@ -2146,36 +2502,919 @@ var log10 = [
     }
 ];
 
-var gamePlayStatus = 0;
-setTimeout(function(){
-    if(!activeParty[0]) return;
-    activeParty[0].xp = gamePlayStatus * 50;
-    invisLevel(activeParty[0]);
-}, 100);
-var gamePlayAgenda = [
-    {set: random1, encounters: 0, bossBattle: true},
-    {set: log1, dialogue: true},
-    {set: random2, encounters: 4},
-    {set: log2, dialogue: true},
-    {set: [["Sam", "Flam"]], encounters: 1, bossBattle: true},
-    {set: log3, dialogue: true},
-    {set: random3, encounters: 6},
-    {set: log4, dialogue: true},
-    {set: random4, encounters: 6},
-    {set: log5, dialogue: true},
-    {set: [["River Dragon"]], encounters: 1, bossBattle: true},
-    {set: log6, dialogue: true},
-    {set: random4, encounters: 3, bossBattle: false},
-    {set: log7, dialogue: true},
-    {set: random5, encounters: 3, bossBattle: true},
-    {set: log8, dialogue: true},
-    {set: [["Purple Dragon"]], encounters: 1, bossBattle: true},
-    {set: log9, dialogue: true},
-    {set: random6, encounters: 8},
-    {set: log10, dialogue: true},
-    {set: random7, encounters: 4},
+var log11 = [
+    function() {
+        activeBackground.texture = resources["sprites/Backgrounds/floor.png"].texture;
+        var tong = new Sprite(resources["sprites/chars/tong.png"].texture);
+        foreground.addChild(tong);
+        tong.anchor.set(0.5,0.5);
+        tong.x = innerWidth * 0.8;
+        tong.y = innerHeight - tong.height/1.9;
+        var nels = new Sprite(resources["sprites/chars/nels.png"].texture);
+        foreground.addChild(nels);
+        nels.anchor.set(0.5,0.5);
+        nels.x = innerWidth * 0.6;
+        nels.y = innerHeight - nels.height/1.9;
+
+        var will = new Sprite(resources["sprites/chars/will.png"].texture);
+        foreground.addChild(will);
+        will.anchor.set(0.5,0.5);
+        will.x = innerWidth * 0.4;
+        will.y = innerHeight-will.height/1.9;
+        var goat = new Sprite(resources["sprites/chars/goat.png"].texture);
+        foreground.addChild(goat);
+        goat.anchor.set(0.5,0.5);
+        goat.x = innerWidth * 0.2;
+        goat.y = innerHeight-goat.height/1.9;
+
+        curDialogue.tong = tong;
+        curDialogue.nels = nels;
+        curDialogue.goat = goat;
+        curDialogue.will = will;
+        setFrameout(function() {
+            log11[1]();
+            ++cutSceneI;
+        },30);
+    },
+    function() {
+        clearCharTalk();
+        charTalk("tong", "Hey, Nels! The road is blocked! The only way past is through this old factory!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("nels", "This doesn't look safe!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("goat", "Oh man. I'm missing taco night for this. Could my life possibly get any worse?");
+        gameState = "dialogue";
+    },
+    function() {
+        var bot = new Sprite(resources["sprites/chars/bot.png"].texture);
+        foreground.addChild(bot);
+        bot.anchor.set(0.5,0.5);
+        bot.x = innerWidth * 0.5;
+        bot.y = -200;
+        clearCharTalk();
+        curDialogue.bot = bot;
+        gameState = "anim";
+        setFrameout(function() {
+            animations.push({
+                sprite: bot,
+                type: "transform",
+                props: ["y"],
+                min: [-200],
+                max: [400],
+                direction: "one",
+                speed: 90,
+                destruct: 1,
+                mode: 1,
+                cb: function() {
+                    charTalk("bot", "Hello there friends.");
+                    gameState = "dialogue";
+                },
+                i: 0,
+            });
+        },30);
+    },
+    function() {
+        clearCharTalk();
+        charTalk("tong", "Who are you?");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("bot", "I am Green Robot. Friend to all. I see you are distressed. I will show you the way through the Factory.");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("nels", "How can we be sure you're--");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("tong", "Great! Show us the way through the factory! This is going to be easy-peasy!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("bot", "No trouble at all. This factory is very safe.");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("bot", "Right. Go left, right, right, straight, left, towards yourself, straight. Got that straight, right?");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("will", "First left, then right, then right, then--");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("bot", "I have some business to attend to. I will see you soon.");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        gameState = "anim";
+        setFrameout(function() {
+            animations.push({
+                sprite: curDialogue.bot,
+                type: "transform",
+                props: ["y"],
+                min: [400],
+                max: [-200],
+                direction: "one",
+                speed: 60,
+                destruct: 1,
+                mode: 1,
+                cb: function() {
+                    charTalk("tong", "Thanks for the help!");
+                    gameState = "dialogue";
+                },
+                i: 0,
+            });
+        },30);
+    },
+    function() {
+        clearCharTalk();
+        charTalk("nels", "How are we supposed to remember all that?! Go right, then left, then right... how many commands were there, anyway?!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("will", "Now, now, Nels. He did point in the right direction. We can at least thank him for that.");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("nels", "Augh! I think there's monsters in there!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("will", "Well, that is a natural assumption. As you know, in RPGs the active party--");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("nels", "I've heard enough about RPGs already! <sighs> Let's move it!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        gameState = "anim";
+        fadeOut(20);
+        setFrameout(function() {
+            foreground.removeChild(curDialogue.tong);
+            foreground.removeChild(curDialogue.nels);
+            foreground.removeChild(curDialogue.goat);
+            foreground.removeChild(curDialogue.will);
+            foreground.removeChild(curDialogue.bot);
+            ++gamePlayStatus;
+            nextScene(20);
+            activeParty.forEach(function(e) {
+                foreground.addChild(e.sprite);
+            });
+        }, 20);
+    }
+];
+var log12 = [
+    function() {
+        activeBackground.texture = resources["sprites/Backgrounds/floor.png"].texture;
+
+        var nels = new Sprite(resources["sprites/chars/nels.png"].texture);
+        foreground.addChild(nels);
+        nels.anchor.set(0.5,0.5);
+        nels.x = innerWidth + nels.width/2;
+        nels.y = innerHeight *0.4;
+
+        var tong = new Sprite(resources["sprites/chars/tong.png"].texture);
+        foreground.addChild(tong);
+        tong.anchor.set(0.5,0.5);
+        tong.x = innerWidth + tong.width/2;
+        tong.y = nels.y + nels.height;
+
+        curDialogue.nels = nels;
+        curDialogue.tong = tong;
+
+        var sam = new Sprite(resources["sprites/chars/sam.png"].texture);
+        foreground.addChild(sam);
+        sam.anchor.set(0.5,0.5);
+        sam.x = -sam.width/2;
+        sam.y = innerHeight *0.4;
+
+        var flam = new Sprite(resources["sprites/chars/flam.png"].texture);
+        foreground.addChild(flam);
+        flam.anchor.set(0.5,0.5);
+        flam.x = -flam.width/2;
+        flam.y = sam.y + sam.height;
+        flam.scale.x *= -1;
+
+        curDialogue.sam = sam;
+        curDialogue.flam = flam;
+
+        var will = new Sprite(resources["sprites/chars/will.png"].texture);
+        foreground.addChild(will);
+        will.anchor.set(0.5,0.5);
+        will.y = innerHeight + will.height/2;
+        will.x = innerWidth*0.4;
+
+        var goat = new Sprite(resources["sprites/chars/goat.png"].texture);
+        foreground.addChild(goat);
+        goat.anchor.set(0.5,0.5);
+        goat.y = innerHeight + goat.height/2;
+        goat.x = will.x + will.width;
+
+        var herbert = new Sprite(resources["sprites/monsters/Herbert.png"].texture);
+        foreground.addChild(herbert);
+        herbert.anchor.set(0.5,0.5);
+        herbert.y = innerHeight*0.55;
+        herbert.x = innerWidth*0.4;
+        curDialogue.herbert = herbert;
+        var sword = new Sprite(resources["sprites/sword.png"].texture);
+        foreground.addChild(sword);
+        sword.anchor.set(0.5,0.5);
+        sword.y = herbert.y - sword.height;
+        sword.x = herbert.x;
+        sword.alpha = 0;
+        curDialogue.sword = sword;
+
+
+        var weapon = new Sprite(resources["sprites/weapon.png"].texture);
+        foreground.addChild(weapon);
+        weapon.anchor.set(0.5,0.5);
+        weapon.y = innerHeight*0.55;
+        weapon.x = herbert.x + weapon.width;
+        curDialogue.weapon = weapon;
+        curDialogue.will = will;
+        curDialogue.goat = goat;
+        setFrameout(function() {
+            log12[1]();
+            ++cutSceneI;
+        },30);
+
+    },
+    function() {
+        clearCharTalk();
+        charTalk("herbert", "Ha ha ha! Here come the fools now!");
+        gameState = "dialogue";
+    },
+    
+    function() {
+        clearCharTalk();
+        gameState = "anim";
+        animMove(curDialogue.nels,-400,0,60, function() {
+            charTalk("nels", "Hold it, Emperor!");
+            gameState = "dialogue";
+        });
+        animMove(curDialogue.tong,-400,0,60);
+    },
+    function() {
+        clearCharTalk();
+        charTalk("herbert", "Guards! Get them!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("herbert", ". . . Guards?");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        gameState = "anim";
+        animMove(curDialogue.will,0,-300,60, function() {
+            charTalk("will", "There won't be any escape anymore, Emperor!");
+            gameState = "dialogue";
+        });
+        animMove(curDialogue.goat,0,-300,60);
+    },
+    function() {
+        clearCharTalk();
+        charTalk("goat", "We smashed up those guards of yours pretty good, man.");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("herbert", "Ha! You left the back door unguarded--");
+        gameState = "dialogue";
+    },
+
+    function() {
+        clearCharTalk();
+        gameState = "anim";
+        animMove(curDialogue.sam,400,0,60, function() {
+            charTalk("flam", "Bark bark! Prepare to be boarded!");
+            gameState = "dialogue";
+        });
+        animMove(curDialogue.flam,400,0,60);
+    },
+    function() {
+        clearCharTalk();
+        charTalk("sam", "That was the wrong line!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("flam", "Shh!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("nels", "The game's up, Emperor!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("tong", "Best just give up now and save us the trouble.");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("goat", "Oh yeah man. Hurry up so I can blow this joint and get some flautas.");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("will", "Without dinosaur eyes, your weapon is useless against us!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("sam", "Are we supposed to say something inspirational now?");
+        gameState = "dialogue";
+    },
+
+    function() {
+        clearCharTalk();
+        charTalk("flam", "Yeah, I think so.");
+        gameState = "dialogue";
+    },
+
+    function() {
+        clearCharTalk();
+        charTalk("sam", "You suck!");
+        gameState = "dialogue";
+    },
+
+    function() {
+        clearCharTalk();
+        charTalk("flam", "Yeah! You suck!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("herbert", ". . . It appears you have me surrounded.");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        gameState = "anim";
+        alphaFade(curDialogue.sword,0,1,20,function(){
+            charTalk("herbert", "I surrender my sword!");
+            gameState = "dialogue";
+        });
+    },
+    function() {
+        clearCharTalk();
+        gameState = "anim";
+        animMoveTo(curDialogue.sword,curDialogue.sword.x,100,240,function(){});
+
+        animations.push({
+            sprite: curDialogue.sword,
+            type: "transform",
+            props: ["rotation"],
+            min: [0],
+            max: [Math.PI*8],
+            direction: "one",
+            speed: 240,
+            mode: 1,
+            destruct: 1,
+            i: 0,
+        });
+        setFrameout(function() {
+            animMoveTo(curDialogue.sword,curDialogue.sword.x,95,10,function() {
+                setFrameout(function(){
+                    curDialogue.sword.rotation = -pointTowards(curDialogue.sword.x,curDialogue.sword.y,curDialogue.tong.x,curDialogue.tong.y);
+                    animMoveTo(curDialogue.sword,curDialogue.tong.x,curDialogue.tong.y,10,function() {
+                        deathFade(curDialogue.sword);
+                        setFrameout(function(){
+                            evilBossMode = true;
+                            curDialogue.tong.texture = resources["sprites/chars/tong2.png"].texture;
+                            findActivePartyMember("Tongarango", totalParty).texture = resources["sprites/chars/tong2.png"].texture;
+                            var eye = new Sprite(resources["sprites/eye.png"].texture);
+                            eye.x = curDialogue.tong.x - curDialogue.tong.width/2;
+                            eye.y = curDialogue.tong.y - curDialogue.tong.height/2;
+                            foreground.addChild(eye);
+                            animMoveTo(eye,innerWidth/2,-100, 60);
+                            animMoveTo(curDialogue.herbert,innerWidth/2,-300, 30);
+                            curDialogue.anim1 ={
+                                sprite: curDialogue.weapon.scale,
+                                type: "transform",
+                                props: ["x", "y"],
+                                min: [curDialogue.weapon.scale.x, curDialogue.weapon.scale.y],
+                                max: [curDialogue.weapon.scale.x + 0.15, curDialogue.weapon.scale.y + 0.15],
+                                direction: "both",
+                                speed: 10,
+                                mode: 1,
+                                destruct: Infinity,
+                                play: function(anim) {
+                                    var char = curDialogue.weapon;
+                                        for(var i = 0; i < 5; i++) {
+                                        var part = spawnParticle(char.x + randInt(-200, 200), char.y + randInt(-200, 200), 0xEE402E, function(){return randDir(3)}, 10);
+                                        part.vector = normalize(char.x - part.x, char.y - part.y, 3);
+                                        part.fadeSpeed = 0.025;
+                                    }
+                                },
+                                i: 0,
+                            }
+                            animations.push(curDialogue.anim1);
+                            setFrameout(function(){
+                                charTalk("herbert", "Wah ha ha ha ha. . .");
+                                gameState = "dialogue";
+                            },90);
+                        },30);
+                    });
+                },30);
+                setFrameout(function(){
+                    fadeOut(5);
+                },5);
+            });
+        },240);
+    },
+    function() {
+        clearCharTalk();
+        charTalk("nels", "We just HANDED him the eyeballs?!?!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("tong", "That's the way it always works in RPGs, Nels!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("nels", "AUGH!!!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        gameState = "anim";
+        fadeOut(20);
+        setFrameout(function() {
+            curDialogue.anim1.dead=true;
+            activeBackground.texture = resources["sprites/Backgrounds/boss.png"].texture;
+            foreground.removeChild(curDialogue.nels);
+            foreground.removeChild(curDialogue.herbert);
+            foreground.removeChild(curDialogue.tong);
+            foreground.removeChild(curDialogue.sword);
+            foreground.removeChild(curDialogue.sam);
+            foreground.removeChild(curDialogue.flam);
+            foreground.removeChild(curDialogue.will);
+            foreground.removeChild(curDialogue.weapon);
+            foreground.removeChild(curDialogue.goat);
+            ++gamePlayStatus;
+            nextScene(20);
+            activeParty.forEach(function(e) {
+                foreground.addChild(e.sprite);
+            });
+        }, 20);
+    }
 ];
 
+var log13 = [
+    function() {
+        activeBackground.texture = resources["sprites/Backgrounds/snow.png"].texture;
+        var tong = new Sprite(resources["sprites/chars/tong.png"].texture);
+        foreground.addChild(tong);
+        tong.anchor.set(0.5,0.5);
+        tong.x = innerWidth * 0.8;
+        tong.y = innerHeight - tong.height/1.9;
+        var nels = new Sprite(resources["sprites/chars/nels.png"].texture);
+        foreground.addChild(nels);
+        nels.anchor.set(0.5,0.5);
+        nels.x = innerWidth * 0.6;
+        nels.y = innerHeight - nels.height/1.9;
+
+        var flam = new Sprite(resources["sprites/chars/flam.png"].texture);
+        foreground.addChild(flam);
+        flam.anchor.set(0.5,0.5);
+        flam.x = innerWidth * 0.4;
+        flam.y = innerHeight-flam.height/1.9;
+        var sam = new Sprite(resources["sprites/chars/sam.png"].texture);
+        foreground.addChild(sam);
+        sam.anchor.set(0.5,0.5);
+        sam.x = innerWidth * 0.2;
+        sam.y = innerHeight-sam.height/1.9;
+
+        curDialogue.tong = tong;
+        curDialogue.nels = nels;
+        curDialogue.sam = sam;
+        curDialogue.flam = flam;
+        setFrameout(function() {
+            log13[1]();
+            ++cutSceneI;
+        },30);
+    },
+    function() {
+        charTalk("nels", "Well, we made it out through that factory alive! Now where are we?");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("sam", "Looks like on the side of a mountain.");
+        gameState = "dialogue";
+    },
+    function() {
+        var tux = new Sprite(resources["sprites/chars/tux.png"].texture);
+        foreground.addChild(tux);
+        tux.anchor.set(0.5,0.5);
+        tux.x = innerWidth * 0.4;
+        tux.y = -200;
+        clearCharTalk();
+        curDialogue.tux = tux;
+        gameState = "anim";
+        setFrameout(function() {
+            animations.push({
+                sprite: tux,
+                type: "transform",
+                props: ["y"],
+                min: [-200],
+                max: [400],
+                direction: "one",
+                speed: 90,
+                destruct: 1,
+                mode: 1,
+                cb: function() {
+                    charTalk("tux", "Ork ork!");
+                    gameState = "dialogue";
+                },
+                i: 0,
+            });
+        },30);
+    },
+    function() {
+        clearCharTalk();
+        charTalk("nels", "Why, it's a penguin! What are you doing here?");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("tux", "Ork ork.");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("nels", "You want to come with us?");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("tux", "Ork ork!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("nels", "You and your robot friend?");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("tux", "Ork ork!");
+        gameState = "dialogue";
+    },
+    function() {
+        var cudd = new Sprite(resources["sprites/chars/cudd.png"].texture);
+        foreground.addChild(cudd);
+        cudd.anchor.set(0.5,0.5);
+        cudd.x = innerWidth * 0.6;
+        cudd.y = -200;
+        clearCharTalk();
+        curDialogue.cudd = cudd;
+        gameState = "anim";
+        setFrameout(function() {
+            animations.push({
+                sprite: cudd,
+                type: "transform",
+                props: ["y"],
+                min: [-200],
+                max: [400],
+                direction: "one",
+                speed: 90,
+                destruct: 1,
+                mode: 1,
+                cb: function() {
+                    charTalk("cudd", "Beep beep. We are here to assist.");
+                    gameState = "dialogue";
+                },
+                i: 0,
+            });
+        },30);
+    },
+    function() {
+        clearCharTalk();
+        charTalk("nels", "Just randomly, out of the blue?");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("cudd", "We are trying to save the world.");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("nels", "Why?");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("cudd", "Because we live in the world.");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("tong", "Well, you're in the right place, bud! Let's go save the world!");
+        gameState = "dialogue";
+    },
+    function() {
+        var tux = addCharTux();
+        activeParty.push(tux);
+        totalParty.push(tux);
+        var cudd = addCharCudd();
+        activeParty.push(cudd);
+        totalParty.push(cudd);
+        clearCharTalk();
+        gameState = "anim";
+        fadeOut(20);
+        setFrameout(function() {
+            foreground.removeChild(curDialogue.tong);
+            foreground.removeChild(curDialogue.nels);
+            foreground.removeChild(curDialogue.flam);
+            foreground.removeChild(curDialogue.sam);
+            foreground.removeChild(curDialogue.tux);
+            foreground.removeChild(curDialogue.cudd);
+            ++gamePlayStatus;
+            nextScene(20);
+            activeParty.forEach(function(e) {
+                foreground.addChild(e.sprite);
+            });
+        }, 20);
+    }
+];
+var gamePlayStatus = 0;
+
+var log14 = [
+    function() {
+        activeBackground.texture = resources["sprites/Backgrounds/floor.png"].texture;
+        activeBackground.visible = true;
+        var tong = new Sprite(resources["sprites/chars/tong.png"].texture);
+        foreground.addChild(tong);
+        tong.anchor.set(0.5,0.5);
+        tong.x = innerWidth * 0.833;
+        tong.y = innerHeight - tong.height/1.9;
+        var nels = new Sprite(resources["sprites/chars/nels.png"].texture);
+        foreground.addChild(nels);
+        nels.anchor.set(0.5,0.5);
+        nels.x = innerWidth * 0.666;
+        nels.y = innerHeight - nels.height/1.9;
+
+        var flam = new Sprite(resources["sprites/chars/will.png"].texture);
+        foreground.addChild(flam);
+        flam.anchor.set(0.5,0.5);
+        flam.x = innerWidth * 0.5;
+        flam.y = innerHeight-flam.height/1.9;
+        var sam = new Sprite(resources["sprites/chars/flam.png"].texture);
+        foreground.addChild(sam);
+        sam.anchor.set(0.5,0.5);
+        sam.x = innerWidth * 0.3333;
+        sam.y = innerHeight-sam.height/1.9;
+        var goat = new Sprite(resources["sprites/chars/sam.png"].texture);
+        foreground.addChild(goat);
+        goat.anchor.set(0.5,0.5);
+        goat.x = innerWidth * 0.1666;
+        goat.y = innerHeight-goat.height/1.9;
+
+        curDialogue.tong = tong;
+        curDialogue.goat = goat;
+        curDialogue.nels = nels;
+        curDialogue.sam = sam;
+        curDialogue.flam = flam;
+        
+        setFrameout(function() {
+            log14[1]();
+            ++cutSceneI;
+        },30);
+    },
+    function() {
+        clearCharTalk();
+        charTalk("nels", "Here we are! Right in front of the Emperor's Gate!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("tong", "How do we get into the gate?");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("nels", "We'll need a key.");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("will", "But who has the key?");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("hutt", "I do!");
+        gameState = "dialogue";
+    },
+    function() {
+        var goblin = new Sprite(resources["sprites/monsters/Winnie the Hutt.png"].texture);
+        foreground.addChild(goblin);
+        goblin.anchor.set(0.5,0.5);
+        goblin.x = innerWidth * 0.5;
+        goblin.y = -200;
+        clearCharTalk();
+        curDialogue.goblin = goblin;
+        gameState = "anim";
+        setFrameout(function() {
+            animations.push({
+                sprite: goblin,
+                type: "transform",
+                props: ["y"],
+                min: [-200],
+                max: [400],
+                direction: "one",
+                speed: 90,
+                destruct: 1,
+                mode: 1,
+                cb: function() {
+                    charTalk("tong", "Oh man.");
+                    gameState = "dialogue";
+                },
+                i: 0,
+            });
+        },30);
+    },
+    function() {
+        clearCharTalk();
+        charTalk("nels", "AUGH!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("sam", "That bear is a lot bigger than Nels.");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("flam", "Wonder what special abilities he has?");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("hutt", "Punches!");
+        gameState = "dialogue";
+    },
+    function() {
+        activeBackground.texture = resources["sprites/Backgrounds/grass.png"].texture;
+        clearCharTalk();
+        gameState = "anim";
+        fadeOut(20);
+        animMove(curDialogue.goblin,0,300,30);
+        setFrameout(function() {
+            foreground.removeChild(curDialogue.tong);
+            foreground.removeChild(curDialogue.nels);
+            foreground.removeChild(curDialogue.goblin);
+            foreground.removeChild(curDialogue.flam);
+            foreground.removeChild(curDialogue.sam);
+            foreground.removeChild(curDialogue.goat);
+            foreground.removeChild(curDialogue.will);
+            ++gamePlayStatus;
+            nextScene(20);
+            activeParty.forEach(function(e) {
+                foreground.addChild(e.sprite);
+            });
+        }, 20);
+    }
+];
+
+var log15 = [
+    function() {
+        var tong = new Sprite(resources["sprites/chars/tong2.png"].texture);
+        foreground.addChild(tong);
+        tong.anchor.set(0.5,0.5);
+        tong.x = innerWidth * 0.8;
+        tong.y = innerHeight - tong.height/1.9;
+        var nels = new Sprite(resources["sprites/chars/nels.png"].texture);
+        foreground.addChild(nels);
+        nels.anchor.set(0.5,0.5);
+        nels.x = innerWidth * 0.6;
+        nels.y = innerHeight - nels.height/1.9;
+
+        var flam = new Sprite(resources["sprites/chars/flam.png"].texture);
+        foreground.addChild(flam);
+        flam.anchor.set(0.5,0.5);
+        flam.x = innerWidth * 0.4;
+        flam.y = innerHeight-flam.height/1.9;
+        var sam = new Sprite(resources["sprites/chars/sam.png"].texture);
+        foreground.addChild(sam);
+        sam.anchor.set(0.5,0.5);
+        sam.x = innerWidth * 0.2;
+        sam.y = innerHeight-sam.height/1.9;
+
+        curDialogue.tong = tong;
+        curDialogue.nels = nels;
+        curDialogue.sam = sam;
+        curDialogue.flam = flam;
+        setFrameout(function() {
+            log0[1]();
+            ++cutSceneI;
+        },30);
+    },
+    function() {
+        charTalk("nels", "We did it! The weapon is destroyed!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("sam", "The story is complete!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("tong", "Wait a minute. Guys! I don't have eyes!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("sam", "Oh yeah. Right. Tongarango! Here!");
+        gameState = "dialogue";
+    },
+    function() {
+        gameState = "anim";
+        animMoveTo(curDialogue.sam, curDialogue.tong.x,curDialogue.tong.y,30,function(){
+            clearCharTalk();
+            charTalk("sam","We got you new eyes!");
+            gameState = "dialogue";
+        }).direction = "both";
+        setFrameout(function() {
+            curDialogue.tong.texture = resources["sprites/chars/tong.png"].texture;
+        },30);
+    },
+    function() {
+        clearCharTalk();
+        charTalk("tong", "Great! Where'd you get them?");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("nels", "They look familiar...");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("flam", "They're the River Dragon's eyes! Remember? We didn't need them!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("tong", "Great! I guess we can all go home now! The story is done! The end!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        gameState = "anim";
+        animMove(curDialogue.tong,0 ,400,240,function(){
+            clearCharTalk();
+            gameState = "dialogue";
+            charTalk("tong","Does anyone else have an odd desire to jump in a river?");
+        });
+    },
+    function() {
+        clearCharTalk();
+        charTalk("nels", "AUGH!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        gameState = "anim";
+        fadeOut2(20);
+        dialogueTxt.text = "THE END";
+        dialogueTxt.x = innerWidth*0.5;
+        dialogueTxt.y = innerHeight*0.5;
+        dialogueTxt.scale.set(5,5);
+        alphaFade(dialogueTxt,0,1,100);
+
+    }
+];
 function createSpecial(pp, dmgMult) {
     return {
         pp: pp,
@@ -2223,3 +3462,37 @@ function createSpecial(pp, dmgMult) {
         }
     };
 }
+var gamePlayAgenda = [
+    {set: log0, dialogue: true},
+    {set: random1, encounters: 0, bossBattle: true},
+    {set: log1, dialogue: true},
+    {set: random2, encounters: 4},
+    {set: log2, dialogue: true},
+    {set: [["Sam", "Flam"]], encounters: 1, bossBattle: true},
+    {set: log3, dialogue: true},
+    {set: random3, encounters: 6},
+    {set: log4, dialogue: true},
+    {set: random4, encounters: 6},
+    {set: log5, dialogue: true},
+    {set: [["River Dragon"]], encounters: 1, bossBattle: true},
+    {set: log6, dialogue: true},
+    {set: random4, encounters: 3, bossBattle: false},
+    {set: log7, dialogue: true},
+    {set: random5, encounters: 3, bossBattle: true},
+    {set: log8, dialogue: true},
+    {set: [["Purple Dragon"]], encounters: 1, bossBattle: true},
+    {set: log9, dialogue: true},
+    {set: random6, encounters: 8},
+    {set: log10, dialogue: true},
+    {set: random7, encounters: 4},
+    {set: log11, dialogue: true},
+    {set: random8, encounters: 10},
+    {set: [["Green Robot"]], encounters: 1, bossBattle: true},
+    {set: log13, dialogue: true},
+    {set: random8, encounters: 10},
+    {set: log14, dialogue: true},
+    {set: [["Winnie the Hutt"]], encounters: 1, bossBattle: true},
+    {set: log12, dialogue: true},
+    {set: [["Herbert"]], encounters: 1, bossBattle: true},
+    {set: log15, dialogue: true},
+];

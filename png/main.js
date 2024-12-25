@@ -34,17 +34,19 @@ app.renderer.view.style.display = "block";
 app.renderer.autoResize = true;
 app.renderer.resize(window.innerWidth, window.innerHeight);
 document.body.appendChild(app.view);
-var charNames = ["tong", "nels", "sam", "flam", "tux", "will", "goat", "woof", "purple-dragon"];
+var charNames = ["tong", "nels", "sam", "flam", "tux", "will", "goat", "woof", "purple-dragon", "bot", "herbert", "cudd","hutt"];
 var backgroundNames = ["boss", "floor", "grass", "river", "snow", "city"];
-var monsterNames = ["Goblin", "Dark Goblin", "Sam", "Flam", "Cobra", "Bat", "Ice Goblin", "River Dragon", "Fire Goblin", "Purple Dragon", "Ogre", "Scorpion", "Crystal Scorpion", "Red Bat"];
+var monsterNames = ["Goblin", "Dark Goblin", "Sam", "Flam", "Cobra", "Bat", "Ice Goblin", "River Dragon", "Fire Goblin", "Purple Dragon", "Ogre", "Scorpion", "Crystal Scorpion", "Red Bat",
+"Iron Ogre", "Spider", "Dark Skeleton", "Herbert", "Green Robot", "Winnie the Hutt"];
 loadArray(charNames, "sprites/chars/", "png");
 loadArray(charNames, "sprites/heads/", "png");
 loadArray(monsterNames, "sprites/monsters/", "png");
 loadArray(backgroundNames, "sprites/Backgrounds/", "png");
-loader.add("sprites/particle.png").add("sprites/eye.png").add("sprites/bone.png").load(setup);
+loader.add("sprites/particle.png").add("sprites/eye.png").add("sprites/sword.png").add("sprites/chars/tong2.png").add("sprites/weapon.png").add("sprites/bone.png").load(setup);
 var background = new PIXI.Container();
 var foreground = new PIXI.Container();
 var ui = new PIXI.Container();
+var evilBossMode = false;
 var state;
 var keys = {};
 var globalTextStyle = new PIXI.TextStyle({ stroke: "black", fill: "black"});
@@ -54,9 +56,11 @@ var totalParty = [];
 var activePartyI = 0;
 // var activeSetup = [[0.33,0.85], [0.66,0.85]];
 var enemyParty = [];
+var herbTurn = 0;
 var icon;
 var iconContainer = new PIXI.Container();
 var playerMenu = {};
+var cursedFate = false;
 var gameState = "actions";
 var keyMappings = {up: ["ArrowUp", "ArrowLeft"], down: ["ArrowDown", "ArrowRight"], confirm: [" ", "x", "Enter"], back: ["z","Escape"]};
 var partyActions = [];
@@ -64,7 +68,11 @@ var partyActionsI = 0;
 var map = [];
 var battleRandom = 1;
 function updateBattleRandom() {
-    battleRandom = randNum(0.75,1.25);
+    if(cursedFate) {
+        battleRandom = randNum(0.5,1.5); 
+    } else {
+        battleRandom = randNum(0.75,1.25);
+    }
 };
 
 var animations = [];
@@ -85,7 +93,7 @@ var nelsVenegance = false;
 var curSpecialName = "";
 var twinAbility = 0;
 function findActivePartyMember(name, party, verify) {
-    verify = verify || function(){};
+    verify = verify || function(){return true};
     for(var i = 0; i < party.length; i++) {
         if(party[i].name === name && verify(party[i])) {
             return party[i];
@@ -102,6 +110,7 @@ function setup() {
     app.stage.addChild(ui);
     activeBackground = new Sprite(resources["sprites/Backgrounds/grass.png"].texture);
     activeBackground.width = innerWidth;
+    activeBackground.height = Math.max(activeBackground.height,innerHeight);
     background.addChild(activeBackground);
     playerMenu.list = new PIXI.Container();
     ui.addChild(playerMenu.list);
@@ -164,7 +173,6 @@ function setup() {
             "Resuscitate": {
                 pp: 2,
                 dmgMult: function(target) {
-                    console.log(target.hp)
                     if(target.hp <= 0) {
                         target.hp = Math.round(target.maxHP/5);
                         healFade(target.sprite);
@@ -440,8 +448,9 @@ function setup() {
     icon.anchor.set(0.5,0.5);
     activeParty.push(tong);
     totalParty.push(tong);
-    enemyParty = generateEnemyParty(gamePlayAgenda[gamePlayStatus].set);
-    setForBattle(activeParty, enemyParty);
+    // enemyParty = generateEnemyParty(gamePlayAgenda[gamePlayStatus].set);
+    // setForBattle(activeParty, enemyParty);
+    nextScene();
     charTalkBox.beginFill(0x3C71F7);
     charTalkBox.lineStyle(10, 0x51B4FF);
     charTalkBox.drawRect(2.5, 2.5, innerWidth-5, 200);
@@ -450,6 +459,9 @@ function setup() {
     state = play;
     app.ticker.add(delta => gameLoop(delta));
 }
+window.onbeforeunload = function() {
+    return 'Are you sure you want to leave this page?';
+  };
 function newStatus(name, time, char) {
     var foundCurStatus;
     statuses.forEach(function(stat) {
@@ -482,6 +494,14 @@ function newStatus(name, time, char) {
         status.bonus.agl = {mult: 1.5}
         char.agl *= 1.5;
         status.emitter = addEmitter(char.sprite.x - 100, char.sprite.x + 100, char.sprite.y - 100, char.sprite.y + 100, function(){return randDir(1)}, 0xF2DF0D, 1, Infinity, 10);
+    } else if(name === "horror") {
+        status.bonus.def = {mult: 0.75}
+        char.def *= 0.75;
+        status.emitter = addEmitter(char.sprite.x - 100, char.sprite.x + 100, char.sprite.y - 100, char.sprite.y + 100, function(){return randDir(1)}, 0x5B4200, 1, Infinity, 10);
+    } else if(name === "shell") {
+        status.bonus.def = {mult: 1.25}
+        char.def *= 1.25;
+        status.emitter = addEmitter(char.sprite.x - 100, char.sprite.x + 100, char.sprite.y - 100, char.sprite.y + 100, function(){return randDir(1)}, 0x79C0FF, 1, Infinity, 10);
     }
     statuses.push(status);
     return status;
@@ -496,6 +516,10 @@ function loadPlayerMenu(char) {
                 if(twinAbility === -1 || !findActivePartyMember("Flam", activeParty, function(char){return char.hp > 0})) {
                     return;
                 }
+            } else if(char.name === "Flam") {
+                if(twinAbility === -1 || !findActivePartyMember("Sam", activeParty, function(char){return char.hp > 0})) {
+                    return;
+                }
             }
         }
         playerMenu.targets.push(name);
@@ -507,9 +531,15 @@ function loadPlayerMenu(char) {
         el.anchor.set(1,0.5);
         el.x = innerWidth - 25;
         els.push(el);
-        if(i === 2 && activeParty.length === totalParty.length) {
+
+        if(i === 0 && char.hp <= 0) {
+            el.text = "Pass";
+            el.alpha = 1;
+        } else if (i === 1 && (char.hp <= 0)) {
             el.alpha = 0.5;
-        } else if (i === 3 && noPartyItems()) {
+        } else if(i === 2 && activeParty.length == totalParty.length) {
+            el.alpha = 0.5;
+        } else if (i === 3 && (noPartyItems() || char.hp <= 0)) {
             el.alpha = 0.5;
         }
     });
@@ -662,7 +692,11 @@ function handleParticles(particles) {
     }
 }
 function spawnParticle(x,y,tint, vector) {
-    var part = new Sprite(resources["sprites/particle.png"].texture);
+    if(evilBossMode) {
+        var part = new Sprite(resources["sprites/eye.png"].texture);
+    } else{
+        var part = new Sprite(resources["sprites/particle.png"].texture);
+    }
     particleContainer.addChild(part);
     part.scale.set(0.5,0.5);
     particles.push(part);
@@ -729,7 +763,7 @@ function setForBattle(good, bad) {
 
     for(var i = 0; i < bad.length; i++) {
         bad[i].sprite.x = innerWidth * (i+1)/(bad.length+1);
-        bad[i].sprite.y = bad[i].sprite.height*0.8;
+        bad[i].sprite.y = bad[i].sprite.height*0.5 + 100;
     }
     loot.gold = 0;
     loot.xp = 0;
@@ -797,6 +831,11 @@ function makeTxt(dmg, target) {
     });
 }
 function attack(atk, attacker, defender, fixedDMG) {
+    if(activeParty.includes(defender) && cursedFate) {
+        if(battleRandom< 1) {
+            battleRandom = 1+ (battleRandom -1);
+        }
+    }
     var def = defender.def;
     var dmg = fixedDMG || Math.round(constrain(1, (atk * 1.5 - def) * battleRandom, 9999));
     defender.hp -= dmg;
@@ -805,7 +844,6 @@ function attack(atk, attacker, defender, fixedDMG) {
         defender.hp = 0;
         if(activeParty.includes(defender)) {
             halfFade(defender.sprite);
-            console.log("Grace");
         } else {
             deathFade(defender.sprite);
         }
@@ -865,7 +903,10 @@ function play() {
                     playerMenu.state = "target";
                     playerMenu.action = "fight";
                     updateIcon();
-                } else if(playerMenu.char[playerMenu.targets[playerMenu.i]]) {
+                } else if(playerMenu.targets[playerMenu.i] === "Pass"){
+                    animRetreat(playerMenu.char.sprite);
+                    nextPlayer();
+                } else if(playerMenu.char[playerMenu.targets[playerMenu.i]] && playerMenu.char.hp > 0) {
                     /// Special Ability
                     clearPlayerMenu();
                     loadAbilityMenu(playerMenu.char[playerMenu.targets[playerMenu.i]], playerMenu.char);
@@ -874,14 +915,11 @@ function play() {
                     clearPlayerMenu();
                     loadSwapMenu();
                     playerMenu.state = "complex";
-                } else if(playerMenu.targets[playerMenu.i] === "Item" && !noPartyItems()) {
+                } else if(playerMenu.targets[playerMenu.i] === "Item" && !noPartyItems() && playerMenu.char.hp > 0) {
                     clearPlayerMenu();
                     loadItemMenu();
                     playerMenu.state = "complex";
                 }
-            } else if(userInput.back) {
-                animRetreat(playerMenu.char.sprite);
-                nextPlayer();
             }
         } else if(playerMenu.state === "complex") {
             if(userInput.up) {
@@ -1213,7 +1251,7 @@ function play() {
             alphaFade(dialogueTxt,0,1,10);
             setFrameout(function(){
                 alphaFade(dialogueTxt,1,0,10, function(){dialogueTxt.text = ""; dialogueTxt.visible = false; dialogueTxt.alpha = 1});
-                if(!curAction.enemyItem) {
+                if(!curAction.enemyItem && partyItems[curAction.name]) {
                     partyItems[curAction.name]--;
                 }
                 runItem(curAction);
@@ -1239,7 +1277,6 @@ function play() {
                 } else {
                     fadeOut(20);
                     nextScene(20);
-                    console.log(gameState);
                     gameState = "anim";
                 }
             }
@@ -1264,6 +1301,7 @@ function play() {
             gameState = "anim";
         } else if(userInput.back) {
             dialogueTxt.text = "";
+            gamePlayAgenda[gamePlayStatus].encounters = 3;
             fadeOut(20);
             nextScene(20);
             gameState = "anim";
@@ -1413,6 +1451,31 @@ function fadeOut(duration) {
         mode: 1,
         i: 0,
     });
+    return fade;
+}function fadeOut2(duration) {
+    var fade = new PIXI.Graphics();
+    fade.x = -10;
+    fade.y = -10;
+    fade.beginFill(0xFFFFFF);
+    fade.drawRect(0,0,innerWidth + 100, innerHeight + 100);
+    particleContainer.addChild(fade);
+    fade.alpha = 0;
+    animations.push({
+        sprite: fade,
+        type: "transform",
+        props: ["alpha"],
+        min: [0],
+        max: [1],
+        direction: "one",
+        speed: duration,
+        destruct: 1,
+        cb: function() {
+            ui.removeChild(fade);
+        },
+        mode: 1,
+        i: 0,
+    });
+    return fade;
 }
 function charTalk(name, txt) {
     name = name.toLowerCase();
@@ -1580,7 +1643,6 @@ function runFight(curAction) {
                             for(var i = 0; i < 10; i++) {
                                 spawnParticle(anim.max[0] + randInt(-150,150), anim.max[1] + randInt(-150,150), 0xEE402E, direction(randNum(0,Math.PI*2),3), 0);
                             }
-                            console.log(anim.i,anim.speed);
                         },
                         i: 0,
                     });
@@ -1785,7 +1847,7 @@ function nextPlayer() {
         if(activePartyI > activeParty.length-1) {
             break;
         }
-    } while(activeParty[activePartyI].hp <= 0 || (activeParty[activePartyI].Twin && twinAbility === 1));
+    } while((activeParty[activePartyI].hp <= 0 && activeParty.length === totalParty.length) || (activeParty[activePartyI].Twin && twinAbility === 1));
 
     if(activePartyI > activeParty.length-1) {
         gameState = "anim";
@@ -1842,7 +1904,6 @@ function generateEnemyParty(configs) {
     var curConfig = configs[randInt(0,configs.length-1)];
     for(var i = 0; i < curConfig.length; i++) {
         var curDetails = monsterpedia[curConfig[i]];
-        console.log(curDetails,curConfig);
         var monster = {
             name: curConfig[i],
             sprite: new Sprite(resources["sprites/monsters/" + curConfig[i] + ".png"].texture),
