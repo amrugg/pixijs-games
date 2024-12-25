@@ -34,17 +34,20 @@ app.renderer.view.style.display = "block";
 app.renderer.autoResize = true;
 app.renderer.resize(window.innerWidth, window.innerHeight);
 document.body.appendChild(app.view);
-var charNames = ["tong", "nels", "sam", "flam", "tux", "will", "goat"];
-var monsterNames = ["Goblin", "Dark Goblin", "Sam", "Flam", "Cobra", "Bat", "Ice Goblin", "River Dragon"];
+var charNames = ["tong", "nels", "sam", "flam", "tux", "will", "goat", "woof", "purple-dragon"];
+var backgroundNames = ["boss", "floor", "grass", "river", "snow", "city"];
+var monsterNames = ["Goblin", "Dark Goblin", "Sam", "Flam", "Cobra", "Bat", "Ice Goblin", "River Dragon", "Fire Goblin", "Purple Dragon", "Ogre", "Scorpion", "Crystal Scorpion", "Red Bat"];
 loadArray(charNames, "sprites/chars/", "png");
 loadArray(charNames, "sprites/heads/", "png");
 loadArray(monsterNames, "sprites/monsters/", "png");
+loadArray(backgroundNames, "sprites/Backgrounds/", "png");
 loader.add("sprites/particle.png").add("sprites/eye.png").add("sprites/bone.png").load(setup);
 var background = new PIXI.Container();
 var foreground = new PIXI.Container();
 var ui = new PIXI.Container();
 var state;
 var keys = {};
+var globalTextStyle = new PIXI.TextStyle({ stroke: "black", fill: "black"});
 var mouseX,mouseY;
 var activeParty = [];
 var totalParty = [];
@@ -58,7 +61,7 @@ var gameState = "actions";
 var keyMappings = {up: ["ArrowUp", "ArrowLeft"], down: ["ArrowDown", "ArrowRight"], confirm: [" ", "x", "Enter"], back: ["z","Escape"]};
 var partyActions = [];
 var partyActionsI = 0;
-
+var map = [];
 var battleRandom = 1;
 function updateBattleRandom() {
     battleRandom = randNum(0.75,1.25);
@@ -68,6 +71,7 @@ var animations = [];
 var charTalkBox = new PIXI.Graphics();
 var dialogues = [];
 var dialogueTxt = new PIXI.Text("");
+dialogueTxt.style = globalTextStyle;
 var frameOuts = [];
 var particleEmitters = [];
 var globalFrameCount = 0;
@@ -89,12 +93,16 @@ function findActivePartyMember(name, party, verify) {
     }
 }
 var statuses = [];
+var activeBackground;
 function setup() {
     updateBattleRandom();
     app.stage.addChild(background);
     app.stage.addChild(foreground);
     app.stage.addChild(particleContainer);
     app.stage.addChild(ui);
+    activeBackground = new Sprite(resources["sprites/Backgrounds/grass.png"].texture);
+    activeBackground.width = innerWidth;
+    background.addChild(activeBackground);
     playerMenu.list = new PIXI.Container();
     ui.addChild(playerMenu.list);
     ui.addChild(dialogueTxt);
@@ -464,8 +472,16 @@ function newStatus(name, time, char) {
         char.atk *= 2;
         status.emitter = addEmitter(char.sprite.x - 100, char.sprite.x + 100, char.sprite.y - 100, char.sprite.y + 100, function(){return randDir(1)}, 0xEE402E, 1, Infinity, 10);
     } else if(name === "poison") {
-        status.bonus.hp = {val: Math.round(char.hp/10)};
+        status.bonus.hp = {val: Math.min(Math.round(char.hp/10),25)};
         status.emitter = addEmitter(char.sprite.x - 100, char.sprite.x + 100, char.sprite.y - 100, char.sprite.y + 100, function(){return randDir(1)}, 0x398712, 1, Infinity, 10);
+    } else if(name === "venom") {
+        status.bonus.hp = {val: Math.min(Math.round(char.hp/5),25)};
+        status.bonus.pp = {val: Math.min(Math.round(char.pp/10),25)};
+        status.emitter = addEmitter(char.sprite.x - 100, char.sprite.x + 100, char.sprite.y - 100, char.sprite.y + 100, function(){return randDir(1)}, 0xC1F335, 1, Infinity, 10);
+    } else if(name === "swift") {
+        status.bonus.agl = {mult: 1.5}
+        char.agl *= 1.5;
+        status.emitter = addEmitter(char.sprite.x - 100, char.sprite.x + 100, char.sprite.y - 100, char.sprite.y + 100, function(){return randDir(1)}, 0xF2DF0D, 1, Infinity, 10);
     }
     statuses.push(status);
     return status;
@@ -484,6 +500,7 @@ function loadPlayerMenu(char) {
         }
         playerMenu.targets.push(name);
         var el = new PIXI.Text(name);
+        el.style = globalTextStyle;
         playerMenu.names.push(name);
         playerMenu.list.addChild(el);
         el.y = 25 + i * 50;
@@ -539,6 +556,8 @@ function loadAbilityMenu(ability,char) {
             el.x = innerWidth - 250 + el.width;
             els.push(el);
             var pp = new PIXI.Text(ability[name].pp);
+            el.style = globalTextStyle;
+            pp.style = globalTextStyle;
             playerMenu.list.addChild(pp);
     
             pp.y = 25 + i * 50;
@@ -572,6 +591,7 @@ function loadSwapMenu() {
         var cur = totalParty[i]
         if(!activeParty.includes(cur)) {
             var el = new PIXI.Text(cur.name);
+            el.style = globalTextStyle;
             playerMenu.names.push(cur.name);
             playerMenu.list.addChild(el);
             el.y = 25 + trueI++ * 50;
@@ -601,6 +621,7 @@ function loadItemMenu() {
             return;
         }
         var el = new PIXI.Text(name);
+        el.style = globalTextStyle;
         playerMenu.names.push(name);
         playerMenu.list.addChild(el);
         el.y = 25 + i * 50;
@@ -608,6 +629,7 @@ function loadItemMenu() {
         el.x = innerWidth - 275 + el.width;
         els.push(el);
         var pp = new PIXI.Text(partyItems[name]);
+        pp.style = globalTextStyle;
         playerMenu.list.addChild(pp);
         pp.y = 25 + i * 50;
         pp.anchor.set(1,0.5);
@@ -665,6 +687,7 @@ function createInterface(char) {
     hpBar.x = hpBack.x;
     hpBar.y = hpBack.y;
     var hpText = new PIXI.Text(char.hp);
+    hpText.style = globalTextStyle;
     hpText.x = hpBack.x + 210;
     hpText.y = hpBack.y - 10;
     ui.addChild(hpText);
@@ -676,6 +699,7 @@ function createInterface(char) {
     ppBar.x = ppBack.x;
     ppBar.y = ppBack.y;
     var ppText = new PIXI.Text(char.pp);
+    ppText.style = globalTextStyle;
     ppText.x = ppBack.x + 210;
     ppText.y = ppBack.y - 10;
     ui.addChild(ppText);
@@ -705,7 +729,7 @@ function setForBattle(good, bad) {
 
     for(var i = 0; i < bad.length; i++) {
         bad[i].sprite.x = innerWidth * (i+1)/(bad.length+1);
-        bad[i].sprite.y = 180;
+        bad[i].sprite.y = bad[i].sprite.height*0.8;
     }
     loot.gold = 0;
     loot.xp = 0;
@@ -737,6 +761,7 @@ function disableUserInput(input) {
 function makeTxt(dmg, target) {
 
     var dmgTxt = new PIXI.Text(dmg);
+    dmgTxt.style = globalTextStyle;
     dmgTxt.anchor.set(0.5,1)
     ui.addChild(dmgTxt);
     dmgTxt.x = target.x;
@@ -807,6 +832,12 @@ function handleFrameouts(frame) {
     }
 }
 function play() {
+    if(keys.Q) {
+        activeParty.forEach(function(c){
+            c.atk = 1000;
+            c.def = 1000;
+        });
+    }
     playAnimations(animations);
     handleFrameouts(++globalFrameCount);
     handleEmitters(particleEmitters)
@@ -1099,6 +1130,9 @@ function play() {
                 addPartyItem(e);
             });
             dialogueTxt.visible = true;
+            if(gamePlayAgenda[gamePlayStatus].encounters-- <= 0) {
+                dialogues.push("Level Clear!");
+            }
             gameState = "anim";
             setFrameout(function() {
                 gameState = "end";
@@ -1191,10 +1225,23 @@ function play() {
             dialogueTxt.text = "";
             dialogues.shift();
             if(dialogues.length === 0) {
-                fadeOut(20);
-                nextScene(20);
-                console.log(gameState);
-                gameState = "anim";
+                if(gamePlayAgenda[gamePlayStatus].encounters <= 0) {
+                    if(gamePlayAgenda[gamePlayStatus].bossBattle) {
+                        dialogueTxt.text = "";
+                        ++gamePlayStatus;
+                        fadeOut(20);
+                        nextScene(20);
+                        gameState = "anim";
+                    } else {
+                        dialogueTxt.text = "Would you like to progress (confirm) or keep grinding (back)?"
+                        gameState = "anticipation";
+                    }
+                } else {
+                    fadeOut(20);
+                    nextScene(20);
+                    console.log(gameState);
+                    gameState = "anim";
+                }
             }
         } else if(dialogueTxt.text.length !== dialogues[0].length) {
             if(globalFrameCount % 2 === 0) {
@@ -1207,6 +1254,19 @@ function play() {
             gamePlayAgenda[gamePlayStatus].set[++cutSceneI]();
         } else if(curCharTalkText) {
             updateCharTalk();
+        }
+    } else if(gameState === "anticipation") {
+        if(userInput.confirm) {
+            dialogueTxt.text = "";
+            ++gamePlayStatus;
+            fadeOut(20);
+            nextScene(20);
+            gameState = "anim";
+        } else if(userInput.back) {
+            dialogueTxt.text = "";
+            fadeOut(20);
+            nextScene(20);
+            gameState = "anim";
         }
     }
 }
@@ -1300,10 +1360,6 @@ function addEmitter(minX,maxX,minY,maxY,vector,tint,count,period,rate) {
 }
 function nextScene(timeOut) {
     setFrameout(function() {
-                    
-        if(gamePlayAgenda[gamePlayStatus].encounters-- <= 0) {
-            gamePlayStatus++;
-        }
         if(gamePlayAgenda[gamePlayStatus].dialogue) {
             cutSceneI = 0;
             gameState = "anim";

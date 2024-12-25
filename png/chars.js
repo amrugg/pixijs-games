@@ -10,7 +10,7 @@ var levelUpStats = {
     },
     "Nels": {
         atk: 4,
-        def: 1,
+        def: 1.5,
         maxHP: 3,
         maxPP: 5,
         agl: 5,
@@ -25,6 +25,15 @@ var levelUpStats = {
         agl: 4,
         evd: 2,
         ability: {"Finis": 1},
+    },
+    "Goat": {
+        atk: 2,
+        def: 2,
+        maxHP: 4,
+        maxPP: 3,
+        agl: 2,
+        evd: 1,
+        ability: {"Burrito": 1, "Horn": 5, "Poison Flauta": 1},
     },
     "Sam": {
         atk: 3,
@@ -43,5 +52,14 @@ var levelUpStats = {
         agl: 5,
         evd: 2,
         ability: {"Bench Press": 1, "Cross Bones": 1, "Ear Jets": 1},
+    },
+    "Willoughby": {
+        atk: 3.5,
+        def: 2,
+        maxHP: 4,
+        maxPP: 4,
+        agl: 4,
+        evd: 2.5,
+        ability: {"Finis": 1, "Quicken": 3, "Semper Fi": 5, "Disarm": 7, "Exeunt": 15, "Triforce": 20},
     },
 }

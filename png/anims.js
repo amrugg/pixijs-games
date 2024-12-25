@@ -12,6 +12,44 @@ function animAdvance(char) {
         i: 0,
     });
 }
+function animMoveTo(char, x, y, speed, cb, dontActivate) {
+    var anim = {
+        sprite: char,
+        type: "transform",
+        props: ["x","y"],
+        min: [char.x, char.y],
+        max: [x, y],
+        direction: "one",
+        speed: speed,
+        destruct: 1,
+        cb: cb,
+        mode: 1,
+        i: 0,
+    };
+    if(!dontActivate) {
+        animations.push(anim);
+    }
+    return anim;
+}
+function animMove(char, xChange, yChange, speed, cb, dontActivate) {
+    var anim = {
+        sprite: char,
+        type: "transform",
+        props: ["x","y"],
+        min: [char.x, char.y],
+        max: [char.x + xChange, char.y + yChange],
+        direction: "one",
+        speed: speed,
+        destruct: 1,
+        cb: cb,
+        mode: 1,
+        i: 0,
+    };
+    if(!dontActivate) {
+        animations.push(anim);
+    }
+    return anim;
+}
 function animRetreat(char,cb) {
     animations.push({
         sprite: char,
