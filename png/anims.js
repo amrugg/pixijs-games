@@ -12,6 +12,20 @@ function animAdvance(char) {
         i: 0,
     });
 }
+function animSpin(char, rot, speed) {
+    animations.push({
+        sprite: char,
+        type: "transform",
+        props: ["rotation"],
+        min: [0],
+        max: [rot],
+        direction: "one",
+        speed: speed,
+        destruct: 1,
+        mode: 1,
+        i: 0,
+    });
+}
 function animMoveTo(char, x, y, speed, cb, dontActivate) {
     var anim = {
         sprite: char,

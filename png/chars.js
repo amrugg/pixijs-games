@@ -6,7 +6,7 @@ var levelUpStats = {
         maxPP: 3,
         agl: 3,
         evd: 1,
-        ability: {"Tremor": 1, "Resuscitate": 3, "Dynamite": 5, "Sumo Finish Flop": 20},
+        ability: {"Tremor": 1, "Resuscitate": 3, "Dynamite": 5, "Sumo Finish Flop": 25},
     },
     "Nels": {
         atk: 4,
@@ -45,7 +45,7 @@ var levelUpStats = {
         ability: {"Burrito": 1, "Horn": 5, "Poison Flauta": 7, "Christmas Past": 30},
     },
     "Sam": {
-        atk: 3,
+        atk: 2,
         def: 2,
         maxHP: 4,
         maxPP: 3,
@@ -54,7 +54,7 @@ var levelUpStats = {
         ability: {"Bench Press": 1, "Cross Bones": 1, "Ear Jets": 1},
     },
     "Flam": {
-        atk: 2,
+        atk: 1.5,
         def: 1,
         maxHP: 3,
         maxPP: 5,

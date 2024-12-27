@@ -42,7 +42,7 @@ loadArray(charNames, "sprites/chars/", "png");
 loadArray(charNames, "sprites/heads/", "png");
 loadArray(monsterNames, "sprites/monsters/", "png");
 loadArray(backgroundNames, "sprites/Backgrounds/", "png");
-loader.add("sprites/particle.png").add("sprites/eye.png").add("sprites/sword.png").add("sprites/chars/tong2.png").add("sprites/weapon.png").add("sprites/bone.png").load(setup);
+loader.add("sprites/particle.png").add("sprites/eye.png").add("sprites/logo.png").add("sprites/sword.png").add("sprites/chars/tong2.png").add("sprites/weapon.png").add("sprites/bone.png").load(setup);
 var background = new PIXI.Container();
 var foreground = new PIXI.Container();
 var ui = new PIXI.Container();
@@ -87,6 +87,7 @@ var loot = {gold: 0, xp: 0, items: []};
 var partyGold = 0;
 var partyItems = {};
 addPartyItem("Barbecue Sauce");
+addPartyItem("Pancake");
 var particles = [];
 var particleContainer = new PIXI.Container();
 var nelsVenegance = false;
@@ -102,6 +103,9 @@ function findActivePartyMember(name, party, verify) {
 }
 var statuses = [];
 var activeBackground;
+var dialogueRollingText = false;
+var introBackground;
+var introLogo;
 function setup() {
     updateBattleRandom();
     app.stage.addChild(background);
@@ -129,14 +133,16 @@ function setup() {
         maxPP: 10,
         pp: 10,
         agl: 5,
-        evd: 5,
+        evd: 1,
         level: 1,
         xp: 0,
         actions: ["Fight", "Dino", "Swap", "Item"],
         status: [],
         Dino: {
             "Tremor": {
+                desc: "Shake the earth with gargantuan weight",
                 pp: 3,
+                unblockable: true,
                 dmgMult: 0.65,
                 target: "all",
                 animLen: 100,
@@ -171,7 +177,8 @@ function setup() {
                 }
             },
             "Resuscitate": {
-                pp: 2,
+                desc: "Revive the fallen",
+                pp: 5,
                 dmgMult: function(target) {
                     if(target.hp <= 0) {
                         target.hp = Math.round(target.maxHP/5);
@@ -275,8 +282,10 @@ function setup() {
                 }
             },
             "Dynamite": {
-                pp: 5,
+                desc: "Unleash explosive power on multiple enemies",
+                pp: 10,
                 dmgMult: 1,
+                unblockable: true,
                 target: "all",
                 animLen: 200,
                 charAnim: function(char, target) {
@@ -332,9 +341,11 @@ function setup() {
                 }
             },
             "Sumo Finish Flop": {
-                pp: 2,
+                desc: "The ultimate takedown attack",
+                pp: 30,
                 dmgMult: 3,
                 target: "one",
+                unblockable: true,
                 animLen: 140,
                 charAnim: function(char, target) {
                     var origX = char.x;
@@ -432,6 +443,7 @@ function setup() {
     foreground.addChild(tong.sprite);
     
     icon = new Sprite(resources["sprites/eye.png"].texture);
+    icon.visible = false;
     animations.push({
         sprite: icon.scale,
         type: "transform",
@@ -448,16 +460,32 @@ function setup() {
     icon.anchor.set(0.5,0.5);
     activeParty.push(tong);
     totalParty.push(tong);
+    // tong.sprite.visible = false;
     // enemyParty = generateEnemyParty(gamePlayAgenda[gamePlayStatus].set);
     // setForBattle(activeParty, enemyParty);
-    nextScene();
+    // nextScene();
     charTalkBox.beginFill(0x3C71F7);
     charTalkBox.lineStyle(10, 0x51B4FF);
     charTalkBox.drawRect(2.5, 2.5, innerWidth-5, 200);
-    
+    introBackground = new Sprite(resources["sprites/Backgrounds/boss.png"].texture);
+    foreground.addChild(introBackground);
+    introBackground.width = Math.max(introBackground.width, innerWidth);
+    introBackground.height = Math.max(introBackground.height, innerHeight);
+
+    introLogo = new Sprite(resources["sprites/logo.png"].texture);
+    introLogo.anchor.set(0.5,0.5);
+    introLogo.x = innerWidth/2;
+    introLogo.y = innerHeight/2;
+    foreground.addChild(introLogo);
     gameState = "actions";
-    state = play;
+    state = wait;
     app.ticker.add(delta => gameLoop(delta));
+}
+function wait() {
+    var userInput = readKeyMappings(keyMappings, keys);
+    if(userInput.confirm) {
+        startGame();
+    }
 }
 window.onbeforeunload = function() {
     return 'Are you sure you want to leave this page?';
@@ -575,6 +603,7 @@ function loadAbilityMenu(ability,char) {
     var els = [];
     playerMenu.targets = [];
     playerMenu.names = [];
+    playerMenu.desc = [];
     var keys = Object.keys(ability);
     keys.forEach(function (name, i) {
         if(levelUpStats[char.name].ability[name] <= char.level) {
@@ -589,7 +618,7 @@ function loadAbilityMenu(ability,char) {
             el.style = globalTextStyle;
             pp.style = globalTextStyle;
             playerMenu.list.addChild(pp);
-    
+            playerMenu.desc.push(ability[name].desc);
             pp.y = 25 + i * 50;
             pp.anchor.set(1,0.5);
             pp.x = innerWidth - 25;
@@ -614,6 +643,7 @@ function loadAbilityMenu(ability,char) {
 }
 function loadSwapMenu() {
     var els = [];
+    playerMenu.desc = [];
     playerMenu.targets = [];
     playerMenu.names = [];
     var trueI = 0;
@@ -630,7 +660,7 @@ function loadSwapMenu() {
             els.push(el);
             if(cur.hp <= 0) {
                 el.alpha = 0.5;
-                pp.alpha = 0.5;
+                // pp.alpha = 0.5;
             }
             playerMenu.targets.push(cur);
         }
@@ -643,6 +673,7 @@ function loadSwapMenu() {
 }
 function loadItemMenu() {
     var els = [];
+    playerMenu.desc = [];
     playerMenu.targets = [];
     playerMenu.names = [];
     var keys = Object.keys(partyItems);
@@ -658,6 +689,7 @@ function loadItemMenu() {
         el.anchor.set(1,0.5);
         el.x = innerWidth - 275 + el.width;
         els.push(el);
+        playerMenu.desc.push(itempedia[name].desc);
         var pp = new PIXI.Text(partyItems[name]);
         pp.style = globalTextStyle;
         playerMenu.list.addChild(pp);
@@ -836,6 +868,17 @@ function attack(atk, attacker, defender, fixedDMG) {
             battleRandom = 1+ (battleRandom -1);
         }
     }
+    if(attacker) {
+        if(attacker.agl && defender.evd && !attacker.unblockable) {
+            var rand = Math.random();
+            var ratio = attacker.agl / (attacker.agl + defender.evd);
+            console.log(rand,ratio);
+            if(rand > ratio) {
+                makeTxt("EVADE", defender.sprite);
+                return 0;
+            }
+        }
+    }
     var def = defender.def;
     var dmg = fixedDMG || Math.round(constrain(1, (atk * 1.5 - def) * battleRandom, 9999));
     defender.hp -= dmg;
@@ -870,12 +913,6 @@ function handleFrameouts(frame) {
     }
 }
 function play() {
-    if(keys.Q) {
-        activeParty.forEach(function(c){
-            c.atk = 1000;
-            c.def = 1000;
-        });
-    }
     playAnimations(animations);
     handleFrameouts(++globalFrameCount);
     handleEmitters(particleEmitters)
@@ -910,6 +947,7 @@ function play() {
                     /// Special Ability
                     clearPlayerMenu();
                     loadAbilityMenu(playerMenu.char[playerMenu.targets[playerMenu.i]], playerMenu.char);
+                    dialogueTxt.text = playerMenu.desc[playerMenu.i];
                     playerMenu.state = "complex";
                 } else if(playerMenu.targets[playerMenu.i] === "Swap" && activeParty.length < totalParty.length) {
                     clearPlayerMenu();
@@ -919,6 +957,7 @@ function play() {
                     clearPlayerMenu();
                     loadItemMenu();
                     playerMenu.state = "complex";
+                    dialogueTxt.text = playerMenu.desc[playerMenu.i];
                 }
             }
         } else if(playerMenu.state === "complex") {
@@ -927,14 +966,17 @@ function play() {
                 if(--playerMenu.i < 0) {
                     playerMenu.i = playerMenu.choices.length-1;
                 }
+                dialogueTxt.text = playerMenu.desc[playerMenu.i];
                 updateIcon();
             } else if(userInput.down) {
                 disableUserInput("down");
                 if(++playerMenu.i > playerMenu.choices.length-1) {
                     playerMenu.i = 0;
                 }
+                dialogueTxt.text = playerMenu.desc[playerMenu.i];
                 updateIcon();
-            } else if(userInput.confirm) {
+            } else if(userInput.confirm) {  
+                dialogueTxt.text = "";
                 disableUserInput("confirm");
                 if(playerMenu.targets[playerMenu.i].sprite) {
                     /// If our target is a character it should have a sprite, right?
@@ -1020,6 +1062,7 @@ function play() {
                     }
                 }
             } else if(userInput.back) {
+                dialogueTxt.text = "";
                 disableUserInput("back");
                 clearPlayerMenu();
                 loadPlayerMenu(playerMenu.char);
@@ -1534,7 +1577,11 @@ function runSpecial(curAction) {
             if(typeof curAction.ability.dmgMult === "function") {
                 curAction.ability.dmgMult(curAction.targets[i]);
             } else {
-                attack(curAction.char.atk * curAction.ability.dmgMult, curAction.char, curAction.targets[i]);
+                if(curAction.ability.unblockable) {
+                    attack(curAction.char.atk * curAction.ability.dmgMult, false, curAction.targets[i]);
+                } else {
+                    attack(curAction.char.atk * curAction.ability.dmgMult, curAction.char, curAction.targets[i]);
+                }
             }
         }
         setFrameout(function() {
@@ -1915,6 +1962,7 @@ function generateEnemyParty(configs) {
             pp: curDetails.maxPP,
             agl: curDetails.agl,
             evd: curDetails.evd,
+            unblockable: curDetails.unblockable,
             items: []
         }
         if(curDetails.items) {
@@ -1984,7 +2032,108 @@ addEventListener("mousemove",function(e){
 });
 addEventListener("keydown", function (e){
     keys[e.key] = true;
+    if(e.ctrlKey && e.code === "KeyC") {
+        var gameSave = "";
+        var checkSum = 0;
+        totalParty.forEach(function(c,i){
+            gameSave += c.name + "|" + c.xp + "\n";
+            checkSum += c.xp*2;
+        });
+        gameSave += "ITEMS\n";
+        var itemKeys = Object.keys(partyItems);
+        itemKeys.forEach(function(e,i){
+            if(partyItems[e]) {
+                gameSave += e + "|" + partyItems[e] + "\n";
+                checkSum += partyItems[e];
+            }
+        });
+        gameSave += "STATUS\n";
+        gameSave += gamePlayStatus + "\n";
+        gameSave += checkSum;
+        navigator.clipboard.writeText(gameSave);
+        alert("Your gamesave has been copied to the clipboard!");
+    }
 });
+var introMenu = true;
+addEventListener("paste", function (e){
+    if(introMenu) {
+        var data = e.clipboardData.getData("text/plain").split("\n");
+        var state = 0;
+        var dict = {
+            "Nels": addCharNels,
+            "Sam": addCharSam,
+            "Flam": addCharFlam,
+            "Goat": addCharGoat,
+            "Willoughby": addCharWill,
+            "Cuddle Robot": addCharCudd,
+            "Tux": addCharTux,
+        };
+        var verifySum = 0;
+        var sam;
+        var flam;
+        for(var i = 0; i < data.length; i++) {
+            var cur = data[i];
+            if(cur === "ITEMS") {
+                state = 1;
+                continue;
+            } else if(cur === "STATUS") {
+                state = 2;
+                continue;
+            }
+            if(state === 0) {
+                cur = cur.split("|");
+                if(cur[0] === "Tongarango") {
+                    activeParty[0].xp = Number(cur[1]);
+                    invisLevel(activeParty[0]);
+                    verifySum += activeParty[0].xp * 2;
+                } else {
+                    var char = dict[cur[0]]();
+                    activeParty.push(char);
+                    totalParty.push(char);
+                    char.xp = Number(cur[1]);
+                    foreground.addChild(char.sprite)
+                    verifySum += char.xp * 2;
+                    invisLevel(char);
+                    if(cur[0] === "Sam") {
+                        sam = char;
+                    } else if(cur[0] === "Flam") {
+                        flam = char;
+                    }
+                }
+            } else if(state === 1) {
+                cur = cur.split("|");
+                partyItems[cur[0]] = Number(cur[1]);
+                verifySum += Number(cur[1]);
+            } else if(state === 2) {
+                gamePlayStatus = Number(cur);
+                state = 3;
+            } else {
+                if(verifySum !== Number(cur)) {
+                    alert("Your checksum failed. We're passing you anyway.")
+                }
+            }
+        }
+        sam.myTwin = flam;
+        flam.myTwin = sam;
+        dialogueTxt.visible = true;
+        startGame();
+    } else {
+        alert("Gamesaves can only be loaded from the intro menu.");
+    }
+});
+function startGame() {
+    introMenu = false;
+    icon.visible = true;
+    state = play;
+    fadeOut(120);
+    setFrameout(function() {
+        foreground.removeChild(introLogo);
+        foreground.removeChild(introBackground);
+        disableUserInput("confirm");
+        // gamePlayStatus++;
+        nextScene();
+    },90);
+}
 addEventListener("keyup", function (e){
     keys[e.key] = false;
 });

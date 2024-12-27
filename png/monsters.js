@@ -18,7 +18,7 @@ var monsterpedia = {
         maxHP: 10,
         maxPP:  0,
         agl: 2,
-        evd: 5,
+        evd: 0.3,
         ai: targetRandomPlayer,
         gold: 3,
         xp: 3,
@@ -30,13 +30,14 @@ var monsterpedia = {
         maxHP: 13,
         maxPP:  5,
         agl: 5,
-        evd: 5,
+        evd: 2,
         ai: function(players, char) {
             var action = targetRandomPlayer(players,char);
             if(Math.random() < 0.5 && char.pp >= 3) {
                 action.action = "special";
                 action.name = "Cutthroat";
                 action.ability = createSpecial(3, 1.5);
+                action.ability.unblockable = true;
                 /*
                                 char: playerMenu.char,
                                 targets: [playerMenu.char],
@@ -79,19 +80,19 @@ var monsterpedia = {
         maxHP: 10,
         maxPP:  0,
         agl: 15,
-        evd: 5,
+        evd: 50,
         ai: targetRandomPlayer,
         gold: 7,
         xp: 6,
-        items: [{n: "Tuna-flavored Mint", r: 0.1}],
+        items: [{n: "Tuna-flavored Mint", r: 0.25},{n: "Barbecue Sauce", r: 0.25},],
     },
     "Cobra": {
         atk: 16,
         def: 15,
         maxHP: 20,
         maxPP:  10,
-        agl: 18,
-        evd: 5,
+        agl: 28,
+        evd: 25,
         ai: function(players, char) {
             var action = targetRandomPlayer(players,char);
             if(Math.random() < 0.5 && char.pp >= 3) {
@@ -194,6 +195,7 @@ var monsterpedia = {
                         },20);
                     }
                 };
+                action.ability.unblockable = true;
             }
             return action;
         },
@@ -203,14 +205,17 @@ var monsterpedia = {
     "River Dragon": {
         atk: 35,
         def: 25,
-        maxHP: 350,
+        maxHP: 450,
         maxPP:  100,
-        agl: 30,
+        agl: 40,
         items: [{n: "Pancake", r: 1}],
-        evd: 15,
+        evd: 5,
         ai: function(players, char) {
             var action = targetRandomPlayer(players,char);
-            var rand = Math.random()
+            var rand = Math.random();
+            if(char.hp < 150) {
+                rand = rand**2;
+            }
             if(rand < 0.25 && char.pp >= 3) {
                 action.action = "special";
                 action.name = "Deluge";
@@ -284,6 +289,7 @@ var monsterpedia = {
                 action.action = "special";
                 action.name = "Kersplat";
                 action.ability = createSpecial(5, 1.5);
+                action.ability.unblockable = true;
             } else if(rand < 0.65 && char.pp > 3) {
                 
                 return {
@@ -311,9 +317,9 @@ var monsterpedia = {
         def: 23,
         maxHP: 100,
         maxPP:  15,
-        agl: 50,
+        agl: 60,
         items: [{n: "Pancake", r: 0.1}, {n: "Barbecue Sauce", r: 0.5}],
-        evd: 10,
+        evd: 13,
         ai: function(players, char) {
             var action = targetRandomPlayer(players,char);
             if(Math.random() < 0.75 && char.pp >= 5) {
@@ -323,7 +329,7 @@ var monsterpedia = {
                 action.ability = {
                     pp: 5,
                     dmgMult: function(target){
-                        attack(23, {}, target, 10);
+                        attack(23, {agl: 99999}, target);
                     },
                     target: "all",
                     animLen: 160,
@@ -378,21 +384,23 @@ var monsterpedia = {
         def: 25,
         maxHP: 1000,
         maxPP:  100,
-        agl: 30,
-        items: [{n: "Pancake", r: 1}, {n: "Pancake", r: 1}],
-        evd: 15,
+        agl: 40,
+        items: [{n: "Hot Sauce", r: 1}, {n: "Hot Sauce", r: 1}, {n: "Mayonnaise", r: 1}],
+        evd: 35,
         ai: function(players, char) {
             var action = targetRandomPlayer(players,char);
-            var rand = Math.random()
+            var rand = Math.random();
+            if(char.hp < 250) {
+                rand = rand ** 3;
+            }
             if(rand < 0.25 && char.pp >= 3) {
-                
                 action.action = "special";
                 action.name = "Fire Breath";
                 action.targets = activeParty;
                 action.ability = {
                     pp: 5,
                     dmgMult: function(target){
-                        attack(23, {}, target, 13);
+                        attack(23, {}, target, 20);
                     },
                     target: "all",
                     animLen: 160,
@@ -440,6 +448,7 @@ var monsterpedia = {
                 action.action = "special";
                 action.name = "Red Claw";
                 action.ability = createSpecial(5, 1.5);
+                action.ability.unblockable = true;
             } else if(rand < 0.75 && char.pp > 5) {
                 
                 return {
@@ -451,7 +460,7 @@ var monsterpedia = {
                         target: "one",
                         enemyItem: true,
                         bonus: {
-                            atk: {val: 15}
+                            atk: {val: 50}
                         },
                         tint: 0xEE402E
                     }
@@ -463,12 +472,13 @@ var monsterpedia = {
         xp: 200
     },
     "Ogre": {
-        atk: 60,
-        def: 51,
-        maxHP: 100,
+        atk: 80,
+        def: 71,
+        maxHP: 150,
         maxPP:  0,
-        agl: 10,
-        evd: 5,
+        unblockable: true,
+        agl: 45,
+        evd: 0,
         ai: targetRandomPlayer,
         gold: 62,
         xp: 50
@@ -476,10 +486,10 @@ var monsterpedia = {
     "Scorpion": {
         atk: 35,
         def: 20,
-        maxHP: 30,
+        maxHP: 60,
         maxPP:  10,
-        agl: 18,
-        evd: 5,
+        agl: 58,
+        evd: 56,
         ai: function(players, char) {
             var action = targetRandomPlayer(players,char);
             if(Math.random() < 0.5 && char.pp >= 3) {
@@ -487,7 +497,7 @@ var monsterpedia = {
                 action.name = "Tail Edge";
                 action.ability = createSpecial(1, function(target){
                     newStatus("venom", 3, target);
-                    attack(30,char,target);
+                    attack(30,false,target);
                 });
                 /*
                                 char: playerMenu.char,
@@ -499,14 +509,14 @@ var monsterpedia = {
             }
             return action;
         },
-        items: [{n: "Paint", r: 0.1}, {n: "Barbecue Sauce", r: 0.1}],
+        items: [{n: "Paint", r: 0.1}, {n: "Barbecue Sauce", r: 0.1}, {n: "Poison Beaker", r: 0.2}],
         gold: 46,
         xp: 31,
     },
     "Crystal Scorpion": {
         atk: 40,
-        def: 40,
-        maxHP: 30,
+        def: 100,
+        maxHP: 50,
         maxPP:  10,
         agl: 18,
         evd: 5,
@@ -516,6 +526,7 @@ var monsterpedia = {
                 action.action = "special";
                 action.name = "Crystalline";
                 action.ability = createSpecial(3, 3);
+                action.ability.unblockable = true;
                 /*
                                 char: playerMenu.char,
                                 targets: [playerMenu.char],
@@ -536,25 +547,27 @@ var monsterpedia = {
         maxHP: 20,
         maxPP:  0,
         agl: 30,
-        evd: 5,
+        evd: 100,
         ai: targetRandomPlayer,
         gold: 17,
         xp: 12,
-        items: [{n: "Tuna-flavored Mint", r: 0.1}],
+        items: [{n: "Hot Sauce", r: 0.3}],
     },
     "Iron Ogre": {
         atk: 70,
         def: 66,
-        maxHP: 150,
+        maxHP: 350,
         maxPP:  9,
-        agl: 15,
+        agl: 55,
+        unblockable: true,
         evd: 5,
         ai: function(players, char) {
             var action = targetRandomPlayer(players,char);
-            if(Math.random() < 0.5 && char.pp >= 3) {
+            if(Math.random() < 0.5 && char.pp >= 3 || char.hp < 50) {
                 action.action = "special";
                 action.name = "Baseball Bat";
                 action.ability = createSpecial(3, 1.5);
+                action.ability.unblockable = true;
                 /*
                                 char: playerMenu.char,
                                 targets: [playerMenu.char],
@@ -566,24 +579,22 @@ var monsterpedia = {
             return action;
         },
         gold: 112,
+        items: [{n: "Turtle Soup", r: 0.3}, {n: "Pancake", r: 0.1}],
         xp: 89
     },
     "Dark Skeleton": {
         atk: 45,
         def: 30,
-        maxHP: 60,
-        maxPP:  10,
-        agl: 38,
-        evd: 5,
+        maxHP: 80,
+        maxPP: 10,
+        agl: 48,
+        evd: 35,
         ai: function(players, char) {
             var action = targetRandomPlayer(players,char);
             if(Math.random() < 0.2 && char.pp >= 3 && enemyParty.length > 1) {
                 action.action = "special";
                 action.name = "Possess";
                 action.ability = createSpecial(3, function(target){
-                    char.hp = -1;
-                    deathFade(char.sprite);
-                    makeTxt("MORTIS", char.sprite);
                     target.hp = -1;
                     deathFade(target.sprite);
                     makeTxt("MORTIS", target.sprite);
@@ -607,8 +618,8 @@ var monsterpedia = {
         def: 25,
         maxHP: 20,
         maxPP:  10,
-        agl: 48,
-        evd: 5,
+        agl: 58,
+        evd: 30,
         ai: function(players, char) {
             var action = targetRandomPlayer(players,char);
             if(Math.random() < 0.5 && char.pp >= 3) {
@@ -628,17 +639,17 @@ var monsterpedia = {
             }
             return action;
         },
-        items: [{n: "Paint", r: 0.1}, {n: "Barbecue Sauce", r: 0.1}],
+        items: [{n: "Hot Sauce", r: 0.1}, {n: "Poison Beaker", r: 0.2}],
         gold: 50,
         xp: 39,
     },
     "Herbert": {
-        atk: 100,
+        atk: 200,
         def: 100,
-        maxHP: 5000,
+        maxHP: 10000,
         maxPP:  3000,
-        agl: 48,
-        evd: 5,
+        agl: 148,
+        evd: 40,
         ai: function(players, char) {
             ++herbTurn;
             var action = targetRandomPlayer(players,char);
@@ -663,6 +674,7 @@ var monsterpedia = {
                         
                     }
                 }
+                action.ability.unblockable = true;
                 return action;
             }
             if(rand < 0.25 && char.pp >= 50) {
@@ -700,6 +712,8 @@ var monsterpedia = {
                     targetAnim: function(target) {
                     }
                 };
+                action.ability.unblockable = true;
+
             } else if(rand < 0.5 && char.pp > 75) {
                 action.action = "special";
                 action.name = "Laser";
@@ -716,6 +730,8 @@ var monsterpedia = {
                     targetAnim: function(target) {
                     }
                 };
+                action.ability.unblockable = true;
+
             } else if(rand < 0.75 && char.pp > 100) {
                 action.action = "special";
                 action.name = "Horror";
@@ -735,6 +751,8 @@ var monsterpedia = {
                     targetAnim: function(target) {
                     }
                 };
+                action.ability.unblockable = true;
+
             } else if(char.pp > 200) {
                 action.action = "special";
                 action.name = "Stinky Tofu";
@@ -773,20 +791,20 @@ var monsterpedia = {
                     targetAnim: function(target) {
                     }
                 };
+                action.ability.unblockable = true;
             }
             return action;
         },
-        items: [{n: "Paint", r: 0.1}, {n: "Barbecue Sauce", r: 0.1}],
         gold: 50,
         xp: 39,
     },
     "Green Robot": {
         atk: 70,
         def: 40,
-        maxHP: 1000,
+        maxHP: 5000,
         maxPP:  3000,
-        agl: 48,
-        evd: 5,
+        agl: 100,
+        evd: 45,
         ai: function(players, char) {
             var action = targetRandomPlayer(players,char);
             var rand = Math.random();
@@ -829,6 +847,7 @@ var monsterpedia = {
                 action.action = "special";
                 action.name = "Saw Edge";
                 action.ability = createSpecial(75, 1.5);
+                action.ability.unblockable = true;
             }
             return action;
         },
@@ -842,6 +861,7 @@ var monsterpedia = {
         maxHP: 2000,
         maxPP:  0,
         agl: 60,
+        unblockable: true,
         evd: 5,
         ai: targetRandomPlayer,
         gold: 476,
@@ -857,6 +877,7 @@ var random5 = [["Goblin", "Fire Goblin", "Ice Goblin", "Goblin"], ["Ice Goblin",
 var random6 = [["Ogre"], ["Scorpion", "Crystal Scorpion", "Scorpion"], ["Scorpion", "Scorpion", "Scorpion"], ["Crystal Scorpion"], ["Fire Goblin", "Ice Goblin"], ["Red Bat", "Bat", "Red Bat"],];
 var random7 = [["Ogre", "Ogre"], ["Crystal Scorpion", "Scorpion", "Crystal Scorpion"], ["Scorpion", "Scorpion", "Scorpion"], ["Crystal Scorpion", "Fire Goblin"], ["Fire Goblin", "Dark Goblin", "Ice Goblin"], ["Red Bat", "Red Bat", "Red Bat"],];
 var random8 = [["Iron Ogre"], ["Red Bat","Dark Skeleton","Red Bat"], ["Crystal Scorpion", "Crystal Scorpion", "Crystal Scorpion"], ["Fire Goblin", "Dark Skeleton"], ["Spider", "Ogre", "Spider"], ["Spider", "Spider", "Spider"]];
+var random9 = [["Iron Ogre", "Iron Ogre", "Iron Ogre"], ["Red Bat","Iron Ogre","Red Bat"], ["Crystal Scorpion", "River Dragon", "Crystal Scorpion"], ["Fire Goblin", "Fire Goblin", "Fire Goblin","Iron Ogre"], ["Iron Ogre", "Ogre", "Fire Goblin", "Iron Ogre"], ["Spider", "Spider", "Spider","Spider","Spider","Scorpion"]];
 
 //["Ice Goblin", "Cobra", "Ice Goblin"],
 var curDialogue = {}; /// Serves as a type of window.
@@ -3080,7 +3101,7 @@ var log13 = [
     },
     function() {
         clearCharTalk();
-        charTalk("nels", "You and your robot friend?");
+        charTalk("nels", "To help us save the world?");
         gameState = "dialogue";
     },
     function() {
@@ -3089,51 +3110,8 @@ var log13 = [
         gameState = "dialogue";
     },
     function() {
-        var cudd = new Sprite(resources["sprites/chars/cudd.png"].texture);
-        foreground.addChild(cudd);
-        cudd.anchor.set(0.5,0.5);
-        cudd.x = innerWidth * 0.6;
-        cudd.y = -200;
-        clearCharTalk();
-        curDialogue.cudd = cudd;
-        gameState = "anim";
-        setFrameout(function() {
-            animations.push({
-                sprite: cudd,
-                type: "transform",
-                props: ["y"],
-                min: [-200],
-                max: [400],
-                direction: "one",
-                speed: 90,
-                destruct: 1,
-                mode: 1,
-                cb: function() {
-                    charTalk("cudd", "Beep beep. We are here to assist.");
-                    gameState = "dialogue";
-                },
-                i: 0,
-            });
-        },30);
-    },
-    function() {
-        clearCharTalk();
-        charTalk("nels", "Just randomly, out of the blue?");
-        gameState = "dialogue";
-    },
-    function() {
         clearCharTalk();
         charTalk("cudd", "We are trying to save the world.");
-        gameState = "dialogue";
-    },
-    function() {
-        clearCharTalk();
-        charTalk("nels", "Why?");
-        gameState = "dialogue";
-    },
-    function() {
-        clearCharTalk();
-        charTalk("cudd", "Because we live in the world.");
         gameState = "dialogue";
     },
     function() {
@@ -3145,9 +3123,6 @@ var log13 = [
         var tux = addCharTux();
         activeParty.push(tux);
         totalParty.push(tux);
-        var cudd = addCharCudd();
-        activeParty.push(cudd);
-        totalParty.push(cudd);
         clearCharTalk();
         gameState = "anim";
         fadeOut(20);
@@ -3157,7 +3132,6 @@ var log13 = [
             foreground.removeChild(curDialogue.flam);
             foreground.removeChild(curDialogue.sam);
             foreground.removeChild(curDialogue.tux);
-            foreground.removeChild(curDialogue.cudd);
             ++gamePlayStatus;
             nextScene(20);
             activeParty.forEach(function(e) {
@@ -3167,7 +3141,6 @@ var log13 = [
     }
 ];
 var gamePlayStatus = 0;
-
 var log14 = [
     function() {
         activeBackground.texture = resources["sprites/Backgrounds/floor.png"].texture;
@@ -3305,7 +3278,6 @@ var log14 = [
         }, 20);
     }
 ];
-
 var log15 = [
     function() {
         var tong = new Sprite(resources["sprites/chars/tong2.png"].texture);
@@ -3335,7 +3307,7 @@ var log15 = [
         curDialogue.sam = sam;
         curDialogue.flam = flam;
         setFrameout(function() {
-            log0[1]();
+            log15[1]();
             ++cutSceneI;
         },30);
     },
@@ -3415,6 +3387,166 @@ var log15 = [
 
     }
 ];
+
+var log16 = [
+    function() {
+        activeBackground.texture = resources["sprites/Backgrounds/floor.png"].texture;
+        var tong = new Sprite(resources["sprites/chars/tong.png"].texture);
+        foreground.addChild(tong);
+        tong.anchor.set(0.5,0.5);
+        tong.x = innerWidth * 0.8;
+        tong.y = innerHeight - tong.height/1.9;
+        var nels = new Sprite(resources["sprites/chars/nels.png"].texture);
+        foreground.addChild(nels);
+        nels.anchor.set(0.5,0.5);
+        nels.x = innerWidth * 0.6;
+        nels.y = innerHeight - nels.height/1.9;
+
+        var flam = new Sprite(resources["sprites/chars/will.png"].texture);
+        foreground.addChild(flam);
+        flam.anchor.set(0.5,0.5);
+        flam.x = innerWidth * 0.4;
+        flam.y = innerHeight-flam.height/1.9;
+        var sam = new Sprite(resources["sprites/chars/goat.png"].texture);
+        foreground.addChild(sam);
+        sam.anchor.set(0.5,0.5);
+        sam.x = innerWidth * 0.2;
+        sam.y = innerHeight-sam.height/1.9;
+
+        curDialogue.tong = tong;
+        curDialogue.nels = nels;
+        curDialogue.sam = sam;
+        curDialogue.flam = flam;
+        setFrameout(function() {
+            log16[1]();
+            ++cutSceneI;
+        },30);
+    },
+    function() {
+        charTalk("nels", "Where do we go now? It's a dead end.");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("tong", "Wait! There's a way out.");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("bot", "Error. There is no way out.");
+        gameState = "dialogue";
+    },
+    function() {
+        var goat = new Sprite(resources["sprites/chars/bot.png"].texture);
+        foreground.addChild(goat);
+        goat.anchor.set(0.5,0.5);
+        goat.x = innerWidth * 0.5;
+        goat.y = -200;
+        clearCharTalk();
+        curDialogue.goat = goat;
+        gameState = "anim";
+        setFrameout(function() {
+            animations.push({
+                sprite: goat,
+                type: "transform",
+                props: ["y"],
+                min: [-200],
+                max: [400],
+                direction: "one",
+                speed: 90,
+                destruct: 1,
+                mode: 1,
+                cb: function() {
+                    charTalk("bot", "The emperor needs your eyes. I regret to inform you that I must terminate you all.");
+                    gameState = "dialogue";
+                },
+                i: 0,
+            });
+        },30);
+    },
+    function() {
+        clearCharTalk();
+        charTalk("goat", "Oh man! Can't you just, like, kill him and take the eyes? I'm not in this at all!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("nels", "You'll never defeat us!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("bot", "I am superior in every way. Prepare to die!");
+        gameState = "dialogue";
+    },
+    function() {
+        var goat = new Sprite(resources["sprites/chars/cudd.png"].texture);
+        foreground.addChild(goat);
+        goat.anchor.set(0.5,0.5);
+        goat.x = innerWidth * 0.5;
+        goat.y = -200;
+        clearCharTalk();
+        curDialogue.cudd = goat;
+        gameState = "anim";
+        setFrameout(function() {
+            animations.push({
+                sprite: goat,
+                type: "transform",
+                props: ["y"],
+                min: [-200],
+                max: [400],
+                direction: "one",
+                speed: 30,
+                destruct: 1,
+                mode: 1,
+                cb: function() {
+                    animMoveTo(curDialogue.goat, 100, curDialogue.goat.y, 60);
+                    animSpin(curDialogue.goat, Math.PI*4,60);
+                    charTalk("cudd", "Error! You must not take the dinosaur's eyes. The world must not be destroyed.");
+                    gameState = "dialogue";
+                },
+                i: 0,
+            });
+        },0);
+    },
+    function() {
+        clearCharTalk();
+        charTalk("bot", "Error. Prepare to die.");
+        partyGold -= 20;
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("cudd", "Double error! I'm a robot! I cannot die!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("bot", "Who cares?");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        gameState = "anim";
+        fadeOut(20);
+        var cudd = addCharCudd();
+        activeParty.unshift(cudd);
+        totalParty.unshift(cudd);
+        setFrameout(function() {
+            foreground.removeChild(curDialogue.tong);
+            foreground.removeChild(curDialogue.nels);
+            foreground.removeChild(curDialogue.flam);
+            foreground.removeChild(curDialogue.sam);
+            foreground.removeChild(curDialogue.goat);
+            foreground.removeChild(curDialogue.cudd);
+            ++gamePlayStatus;
+            nextScene(20);
+            activeParty.forEach(function(e) {
+                foreground.addChild(e.sprite);
+            });
+        }, 20);
+    }
+];
 function createSpecial(pp, dmgMult) {
     return {
         pp: pp,
@@ -3470,13 +3602,13 @@ var gamePlayAgenda = [
     {set: log2, dialogue: true},
     {set: [["Sam", "Flam"]], encounters: 1, bossBattle: true},
     {set: log3, dialogue: true},
-    {set: random3, encounters: 6},
+    {set: random3, encounters: 4},
     {set: log4, dialogue: true},
-    {set: random4, encounters: 6},
+    {set: random4, encounters: 4},
     {set: log5, dialogue: true},
     {set: [["River Dragon"]], encounters: 1, bossBattle: true},
     {set: log6, dialogue: true},
-    {set: random4, encounters: 3, bossBattle: false},
+    {set: random4, encounters: 5, bossBattle: false},
     {set: log7, dialogue: true},
     {set: random5, encounters: 3, bossBattle: true},
     {set: log8, dialogue: true},
@@ -3484,15 +3616,64 @@ var gamePlayAgenda = [
     {set: log9, dialogue: true},
     {set: random6, encounters: 8},
     {set: log10, dialogue: true},
-    {set: random7, encounters: 4},
+    {set: random7, encounters: 3},
     {set: log11, dialogue: true},
-    {set: random8, encounters: 10},
-    {set: [["Green Robot"]], encounters: 1, bossBattle: true},
+    {set: random8, encounters: 8},
+    {set: log16, dialogue: true},
+    {set: [["Green Robot"]], encounters: 0, bossBattle: true},
     {set: log13, dialogue: true},
-    {set: random8, encounters: 10},
+    {set: random8, encounters: 4},
+    {set: random9, encounters: 5},
     {set: log14, dialogue: true},
     {set: [["Winnie the Hutt"]], encounters: 1, bossBattle: true},
     {set: log12, dialogue: true},
     {set: [["Herbert"]], encounters: 1, bossBattle: true},
     {set: log15, dialogue: true},
 ];
+function hackyReload() {
+    totalParty.push(addCharNels());
+    totalParty.push(addCharSam());
+    totalParty.push(addCharFlam());
+    totalParty.push(addCharTux());
+    totalParty.push(addCharGoat());
+    totalParty.push(addCharWill());
+    totalParty.push(addCharCudd());
+    activeParty = totalParty.slice(0);
+    var data = [[32,'Tongarango'],[31,'Nels'],[31,'Sam'],[18,'Flam'],[31,'Goat'],[32,'Willoughby'],[30,'Tux'],[30,'Cuddle Robot']]
+    for(var i = 0; i < data.length; i++) {
+        var partyMember = findActivePartyMember(data[i][1], totalParty);
+        while(partyMember.level < data[i][0]) {
+            partyMember.xp += 100;
+            invisLevel(partyMember);
+        }
+    }
+    addPartyItem("Barbecue Sauce");
+    addPartyItem("Barbecue Sauce");
+    addPartyItem("Barbecue Sauce");
+    addPartyItem("Barbecue Sauce");
+    addPartyItem("Barbecue Sauce");
+    addPartyItem("Barbecue Sauce");
+    addPartyItem("Barbecue Sauce");
+    addPartyItem("Paint");
+    addPartyItem("Paint");
+    addPartyItem("Paint");
+    addPartyItem("Paint");
+    addPartyItem("Paint");
+    addPartyItem("Paint");
+    addPartyItem("Paint");
+    addPartyItem("Mayonnaise");
+    addPartyItem("Poison Beaker");
+    addPartyItem("Tuna-flavored Mint");
+    addPartyItem("Mayonnaise");
+    addPartyItem("Mayonnaise");
+    addPartyItem("Mayonnaise");
+    addPartyItem("Mayonnaise");
+    addPartyItem("Hot Sauce");
+    addPartyItem("Hot Sauce");
+    addPartyItem("Turtle Soup");
+    addPartyItem("Turtle Soup");
+    addPartyItem("Pancake");
+    addPartyItem("Pancake");
+    addPartyItem("Pancake");
+
+}

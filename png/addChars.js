@@ -17,6 +17,7 @@ function addCharNels() {
         Swordplay: {
             "Finis": {
                 pp: 3,
+                desc: "Instant death attack",
                 dmgMult: function(target) { 
                     if(target.maxHP + target.def + target.evd <= nels.agl + nels.atk * battleRandom) {
                         target.hp = -1;
@@ -77,6 +78,8 @@ function addCharNels() {
             },
             "Venegance": {
                 pp: 3,
+                desc: "Prepares for a devastating counter",
+                unblockable: true,
                 dmgMult: function(target) { 
                     makeTxt("COUNTER", target.sprite);
                     nelsVenegance = true;
@@ -111,6 +114,7 @@ function addCharNels() {
             },
             "Dynamis": {
                 pp: 5,
+                desc: "Charges attack power",
                 dmgMult: function(target) { 
                     makeTxt("VALOR", target.sprite);
                     newStatus("valor", 5, target);
@@ -144,10 +148,11 @@ function addCharNels() {
             },
             "Shield Breaker": {
                 pp: 10,
+                desc: "Shatter an enemy's defenses",
                 dmgMult: function(target) { 
                     if(target.maxHP + target.def + target.evd <= nels.agl + nels.atk * 2 * battleRandom) {
                         target.def = 0;
-                        attack(nels.atk, nels, target);
+                        attack(nels.atk, false, target);
                     } else {
                         makeTxt("MISS", target.sprite);
                     }
@@ -233,6 +238,7 @@ function addCharNels() {
             "Swath": {
                 pp: 20,
                 dmgMult: 1,
+                desc: "Multi-target attack",
                 target: "all",
                 animLen: 150,
                 charAnim: function(char, target) {
@@ -306,9 +312,11 @@ function addCharNels() {
             "Pentimone": {
                 pp: 30,
                 dmgMult: 1.35,
+                desc: "Five powerful strikes",
                 target: "all",
                 animLen: 40,
                 repeater: 5,
+                unblockable: true,
                 actionSpeed: 0.1,
                 charAnim: function(char, target) {
 
@@ -382,9 +390,11 @@ function addCharSam() {
         Twin: {
             "Bench Press": {
                 pp: 3,
-                dmgMult: 2,
+                desc: "Single-target attack",
+                dmgMult: 1.5,
                 twin: true,
                 name: "Bench Press",
+                unblockable: true,
                 target: "one",
                 animLen: 80,
                 charAnim: function(char, target) {
@@ -439,6 +449,7 @@ function addCharSam() {
             },
             "Cross Bones": {
                 pp: 7,
+                desc: "Instant death attack with insurance",
                 dmgMult: function(target) { 
                     if(target.maxHP + target.def + target.evd <= (sam.agl + sam.atk + sam.myTwin.agl + sam.myTwin.atk)/1.75 * battleRandom) {
                         target.hp = -1;
@@ -480,9 +491,10 @@ function addCharSam() {
             },
             "Ear Jets": {
                 pp: 10,
-                dmgMult: 1.5,
+                dmgMult: 0.75,
                 twin: true,
                 name: "Ear Jets",
+                desc: "Scald the field with fire",
                 target: "all",
                 animLen: 120,
                 charAnim: function(char, target) {
@@ -566,8 +578,10 @@ function addCharFlam() {
             "Bench Press": {
                 pp: 3,
                 dmgMult: 2,
+                desc: "Single-target attack",
                 twin: true,
                 name: "Bench Press",
+                unblockable: true,
                 target: "one",
                 animLen: 80,
                 charAnim: function(char, target) {
@@ -620,9 +634,9 @@ function addCharFlam() {
                     },15);
                 }
             },
-
             "Cross Bones": {
                 pp: 7,
+                desc: "Instant death attack with insurance",
                 dmgMult: function(target) { 
                     if(target.maxHP + target.def + target.evd <= (flam.agl + flam.atk + flam.myTwin.agl + flam.myTwin.atk)/1.75 * battleRandom) {
                         target.hp = -1;
@@ -664,7 +678,8 @@ function addCharFlam() {
             },
             "Ear Jets": {
                 pp: 10,
-                dmgMult: 1.5,
+                dmgMult: 0.75,
+                desc: "Scald the field with fire",
                 twin: true,
                 name: "Ear Jets",
                 target: "all",
@@ -744,7 +759,7 @@ function addCharTux() {
         agl: 13,
         evd: 12,
         level: 1,
-        xp: 1000,
+        xp: 2600,
         actions: ["Fight", "Frost", "Swap", "Item"],
         status: [],
         Frost: {
@@ -754,6 +769,7 @@ function addCharTux() {
                 dmgMult: 0.8,
                 target: "all",
                 animLen: 150,
+                desc: "Multi-target attack",
                 charAnim: function(char, target) {
                     animations.push({
                         sprite: char.scale,
@@ -824,9 +840,14 @@ function addCharTux() {
             },
             "Seafood": {
                 pp: 7,
+                desc: "Heal a party member",
                 dmgMult: function(target) { 
+
+                    addEmitter(c.sprite.x - 100, c.sprite.x + 100, c.sprite.y - 100, c.sprite.y + 100, function(){return randDir(3)}, 0x79C0FF, 10, 60);
+                    var dmg = Math.round(tux.atk/1.5);
+                    c.hp = constrain(0, c.hp + dmg,c.maxHP);
                 },
-                target: "none",
+                target: "one",
                 actionSpeed: 99,
                 allied: true,
                 healing: true,
@@ -839,14 +860,14 @@ function addCharTux() {
                             makeTxt(dmg, c.sprite);
                             c.hp = constrain(0, c.hp + dmg,c.maxHP);
                         } else {
-                            makeTxt("Ecclesiastes 9:4");
+                            makeTxt("Ecclesiastes 9:4",c.sprite);
                         }
                     });                  
                 },
-            },
-            
+            },        
             "Ice Shield": {
                 pp: 10,
+                desc: "Shield your party from harm",
                 dmgMult: function(target) { 
                 },
                 target: "none",
@@ -883,11 +904,12 @@ function addCharTux() {
                     },90);
                 },
             },
-
             "Eagle Eye": {
                 pp: 20,
                 dmgMult: 2,
+                desc: "Single-target deadly attack",
                 target: "one",
+                unblockable: true,
                 animLen: 80,
                 charAnim: function(char, target) {
                     var flauta = {x: char.x,y:char.y}
@@ -944,8 +966,10 @@ function addCharGoat() {
         "G.O.A.T": {
             "Horn": {
                 pp: 7,
-                dmgMult: 2,
+                dmgMult: 1.25,
+                desc: "Single-target gore attack",
                 target: "one",
+                unblockable: true,
                 animLen: 80,
                 charAnim: function(char, target) {
 
@@ -979,16 +1003,11 @@ function addCharGoat() {
             },
             "Poison Flauta": {
                 pp: 10,
+                desc: "Poison an enemy",
                 dmgMult: function(target) {
-
-                    if(target.maxHP + target.def + target.evd <= goat.agl + goat.atk * battleRandom) {
-
-                        attack(goat.atk* 0.09, goat, target);
-                        if(target.hp>0) {
-                            newStatus("poison", 3, target)
-                        }
-                    } else {
-                        makeTxt("MISS", target.sprite);
+                    attack(goat.atk* 0.75, goat, target);
+                    if(target.hp>0) {
+                        newStatus("poison", 3, target)
                     }
                 },
                 target: "one",
@@ -1023,8 +1042,12 @@ function addCharGoat() {
             },
             "Christmas Past": {
                 pp: 30,
+                desc: "Restore party state",
                 dmgMult: function(target) {
                     activeParty.forEach(function(c){
+                        if(c.hp <= 0) {
+                            healFade(c.sprite);
+                        }
                         c.hp = c.maxHP;
                         c.pp = c.maxPP;
                     });
@@ -1059,12 +1082,13 @@ function addCharWill() {
         agl: 14,
         evd: 9,
         level: 1,
-        xp: 1000,
+        xp: 1500,
         actions: ["Fight", "Swordmastery", "Swap", "Item"],
         status: [],
         Swordmastery: {
             "Finis": {
                 pp: 3,
+                desc: "Instant death attack",
                 dmgMult: function(target) { 
                     if(target.maxHP + target.def + target.evd <= will.agl + will.atk * battleRandom) {
                         target.hp = -1;
@@ -1126,6 +1150,7 @@ function addCharWill() {
             },
             "Quicken": {
                 pp: 7,
+                desc: "Party agility up",
                 dmgMult: function(target) { 
                 },
                 target: "none",
@@ -1164,10 +1189,11 @@ function addCharWill() {
             },
             "Disarm": {
                 pp: 10,
+                desc: "Drops an enemy's offense",
                 dmgMult: function(target) { 
                     if(target.maxHP + target.def + target.evd <= will.agl + will.atk * 2 * battleRandom) {
                         target.atk /= 2;
-                        attack(will.atk, will, target);
+                        attack(will.atk, false, target);
                     } else {
                         makeTxt("MISS", target.sprite);
                     }
@@ -1234,6 +1260,7 @@ function addCharWill() {
             },
             "Semper Fi": {
                 pp: 15,
+                desc: "Heal the party",
                 dmgMult: function(target) { 
                 },
                 target: "none",
@@ -1245,17 +1272,18 @@ function addCharWill() {
                     activeParty.forEach(function(c){
                         if(c.hp > 0) {
                             addEmitter(c.sprite.x - 100, c.sprite.x + 100, c.sprite.y - 100, c.sprite.y + 100, function(){return randDir(3)}, 0xD92662, 10, 60);
-                            var dmg = Math.round(will.atk/5);
+                            var dmg = Math.round(will.atk/3.5);
                             makeTxt(dmg, c.sprite);
                             c.hp = constrain(0, c.hp + dmg,c.maxHP);
                         } else {
-                            makeTxt("Ecclesiastes 9:4");
+                            makeTxt("Ecclesiastes 9:4",c.sprite);
                         }
                     });                  
                 },
             },
             "Exeunt": {
                 pp: 15,
+                desc: "Multi-target instant death attack",
                 dmgMult: function(target) { 
                     if(target.maxHP + target.def + target.evd <= will.agl + will.atk * battleRandom) {
                         target.hp = -1;
@@ -1332,7 +1360,9 @@ function addCharWill() {
                 pp: 25,
                 dmgMult: 1.75,
                 target: "all",
+                desc: "Three deadly strikes",
                 animLen: 40,
+                unblockable: true,
                 repeater: 3,
                 actionSpeed: 0.3,
                 charAnim: function(char, target) {
@@ -1403,8 +1433,6 @@ function invisLevel(char) {
         char.evd += curStatBonus.evd;
     }
 }
-
-
 function addCharCudd() {
     var cudd = {
         name: "Cuddle Robot",
@@ -1418,7 +1446,7 @@ function addCharCudd() {
         agl: 13,
         evd: 12,
         level: 1,
-        xp: 1000,
+        xp: 2500,
         actions: ["Fight", "Tech", "Swap", "Item"],
         status: [],
         Tech: {          
@@ -1426,6 +1454,8 @@ function addCharCudd() {
                 pp: 5,
                 dmgMult: 1.25,
                 target: "one",
+                desc: "Unblockable single-target attack",
+                unblockable: true,
                 animLen: 80,
                 charAnim: function(char, target) {
 
@@ -1475,6 +1505,7 @@ function addCharCudd() {
             },
             "Electroshock Therapy": {
                 pp: 10,
+                desc: "Heal a party member",
                 dmgMult: function(target) {
                     if(target.hp <= 0) {
                         target.hp = Math.round(target.maxHP/5);
@@ -1492,13 +1523,13 @@ function addCharCudd() {
                    
                 },
                 targetAnim: function(target) {
-                    addEmitter(target.x - 50, randX + 50, randY - 50, randY + 50, function(){return randDir(5)}, 0xF2DF0D, 20, 50);
                 }
             },
             "Flamethrower": {
                 pp: 10,
                 dmgMult: 1,
                 target: "all",
+                desc: "Scald the field with fire",
                 animLen: 200,
                 charAnim: function(char, target) {
                     var origX = char.x;
@@ -1560,7 +1591,9 @@ function addCharCudd() {
             "Gigahertz": {
                 pp: 30,
                 dmgMult: 1.5,
+                desc: "Multi-target unblockable deadly attack",
                 target: "all",
+                unblockable: true,
                 animLen: 150,
                 charAnim: function(char, target) {
                     animations.push({
