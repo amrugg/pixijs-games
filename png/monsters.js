@@ -816,7 +816,7 @@ var monsterpedia = {
         xp: 39,
     },
     "Green Robot": {
-        atk: 150,
+        atk: 100,
         def: 40,
         maxHP: 5000,
         maxPP:  3000,
@@ -832,7 +832,7 @@ var monsterpedia = {
                 action.targets = activeParty;
                 action.ability = {
                     pp: 50,
-                    dmgMult: 0.5,
+                    dmgMult: 0.65,
                     target: "all",
                     unblockable: true,
                     animLen: 160,
@@ -876,7 +876,7 @@ var monsterpedia = {
         xp: 179,
     },
     "Winnie the Hutt": {
-        atk: 100,
+        atk: 150,
         def: 50,
         maxHP: 2000,
         maxPP:  0,
