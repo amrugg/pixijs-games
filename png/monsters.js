@@ -2305,6 +2305,11 @@ var log9 = [
         clearCharTalk();
         charTalk("woof", "I name you the Fellowship of the Eyes! Go forth and destroy the Emperor!");
         gameState = "dialogue";
+
+        totalParty.forEach(function(c){
+            c.hp = c.maxHP;
+            c.pp = c.maxPP;
+        });
     },
     function() {
         clearCharTalk();
@@ -3076,6 +3081,10 @@ var log12 = [
         clearCharTalk();
         charTalk("nels", "AUGH!!!");
         gameState = "dialogue";
+        totalParty.forEach(function(c){
+            c.hp = c.maxHP;
+            c.pp = c.maxPP;
+        });
     },
     function() {
         clearCharTalk();
