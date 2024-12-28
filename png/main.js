@@ -67,9 +67,43 @@ var partyActions = [];
 var partyActionsI = 0;
 var map = [];
 var battleRandom = 1;
+var activeMusic;
+var fadeOutMusic;
+var musicVol = 0.8;
+var fadeTime = 500;
+var backgroundType = "grass";
+function setMusic(muse){
+    if(activeMusic) {
+        fadeOutMusic = activeMusic;
+        fadeOutMusic.fade(musicVol, 0, fadeTime);
+    }
+    activeMusic = new Howl({
+        src: ["music/" + muse + ".mp3"],
+        volume: musicVol,
+        loop: true,
+    });
+    setTimeout(function(){
+        activeMusic.fade(0, musicVol, fadeTime);
+        activeMusic.play();
+    }, fadeTime);
+}
+function playSound(muse){
+    var sound = new Howl({
+        src: ["music/sfx/" + muse + ".mp3"],
+        volume: musicVol,
+    });
+    sound.play();
+}
+function stopMusic(){
+    if(activeMusic) {
+        fadeOutMusic = activeMusic;
+        fadeOutMusic.fade(musicVol, 0, fadeTime);
+        activeMusic = false;
+    }
+}
 function updateBattleRandom() {
     if(cursedFate) {
-        battleRandom = randNum(0.5,1.5); 
+        battleRandom = randNum(0.25,1.75); 
     } else {
         battleRandom = randNum(0.75,1.25);
     }
@@ -477,6 +511,7 @@ function setup() {
     introLogo.x = innerWidth/2;
     introLogo.y = innerHeight/2;
     foreground.addChild(introLogo);
+    setMusic("main");
     gameState = "actions";
     state = wait;
     app.ticker.add(delta => gameLoop(delta));
@@ -514,22 +549,30 @@ function newStatus(name, time, char) {
     } else if(name === "poison") {
         status.bonus.hp = {val: Math.min(Math.round(char.hp/10),25)};
         status.emitter = addEmitter(char.sprite.x - 100, char.sprite.x + 100, char.sprite.y - 100, char.sprite.y + 100, function(){return randDir(1)}, 0x398712, 1, Infinity, 10);
+        status.malady = true;
     } else if(name === "venom") {
         status.bonus.hp = {val: Math.min(Math.round(char.hp/5),25)};
         status.bonus.pp = {val: Math.min(Math.round(char.pp/10),25)};
         status.emitter = addEmitter(char.sprite.x - 100, char.sprite.x + 100, char.sprite.y - 100, char.sprite.y + 100, function(){return randDir(1)}, 0xC1F335, 1, Infinity, 10);
+        status.malady = true;
     } else if(name === "swift") {
         status.bonus.agl = {mult: 1.5}
         char.agl *= 1.5;
         status.emitter = addEmitter(char.sprite.x - 100, char.sprite.x + 100, char.sprite.y - 100, char.sprite.y + 100, function(){return randDir(1)}, 0xF2DF0D, 1, Infinity, 10);
     } else if(name === "horror") {
         status.bonus.def = {mult: 0.75}
+        status.malady = true;
         char.def *= 0.75;
         status.emitter = addEmitter(char.sprite.x - 100, char.sprite.x + 100, char.sprite.y - 100, char.sprite.y + 100, function(){return randDir(1)}, 0x5B4200, 1, Infinity, 10);
     } else if(name === "shell") {
         status.bonus.def = {mult: 1.25}
         char.def *= 1.25;
         status.emitter = addEmitter(char.sprite.x - 100, char.sprite.x + 100, char.sprite.y - 100, char.sprite.y + 100, function(){return randDir(1)}, 0x79C0FF, 1, Infinity, 10);
+    }
+    if(!status.malady) {
+        playSound("effect");
+    } else {
+        playSound("poison");
     }
     statuses.push(status);
     return status;
@@ -781,6 +824,9 @@ function clearInterface(e) {
     });
 }
 function setForBattle(good, bad) {
+    if(!gamePlayAgenda[gamePlayStatus].bossBattle) {
+        setMusic("battle/" + backgroundType);
+    }
     while(good.length > 4) {
         good.pop().sprite.visible = false;
     }
@@ -919,6 +965,11 @@ function play() {
     handleParticles(particles);
     var userInput = readKeyMappings(keyMappings, keys);
     if(gameState === "actions") {
+        if(userInput.up || userInput.down) {
+            playSound("smith");
+        } else if(userInput.confirm || userInput.back) {
+            playSound("interface");
+        }
         if(playerMenu.state === "basic") {
             if(userInput.up) {
                 disableUserInput("up");
@@ -1174,6 +1225,7 @@ function play() {
         updatePartyInterface(activeParty);
         if(checkEnemyParty()) {
             dialogues = [];
+            setMusic("battle/victory");
             dialogues.push("You were victorious!");
             dialogues.push("Gained " + loot.gold + " gold");
             partyGold += loot.gold;
@@ -1274,7 +1326,7 @@ function play() {
                 dialogueTxt.visible = true;
                 alphaFade(dialogueTxt,0,1,10);
                 setFrameout(function(){
-                    alphaFade(dialogueTxt,1,0,10, function(){dialogueTxt.text = ""; dialogueTxt.visible = false; dialogueTxt.alpha = 1});                    
+                    alphaFade(dialogueTxt,1,0,10, function(){dialogueTxt.text = ""; dialogueTxt.alpha = 1});                    
                     curAction.char.pp -= curAction.ability.pp;
                     updateInterface(curAction.char);
                     if(curAction.ability.repeater) {
@@ -1293,7 +1345,7 @@ function play() {
             dialogueTxt.visible = true;
             alphaFade(dialogueTxt,0,1,10);
             setFrameout(function(){
-                alphaFade(dialogueTxt,1,0,10, function(){dialogueTxt.text = ""; dialogueTxt.visible = false; dialogueTxt.alpha = 1});
+                alphaFade(dialogueTxt,1,0,10, function(){dialogueTxt.text = ""; dialogueTxt.alpha = 1});
                 if(!curAction.enemyItem && partyItems[curAction.name]) {
                     partyItems[curAction.name]--;
                 }
@@ -1388,6 +1440,7 @@ function handleE(em) {
     }
 }
 function runItem(action) {
+    playSound("item")
     for(var i = 0; i < action.targets.length; i++) {
         var cur = action.targets[i];
         addEmitter(cur.sprite.x - 100, cur.sprite.x + 100, cur.sprite.y - 150, cur.sprite.y - 100, {x:0, y:3}, action.ability.tint, 2,90);
@@ -1724,7 +1777,17 @@ function runFight(curAction) {
         destruct: 1,
         mode: 1,
         cb: function() {
-            attack(curAction.char.atk, curAction.char, curAction.targets[0]);
+            if(curAction.char.name === "Winnie the Hutt") {
+                playSound("big-punch");
+            } else if(attack(curAction.char.atk, curAction.char, curAction.targets[0]) === 0) {
+                playSound("miss");
+            } else if(curAction.char.sword) {
+                playSound("sword");
+            } else if(curAction.char.bite) {
+                playSound("bite");
+            } else {
+                playSound("punch");
+            }
             gameState = "action";
         },
         i: 0,
@@ -1907,10 +1970,16 @@ function nextPlayer() {
                     bb *= b.ability.actionSpeed;
                 }
             }
+            if(b.actionNum) {
+                bb /= b.actionNum;
+            }
             if(a.ability) {
                 if(a.ability.actionSpeed) {
                     aa *= a.ability.actionSpeed;
                 }
+            }
+            if(a.actionNum) {
+                aa /= a.actionNum;
             }
             return bb - aa;
         });
@@ -1935,7 +2004,16 @@ function playEnemies(party) {
     var len = party.length;
     var actions = [];
     for(i = 0; i < len; i++) {
-        actions.push(monsterpedia[party[i].name].ai(activeParty, party[i]));
+        if(monsterpedia[party[i].name].actions) {
+            for(var j = 0; j < monsterpedia[party[i].name].actions; j++) {
+                var act = monsterpedia[party[i].name].ai(activeParty, party[i])
+                actions.push(act);
+                act.actionNum = j+1;
+                console.log(act);
+            }
+        } else {
+            actions.push(monsterpedia[party[i].name].ai(activeParty, party[i]));
+        }
     }
     return actions;
 }
@@ -1960,8 +2038,8 @@ function generateEnemyParty(configs) {
             hp: curDetails.maxHP,
             maxPP: curDetails.maxPP,
             pp: curDetails.maxPP,
-            agl: curDetails.agl,
-            evd: curDetails.evd,
+            agl: curDetails.agl * 1.25,
+            evd: curDetails.evd * 1.25,
             unblockable: curDetails.unblockable,
             items: []
         }
@@ -2113,8 +2191,10 @@ addEventListener("paste", function (e){
                 }
             }
         }
-        sam.myTwin = flam;
-        flam.myTwin = sam;
+        if(sam) {
+            sam.myTwin = flam;
+            flam.myTwin = sam;
+        }
         dialogueTxt.visible = true;
         startGame();
     } else {
@@ -2125,6 +2205,7 @@ function startGame() {
     introMenu = false;
     icon.visible = true;
     state = play;
+    disableUserInput("confirm");
     fadeOut(120);
     setFrameout(function() {
         foreground.removeChild(introLogo);

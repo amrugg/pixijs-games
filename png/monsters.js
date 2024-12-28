@@ -91,7 +91,8 @@ var monsterpedia = {
         def: 15,
         maxHP: 20,
         maxPP:  10,
-        agl: 28,
+        actions: 2,
+        agl: 58,
         evd: 25,
         ai: function(players, char) {
             var action = targetRandomPlayer(players,char);
@@ -119,9 +120,9 @@ var monsterpedia = {
     "Ice Goblin": {
         atk: 23,
         def: 23,
-        maxHP: 23,
+        maxHP: 43,
         maxPP:  5,
-        agl: 20,
+        agl: 30,
         items: [{n: "Mayonnaise", r: 0.25}],
         evd: 10,
         ai: function(players, char) {
@@ -137,6 +138,7 @@ var monsterpedia = {
                     animLen: 160,
                     charAnim: function(char, target) {
                         var track1 = {x: 0, y: innerHeight - 150};
+                        playSound("wind");
                         var track2 = {x: innerWidth, y: innerHeight - 150};
                         animations.push({
                             sprite: track1,
@@ -203,9 +205,10 @@ var monsterpedia = {
         xp: 19
     },
     "River Dragon": {
-        atk: 35,
+        atk: 32,
         def: 25,
         maxHP: 450,
+        actions: 2,
         maxPP:  100,
         agl: 40,
         items: [{n: "Pancake", r: 1}],
@@ -222,10 +225,13 @@ var monsterpedia = {
                 action.targets = activeParty;
                 action.ability = {
                     pp: 10,
-                    dmgMult: 0.75,
+                    dmgMult: 0.5,
                     target: "all",
+                    unblockable: true,
                     animLen: 160,
+                    unblockable: true,
                     charAnim: function(char, target) {
+                        playSound("deluge");
                         var track1 = {x: 0, y: innerHeight - 150};
                         var track2 = {x: innerWidth, y: innerHeight - 150};
                         animations.push({
@@ -290,8 +296,8 @@ var monsterpedia = {
                 action.name = "Kersplat";
                 action.ability = createSpecial(5, 1.5);
                 action.ability.unblockable = true;
-            } else if(rand < 0.65 && char.pp > 3) {
-                
+            } else if(rand < 0.75 && char.pp > 3 && char.hp < 200) {
+                char.pp -= 3;
                 return {
                     char: char,
                     targets: [char],
@@ -334,6 +340,7 @@ var monsterpedia = {
                     target: "all",
                     animLen: 160,
                     charAnim: function(char, target) {
+                        playSound("fireball");
                         var track1 = {x: 0, y: innerHeight/2};
                         animations.push({
                             sprite: track1,
@@ -396,6 +403,7 @@ var monsterpedia = {
             if(rand < 0.25 && char.pp >= 3) {
                 action.action = "special";
                 action.name = "Fire Breath";
+                playSound("fireball");
                 action.targets = activeParty;
                 action.ability = {
                     pp: 5,
@@ -667,6 +675,7 @@ var monsterpedia = {
                     target: "all",
                     animLen: 160,
                     charAnim: function(char, target) {
+                        playSound("wind");
                         fadeOut(90).tint = 0xEE402E
                         addEmitter(0,innerWidth,0,innerHeight, function(){return randDir(10)}, 0x1C0D06, 100, 160);
                     },
@@ -684,7 +693,8 @@ var monsterpedia = {
                 action.targets = activeParty;
                 action.ability = {
                     pp: 50,
-                    dmgMult: 0.5,
+                    dmgMult: 1.25,
+                    unblockable: true,
                     target: "all",
                     animLen: 160,
                     charAnim: function(char, target) {
@@ -703,6 +713,7 @@ var monsterpedia = {
                                 var randX = randInt(0,innerWidth);
                                 var randY = randInt(innerHeight - 300,innerHeight);
                                 if(anim.i % 30 === 0) {
+                                    playSound("punch");
                                     addEmitter(randX - 50, randX + 50, randY - 50, randY + 50, function(){return randDir(5)}, 0x58FAF9, 20, 50);
                                 }
                             },
@@ -721,9 +732,11 @@ var monsterpedia = {
                 action.ability = {
                     pp: 75,
                     dmgMult: 1.5,
+                    unblockable: true,
                     target: "all",
                     animLen: 160,
                     charAnim: function(char, target) {
+                        playSound("woosh");
                         var dir = direction(10, pointTowards(char.x,char.y,target[0].sprite.x,target[0].sprite.y));
                         addEmitter(char.x-10, char.x+10, char.y, char.y, dir, 0x77EF3D, 10, 100).fadeSpeed = 0.005;
                     },
@@ -738,7 +751,9 @@ var monsterpedia = {
                 
                 action.ability = {
                     pp: 100,
+                    unblockable: true,
                     dmgMult: function(target){
+                        playSound("woosh");
                         newStatus("horror", 3, target)
                         attack(50,char,target);
                     },
@@ -765,7 +780,9 @@ var monsterpedia = {
                     },
                     target: "one",
                     animLen: 160,
+                    unblockable: true,
                     charAnim: function(char, target) {
+                        playSound("wind");
                         fadeOut(100).tint = 0x3B3B3B;
                         var track1 = {x: 0, y: innerHeight/2};
                         animations.push({
@@ -799,7 +816,7 @@ var monsterpedia = {
         xp: 39,
     },
     "Green Robot": {
-        atk: 70,
+        atk: 150,
         def: 40,
         maxHP: 5000,
         maxPP:  3000,
@@ -815,8 +832,9 @@ var monsterpedia = {
                 action.targets = activeParty;
                 action.ability = {
                     pp: 50,
-                    dmgMult: 0.5,
+                    dmgMult: 1,
                     target: "all",
+                    unblockable: true,
                     animLen: 160,
                     charAnim: function(char, target) {
                         var track1 = {x: 0, y: innerHeight/2};
@@ -833,7 +851,8 @@ var monsterpedia = {
                             play: function(anim) {
                                 var randX = randInt(0,innerWidth);
                                 var randY = randInt(innerHeight - 300,innerHeight);
-                                if(anim.i % 30 === 0) {
+                                if(anim.i % 60 === 0) {
+                                    playSound("punch");
                                     addEmitter(randX - 50, randX + 50, randY - 50, randY + 50, function(){return randDir(5)}, 0x58FAF9, 20, 50);
                                 }
                             },
@@ -843,12 +862,13 @@ var monsterpedia = {
                     targetAnim: function(target) {
                     }
                 };
-            } else if(rand < 0.5 && char.pp > 75) {
+            } else if(rand < 0.6 && char.pp > 75) {
                 action.action = "special";
                 action.name = "Saw Edge";
                 action.ability = createSpecial(75, 1.5);
                 action.ability.unblockable = true;
             }
+
             return action;
         },
         items: [{n: "Paint", r: 0.1}, {n: "Barbecue Sauce", r: 0.1}],
@@ -884,6 +904,7 @@ var curDialogue = {}; /// Serves as a type of window.
 var cutSceneI = 0;
 var log0 = [
     function() {
+        setMusic("chars/tong");
         var tong = new Sprite(resources["sprites/chars/tong.png"].texture);
         foreground.addChild(tong);
         tong.anchor.set(0.5,0.5);
@@ -894,7 +915,7 @@ var log0 = [
         setFrameout(function() {
             log0[1]();
             ++cutSceneI;
-        },30);
+        },240);
     },
     function() {
         charTalk("tong", "Wow. It looks like there's a big shindig over in that forest.");
@@ -917,10 +938,12 @@ var log0 = [
     },
     function() {
         gameState = "anim";
+        backgroundType = "grass";
         clearCharTalk();
         foreground.removeChild(curDialogue.tong);
         ++gamePlayStatus;
         fadeOut(20);
+        setMusic("battle/grass");
         nextScene(20);
         activeParty.forEach(function(e) {
             foreground.addChild(e.sprite);
@@ -929,6 +952,7 @@ var log0 = [
 ];
 var log1 = [
     function() {
+        stopMusic();
         var tong = new Sprite(resources["sprites/chars/tong.png"].texture);
         foreground.addChild(tong);
         tong.anchor.set(0.5,0.5);
@@ -952,6 +976,7 @@ var log1 = [
         gameState = "dialogue";
     },
     function() {
+        setMusic("chars/nels");
         clearCharTalk();
         charTalk("nels", "The insolence! I'm Prince Nels! The greatest swordsbear in the world!");
         gameState = "dialogue";
@@ -984,6 +1009,16 @@ var log1 = [
     function() {
         clearCharTalk();
         charTalk("nels", "What?! That's the worst excuse I've ever heard. Monsters don't just show up for no reason!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("tong", "You must not have played very many RPGs, Nels.");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("nels", "What's that have to do with anything?!?");
         gameState = "dialogue";
     },
     function() {
@@ -1024,6 +1059,7 @@ var log1 = [
 ];
 var log2 = [
     function() {
+        setMusic("chars/tong");
         var tong = new Sprite(resources["sprites/chars/tong.png"].texture);
         foreground.addChild(tong);
         tong.anchor.set(0.5,0.5);
@@ -1112,6 +1148,7 @@ var log2 = [
             foreground.removeChild(sam);
             ++gamePlayStatus;
             fadeOut(20);
+            setMusic("battle/boss");
             nextScene(20);
             activeParty.forEach(function(e) {
                 foreground.addChild(e.sprite);
@@ -1153,6 +1190,7 @@ var log3 = [
         },30);
     },
     function() {
+        setMusic("chars/dog");
         charTalk("sam", "We got defeated by the goblins!");
         gameState = "dialogue";
     },
@@ -1293,6 +1331,7 @@ var log3 = [
 ];
 var log4 = [
     function() {
+        setMusic("chars/goat");
         var tong = new Sprite(resources["sprites/chars/tong.png"].texture);
         foreground.addChild(tong);
         tong.anchor.set(0.5,0.5);
@@ -1524,6 +1563,7 @@ var log4 = [
 ];
 var log5 = [
     function() {
+        setMusic("chars/goat");
         activeBackground.texture = resources["sprites/Backgrounds/river.png"].texture;
         var tong = new Sprite(resources["sprites/chars/tong.png"].texture);
         foreground.addChild(tong);
@@ -1594,6 +1634,7 @@ var log5 = [
             cb: function() {
                 clearCharTalk();
                 fadeOut(20);
+                setMusic("battle/boss");
                 setFrameout(function() {
                     foreground.removeChild(curDialogue.tong);
                     foreground.removeChild(curDialogue.nels);
@@ -1613,6 +1654,7 @@ var log5 = [
 ];
 var log6 = [
     function() {
+        setMusic("chars/goat");
         activeBackground.texture = resources["sprites/Backgrounds/grass.png"].texture;
         var tong = new Sprite(resources["sprites/chars/tong.png"].texture);
         foreground.addChild(tong);
@@ -1694,11 +1736,13 @@ var log6 = [
     },
     function() {
         clearCharTalk();
+        setMusic("battle/boss");
         charTalk("nels", "I thought this was nothing but a trick! Prepare to die! Finis--");
         gameState = "dialogue";
     },
     function() {
         clearCharTalk();
+        setMusic("chars/goat");
         charTalk("goat", "No no, wait man! I can help you!");
         gameState = "dialogue";
     },
@@ -1852,6 +1896,7 @@ var log6 = [
 ];
 var log7 = [
     function() {
+        setMusic("main");
         var nels = new Sprite(resources["sprites/chars/nels.png"].texture);
         foreground.addChild(nels);
         nels.anchor.set(0.5,0.5);
@@ -1900,6 +1945,7 @@ var log7 = [
     },
     function() {
         clearCharTalk();
+        setMusic("battle/boss");
         gameState = "anim";
         fadeOut(20);
         setFrameout(function() {
@@ -1916,6 +1962,7 @@ var log7 = [
 
 var log8 = [
     function() {
+        setMusic("main");
         var tong = new Sprite(resources["sprites/chars/tong.png"].texture);
         foreground.addChild(tong);
         tong.anchor.set(0.5,0.5);
@@ -2000,6 +2047,7 @@ var log8 = [
                 clearCharTalk();
                 fadeOut(20);
                 setFrameout(function() {
+                setMusic("battle/boss");
                     foreground.removeChild(curDialogue.tong);
                     foreground.removeChild(curDialogue.nels);
                     foreground.removeChild(curDialogue.flam);
@@ -2018,6 +2066,7 @@ var log8 = [
 ];
 var log9 = [
     function() {
+        setMusic("chars/nels");
         var tong = new Sprite(resources["sprites/chars/tong.png"].texture);
         foreground.addChild(tong);
         tong.anchor.set(0.5,0.5);
@@ -2144,6 +2193,7 @@ var log9 = [
     },
     function() {
         clearCharTalk();
+        setMusic("chars/tong");
         charTalk("woof", "So the king has commanded Nels to protect Tongarango!");
         gameState = "dialogue";
     },
@@ -2199,6 +2249,7 @@ var log9 = [
     },
     function() {
         clearCharTalk();
+        setMusic("chars/goat");
         charTalk("goat", "What?! Oh, man! I thought we were past that now!");
         gameState = "dialogue";
     },
@@ -2239,6 +2290,22 @@ var log9 = [
     },
     function() {
         clearCharTalk();
+        setMusic("main")
+        charTalk("woof", "This is a marvellous undertaking! A band of five loyal friends setting off to save the world against unimaginable odds!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("goat", "Oh man. This is getting worse all the time, man.");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        charTalk("woof", "I name you the Fellowship of the Eyes! Go forth and destroy the Emperor!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
         gameState = "anim";
         fadeOut(20);
         setFrameout(function() {
@@ -2257,6 +2324,7 @@ var log9 = [
 ];
 var log10 = [
     function() {
+        setMusic("main");
         activeBackground.texture = resources["sprites/Backgrounds/city.png"].texture;
         activeBackground.visible = true;
         var tong = new Sprite(resources["sprites/chars/tong.png"].texture);
@@ -2358,7 +2426,7 @@ var log10 = [
         });
     },
     function() {
-
+        setMusic("chars/will");
         clearCharTalk();
         var will = new Sprite(resources["sprites/chars/will.png"].texture);
         foreground.addChild(will);
@@ -2448,6 +2516,7 @@ var log10 = [
         gameState = "dialogue";
     },
     function() {
+        setMusic("chars/goat");
         clearCharTalk();
         charTalk("goat", "Don't look at me, man. I'm just stuck here because they didn't want any guest characters. Do they sell any burritos at the bar?");
         setFrameout(function() {
@@ -2456,6 +2525,7 @@ var log10 = [
         gameState = "dialogue";
     },
     function() {
+        setMusic("chars/will");
         clearCharTalk();
         charTalk("will", "Ah... yes. <ahem> Perhaps I could accompany you on your trip. You might be glad for some assistance.");
         gameState = "dialogue";
@@ -2525,6 +2595,8 @@ var log10 = [
 
 var log11 = [
     function() {
+        backgroundType = "factory";
+        setMusic("battle/factory");
         activeBackground.texture = resources["sprites/Backgrounds/floor.png"].texture;
         var tong = new Sprite(resources["sprites/chars/tong.png"].texture);
         foreground.addChild(tong);
@@ -2707,6 +2779,7 @@ var log11 = [
 ];
 var log12 = [
     function() {
+        stopMusic();
         activeBackground.texture = resources["sprites/Backgrounds/floor.png"].texture;
 
         var nels = new Sprite(resources["sprites/chars/nels.png"].texture);
@@ -2847,26 +2920,31 @@ var log12 = [
     },
     function() {
         clearCharTalk();
+        setMusic("chars/nels");
         charTalk("nels", "The game's up, Emperor!");
         gameState = "dialogue";
     },
     function() {
         clearCharTalk();
+        setMusic("chars/tong");
         charTalk("tong", "Best just give up now and save us the trouble.");
         gameState = "dialogue";
     },
     function() {
         clearCharTalk();
+        setMusic("chars/goat");
         charTalk("goat", "Oh yeah man. Hurry up so I can blow this joint and get some flautas.");
         gameState = "dialogue";
     },
     function() {
         clearCharTalk();
+        setMusic("chars/will");
         charTalk("will", "Without dinosaur eyes, your weapon is useless against us!");
         gameState = "dialogue";
     },
     function() {
         clearCharTalk();
+        setMusic("chars/dog");
         charTalk("sam", "Are we supposed to say something inspirational now?");
         gameState = "dialogue";
     },
@@ -2890,6 +2968,19 @@ var log12 = [
     },
     function() {
         clearCharTalk();
+        setMusic("chars/cudd");
+        charTalk("cudd", "Beep beep. Prepare to die.");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        setMusic("chars/tux");
+        charTalk("tux", "Ork ork!");
+        gameState = "dialogue";
+    },
+    function() {
+        clearCharTalk();
+        stopMusic();
         charTalk("herbert", ". . . It appears you have me surrounded.");
         gameState = "dialogue";
     },
@@ -2964,6 +3055,7 @@ var log12 = [
                 },30);
                 setFrameout(function(){
                     fadeOut(5);
+                    setMusic("battle/final");
                 },5);
             });
         },240);
@@ -3010,6 +3102,8 @@ var log12 = [
 
 var log13 = [
     function() {
+        setMusic("battle/snow");
+        backgroundType = "snow";
         activeBackground.texture = resources["sprites/Backgrounds/snow.png"].texture;
         var tong = new Sprite(resources["sprites/chars/tong.png"].texture);
         foreground.addChild(tong);
@@ -3052,6 +3146,7 @@ var log13 = [
         gameState = "dialogue";
     },
     function() {
+        setMusic("chars/tux");
         var tux = new Sprite(resources["sprites/chars/tux.png"].texture);
         foreground.addChild(tux);
         tux.anchor.set(0.5,0.5);
@@ -3143,6 +3238,7 @@ var log13 = [
 var gamePlayStatus = 0;
 var log14 = [
     function() {
+        setMusic("main");
         activeBackground.texture = resources["sprites/Backgrounds/floor.png"].texture;
         activeBackground.visible = true;
         var tong = new Sprite(resources["sprites/chars/tong.png"].texture);
@@ -3205,6 +3301,7 @@ var log14 = [
     },
     function() {
         clearCharTalk();
+        setMusic("battle/hutt");
         charTalk("hutt", "I do!");
         gameState = "dialogue";
     },
@@ -3280,6 +3377,7 @@ var log14 = [
 ];
 var log15 = [
     function() {
+        setMusic("end");
         var tong = new Sprite(resources["sprites/chars/tong2.png"].texture);
         foreground.addChild(tong);
         tong.anchor.set(0.5,0.5);
@@ -3390,6 +3488,7 @@ var log15 = [
 
 var log16 = [
     function() {
+        setMusic("battle/factory");
         activeBackground.texture = resources["sprites/Backgrounds/floor.png"].texture;
         var tong = new Sprite(resources["sprites/chars/tong.png"].texture);
         foreground.addChild(tong);
@@ -3437,6 +3536,7 @@ var log16 = [
         gameState = "dialogue";
     },
     function() {
+        setMusic("battle/green-robot");
         var goat = new Sprite(resources["sprites/chars/bot.png"].texture);
         foreground.addChild(goat);
         goat.anchor.set(0.5,0.5);
@@ -3480,6 +3580,7 @@ var log16 = [
         gameState = "dialogue";
     },
     function() {
+        setMusic("chars/cudd");
         var goat = new Sprite(resources["sprites/chars/cudd.png"].texture);
         foreground.addChild(goat);
         goat.anchor.set(0.5,0.5);
@@ -3526,6 +3627,7 @@ var log16 = [
         gameState = "dialogue";
     },
     function() {
+        setMusic("battle/green-robot");
         clearCharTalk();
         gameState = "anim";
         fadeOut(20);
@@ -3554,7 +3656,7 @@ function createSpecial(pp, dmgMult) {
         target: "one",
         animLen: 80,
         charAnim: function(char, target) {
-
+            playSound("woosh");
             animations.push({
                 sprite: char,
                 type: "transform",

@@ -8,6 +8,7 @@ function addCharNels() {
         hp: 20,
         maxPP: 15,
         pp: 15,
+        sword: true,
         agl: 15,
         evd: 10,
         level: 1,
@@ -23,15 +24,17 @@ function addCharNels() {
                         target.hp = -1;
                         deathFade(target.sprite);
                         makeTxt("MORTIS", target.sprite);
+                        playSound("sword");
                     } else {
                         makeTxt("MISS", target.sprite);
+                        playSound("miss");
                     }
                     updateBattleRandom();
                 },
                 target: "one",
                 animLen: 80,
                 charAnim: function(char, target) {
-
+                    playSound("glisten");
                     animations.push({
                         sprite: char,
                         type: "transform",
@@ -88,6 +91,7 @@ function addCharNels() {
                 actionSpeed: 99,
                 animLen: 120,
                 charAnim: function(char) {
+                    playSound("glisten");
                     animations.push({
                         sprite: char,
                         type: "transform",
@@ -122,6 +126,7 @@ function addCharNels() {
                 target: "none",
                 animLen: 120,
                 charAnim: function(char) {
+                    playSound("woosh");
                     animations.push({
                         sprite: char.scale,
                         type: "transform",
@@ -152,8 +157,10 @@ function addCharNels() {
                 dmgMult: function(target) { 
                     if(target.maxHP + target.def + target.evd <= nels.agl + nels.atk * 2 * battleRandom) {
                         target.def = 0;
+                        playSound("sword");
                         attack(nels.atk, false, target);
                     } else {
+                        playSound("miss");
                         makeTxt("MISS", target.sprite);
                     }
                     updateBattleRandom();
@@ -161,6 +168,7 @@ function addCharNels() {
                 target: "one",
                 animLen: 150,
                 charAnim: function(char, target) {
+                    playSound("glisten");
                     animations.push({
                         sprite: char.scale,
                         type: "transform",
@@ -183,6 +191,7 @@ function addCharNels() {
                         },
                         i: 0,
                         cb: function() {
+                            playSound("woosh");
                             setFrameout(function() {
                                 animations.push({
                                     sprite: char,
@@ -242,6 +251,7 @@ function addCharNels() {
                 target: "all",
                 animLen: 150,
                 charAnim: function(char, target) {
+                    playSound("glisten");
                     animations.push({
                         sprite: char.scale,
                         type: "transform",
@@ -264,6 +274,7 @@ function addCharNels() {
                         i: 0,
                         cb: function() {
                             setFrameout(function() {
+                                playSound("woosh");
                                 animations.push({
                                     sprite: char,
                                     type: "transform",
@@ -319,7 +330,7 @@ function addCharNels() {
                 unblockable: true,
                 actionSpeed: 0.1,
                 charAnim: function(char, target) {
-
+                    playSound("glisten");
                     animations.push({
                         sprite: char,
                         type: "transform",
@@ -338,6 +349,7 @@ function addCharNels() {
                                 }
                             }
                             if(anim.i === anim.speed-1) {
+                                playSound("sword");
                                 for(var i = 0; i < 100; i++) {
                                     spawnParticle(anim.max[0] + randInt(-150,150), anim.max[1] + randInt(-150,150), 0xEE402E, false, 0);
                                 }
@@ -381,6 +393,7 @@ function addCharSam() {
         hp: 25,
         maxPP: 15,
         pp: 15,
+        bite: true,
         agl: 9,
         evd: 9,
         level: 1,
@@ -442,6 +455,11 @@ function addCharSam() {
                             speed: 10,
                             mode: 1,
                             destruct: 3,
+                            play: function(anim) {
+                                if(anim.i === anim.speed-1) {
+                                    playSound("interface");
+                                }
+                            },
                             i: 4,
                         });
                     },15);
@@ -453,9 +471,11 @@ function addCharSam() {
                 dmgMult: function(target) { 
                     if(target.maxHP + target.def + target.evd <= (sam.agl + sam.atk + sam.myTwin.agl + sam.myTwin.atk)/1.75 * battleRandom) {
                         target.hp = -1;
+                        playSound("bite");
                         deathFade(target.sprite);
                         makeTxt("MORTIS", target.sprite);
                     } else {
+                        playSound("smith");
                         attack(sam.atk + sam.myTwin.atk, sam,  target);
                     }
                     updateBattleRandom();
@@ -465,6 +485,7 @@ function addCharSam() {
                 target: "one",
                 animLen: 80,
                 charAnim: function(char, target) {
+                    playSound("woosh");
                     var bone = new Sprite(resources["sprites/bone.png"].texture);
                     bone.anchor.set(0.5,0.5);
                     foreground.addChild(bone);
@@ -499,6 +520,7 @@ function addCharSam() {
                 animLen: 120,
                 charAnim: function(char, target) {
                     var origX = char.x;
+                    playSound("woosh");
                     var origY = char.y;
                     animations.push({
                         sprite: char,
@@ -570,6 +592,7 @@ function addCharFlam() {
         pp: 25,
         agl: 12,
         evd: 12,
+        bite: true,
         level: 1,
         xp: 50,
         actions: ["Fight", "Twin", "Swap", "Item"],
@@ -640,10 +663,12 @@ function addCharFlam() {
                 dmgMult: function(target) { 
                     if(target.maxHP + target.def + target.evd <= (flam.agl + flam.atk + flam.myTwin.agl + flam.myTwin.atk)/1.75 * battleRandom) {
                         target.hp = -1;
+                        playSound("bite");
                         deathFade(target.sprite);
                         makeTxt("MORTIS", target.sprite);
                     } else {
-                        attack(flam.atk + flam.myTwin.atk, flam,  target);
+                    makeTxt("MORTIS", target.sprite);
+                    attack(flam.atk + flam.myTwin.atk, flam,  target);
                     }
                     updateBattleRandom();
                 },
@@ -1078,6 +1103,7 @@ function addCharWill() {
         maxHP: 23,
         hp: 23,
         maxPP: 14,
+        sword: true,
         pp: 14,
         agl: 14,
         evd: 9,
