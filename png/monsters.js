@@ -3365,7 +3365,6 @@ var log14 = [
         gameState = "dialogue";
     },
     function() {
-        activeBackground.texture = resources["sprites/Backgrounds/grass.png"].texture;
         clearCharTalk();
         gameState = "anim";
         fadeOut(20);
