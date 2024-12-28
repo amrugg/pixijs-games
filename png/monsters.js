@@ -832,7 +832,7 @@ var monsterpedia = {
                 action.targets = activeParty;
                 action.ability = {
                     pp: 50,
-                    dmgMult: 1,
+                    dmgMult: 0.5,
                     target: "all",
                     unblockable: true,
                     animLen: 160,
@@ -1286,7 +1286,7 @@ var log3 = [
     },
     function() {
         clearCharTalk();
-        charTalk("nels", "How are a couple of half-dead dogs going to help us figure fight off the goblins?");
+        charTalk("nels", "How are a couple of half-dead dogs going to help us fight off the goblins?");
         gameState = "dialogue";
     },
     function() {
