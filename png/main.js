@@ -1695,7 +1695,7 @@ function runRepeatSpecial(curAction) {
                     if(typeof curAction.ability.dmgMult === "function") {
                         curAction.ability.dmgMult(curTargets[i]);
                     } else {
-                        attack(curAction.char.atk * curAction.ability.dmgMult, curAction.char, curTargets[i]);
+                        attack(curAction.char.atk * curAction.ability.dmgMult, false, curTargets[i]);
                     }
                 }
             }, 30);
