@@ -114,6 +114,7 @@ var charTalkBox = new PIXI.Graphics();
 var dialogues = [];
 var dialogueTxt = new PIXI.Text("");
 dialogueTxt.style = globalTextStyle;
+var difficultyLevel = 1;
 var frameOuts = [];
 var particleEmitters = [];
 var globalFrameCount = 0;
@@ -182,6 +183,7 @@ function setup() {
                 animLen: 100,
                 evade: false, /// Attack cannot be evaded
                 charAnim: function(char) {
+                    playSound("fireball");
                     animations.push({
                         sprite: char,
                         type: "transform",
@@ -269,7 +271,7 @@ function setup() {
                                             destruct: 1,
                                                 cb: function() {
                                                     setFrameout(function() {
-    
+                                                        playSound("flop");
                                                         animations.push({
                                                             sprite: char.scale,
                                                             type: "transform",
@@ -335,6 +337,7 @@ function setup() {
                         destruct: 1,
                         i: 0,
                         cb: function() {
+                            playSound("fireball");
                             setFrameout(function() {
                                 animations.push({
                                     type: "transform",
@@ -424,7 +427,7 @@ function setup() {
                                             destruct: 1,
                                                 cb: function() {
                                                     setFrameout(function() {
-    
+                                                        playSound("flop");
                                                         animations.push({
                                                             sprite: char.scale,
                                                             type: "transform",
@@ -513,13 +516,30 @@ function setup() {
     foreground.addChild(introLogo);
     setMusic("main");
     gameState = "actions";
+    menuText = new PIXI.Text("Willoughby",20);
+    menuText.anchor.set(0.5,0.5);
+    ui.addChild(menuText);
+    menuText.x = innerWidth/2;
+    menuText.y = 100;
     state = wait;
     app.ticker.add(delta => gameLoop(delta));
 }
+var menuText;
+var menuState = 2;
+var options = ["Tongarango","Sam & Flam", "Willoughby", "Nels T. Bear"];
 function wait() {
     var userInput = readKeyMappings(keyMappings, keys);
     if(userInput.confirm) {
         startGame();
+        ui.removeChild(menuText);
+    } else if (userInput.up && menuState > 0) {
+        disableUserInput("up");
+        --menuState;
+        menuText.text = options[menuState];
+    } else if (userInput.down && menuState < options.length-1) {
+        ++menuState;
+        disableUserInput("down");
+        menuText.text = options[menuState];
     }
 }
 window.onbeforeunload = function() {
@@ -1603,7 +1623,7 @@ function clearCharTalk() {
 var curCharTalkText = "";
 var charTalkHead;
 function levelUpReq(level) {
-    return level ** 1.75 * 10;
+    return level ** 1.75 * 10 * difficultyLevel;
 }
 function chooseRandomEnemy(players) {
     var living = [];
@@ -2032,14 +2052,14 @@ function generateEnemyParty(configs) {
         var monster = {
             name: curConfig[i],
             sprite: new Sprite(resources["sprites/monsters/" + curConfig[i] + ".png"].texture),
-            atk: curDetails.atk,
-            def: curDetails.def,
-            maxHP: curDetails.maxHP,
-            hp: curDetails.maxHP,
-            maxPP: curDetails.maxPP,
-            pp: curDetails.maxPP,
-            agl: curDetails.agl * 1.25,
-            evd: curDetails.evd * 1.25,
+            atk: curDetails.atk * difficultyLevel,
+            def: curDetails.def * difficultyLevel,
+            maxHP: curDetails.maxHP * difficultyLevel,
+            hp: curDetails.maxHP * difficultyLevel,
+            maxPP: curDetails.maxPP * difficultyLevel,
+            pp: curDetails.maxPP * difficultyLevel,
+            agl: curDetails.agl * difficultyLevel,
+            evd: curDetails.evd * difficultyLevel,
             unblockable: curDetails.unblockable,
             items: []
         }
@@ -2207,6 +2227,7 @@ function startGame() {
     state = play;
     disableUserInput("confirm");
     fadeOut(120);
+    difficultyLevel *= (menuState+1)/(options.length-1);
     setFrameout(function() {
         foreground.removeChild(introLogo);
         foreground.removeChild(introBackground);

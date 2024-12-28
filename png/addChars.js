@@ -796,6 +796,7 @@ function addCharTux() {
                 animLen: 150,
                 desc: "Multi-target attack",
                 charAnim: function(char, target) {
+                    playSound("effect");
                     animations.push({
                         sprite: char.scale,
                         type: "transform",
@@ -818,6 +819,7 @@ function addCharTux() {
                         i: 0,
                         cb: function() {
                             setFrameout(function() {
+                                playSound("woosh");
                                 animations.push({
                                     sprite: char,
                                     type: "transform",
@@ -867,7 +869,7 @@ function addCharTux() {
                 pp: 7,
                 desc: "Heal a party member",
                 dmgMult: function(target) { 
-
+                    playSound("effect");
                     addEmitter(c.sprite.x - 100, c.sprite.x + 100, c.sprite.y - 100, c.sprite.y + 100, function(){return randDir(3)}, 0x79C0FF, 10, 60);
                     var dmg = Math.round(tux.atk/1.5);
                     c.hp = constrain(0, c.hp + dmg,c.maxHP);
@@ -901,6 +903,7 @@ function addCharTux() {
                 healing: true,
                 animLen: 120,
                 charAnim: function(char) {
+                    playSound("wind");
                     var wind = {x:0, y: char.y};
                     animations.push({
                         sprite: wind,
@@ -938,7 +941,7 @@ function addCharTux() {
                 animLen: 80,
                 charAnim: function(char, target) {
                     var flauta = {x: char.x,y:char.y}
-
+                    playSound("big-punch");
                     animations.push({
                         sprite: flauta,
                         type: "transform",
@@ -1016,6 +1019,7 @@ function addCharGoat() {
                                 }
                             }
                             if(anim.i === anim.speed-1) {
+                                playSound("bite");
                                 spawnRandomParticles(anim.sprite.x,anim.sprite.y,0xB9B9B9, 30);
                             }
                             /**/
@@ -1039,7 +1043,7 @@ function addCharGoat() {
                 animLen: 80,
                 charAnim: function(char, target) {
                     var flauta = {x: char.x,y:char.y}
-
+                    playSound("woosh");
                     animations.push({
                         sprite: flauta,
                         type: "transform",
@@ -1082,6 +1086,7 @@ function addCharGoat() {
                 target: "none",
                 animLen: 80,
                 charAnim: function(char, target) {
+                    playSound("wind");
                     fadeOut(100).tint = 0xCCCCCC;
                 },
                 targetAnim: function(target) {
@@ -1119,8 +1124,10 @@ function addCharWill() {
                     if(target.maxHP + target.def + target.evd <= will.agl + will.atk * battleRandom) {
                         target.hp = -1;
                         deathFade(target.sprite);
+                        playSound("sword");
                         makeTxt("MORTIS", target.sprite);
                     } else {
+                        playSound("miss");
                         makeTxt("MISS", target.sprite);
                     }
                     updateBattleRandom();
@@ -1128,7 +1135,7 @@ function addCharWill() {
                 target: "one",
                 animLen: 80,
                 charAnim: function(char, target) {
-
+                    playSound("woosh");
                     animations.push({
                         sprite: char,
                         type: "transform",
@@ -1149,7 +1156,7 @@ function addCharWill() {
                             if(anim.i === anim.speed-1) {
                                 for(var i = 0; i < 100; i++) {
                                     var dir = randDir(200)
-                                    spawnParticle(anim.max[0] + dir.x, anim.max[1] + dir.y, 0xEE402E, false, 0);
+                                    spawnParticle(anim.max[0] + dir.x, anim.max[1] + dir.y, 0xEE402E, {x:-dir.x,y:-dir.y}, 0);
                                 }
                             }
                             /**/
@@ -1186,6 +1193,7 @@ function addCharWill() {
                 animLen: 120,
                 charAnim: function(char) {
                     var wind = {x:0, y: char.y};
+                    playSound("wind");
                     animations.push({
                         sprite: wind,
                         type: "transform",
@@ -1220,7 +1228,9 @@ function addCharWill() {
                     if(target.maxHP + target.def + target.evd <= will.agl + will.atk * 2 * battleRandom) {
                         target.atk /= 2;
                         attack(will.atk, false, target);
+                        playSound("sword");
                     } else {
+                        playSound("miss");
                         makeTxt("MISS", target.sprite);
                     }
                     updateBattleRandom();
@@ -1228,6 +1238,7 @@ function addCharWill() {
                 target: "one",
                 animLen: 150,
                 charAnim: function(char, target) {
+                    playSound("glisten");
                     animations.push({
                         sprite: char.scale,
                         type: "transform",
@@ -1250,6 +1261,7 @@ function addCharWill() {
                         },
                         i: 0,
                         cb: function() {
+                            playSound("woosh");
                             setFrameout(function() {
                                 animations.push({
                                     sprite: char,
@@ -1295,6 +1307,7 @@ function addCharWill() {
                 healing: true,
                 animLen: 120,
                 charAnim: function(char) {
+                    playSound("glisten");
                     activeParty.forEach(function(c){
                         if(c.hp > 0) {
                             addEmitter(c.sprite.x - 100, c.sprite.x + 100, c.sprite.y - 100, c.sprite.y + 100, function(){return randDir(3)}, 0xD92662, 10, 60);
@@ -1323,6 +1336,7 @@ function addCharWill() {
                 target: "all",
                 animLen: 150,
                 charAnim: function(char, target) {
+                    playSound("woosh");
                     animations.push({
                         sprite: char.scale,
                         type: "transform",
@@ -1345,6 +1359,7 @@ function addCharWill() {
                         },
                         i: 0,
                         cb: function() {
+                            playSound("big-punch");
                             setFrameout(function() {
                                 animations.push({
                                     sprite: char,
@@ -1392,7 +1407,7 @@ function addCharWill() {
                 repeater: 3,
                 actionSpeed: 0.3,
                 charAnim: function(char, target) {
-
+                    playSound("woosh");
                     animations.push({
                         sprite: char,
                         type: "transform",
@@ -1411,6 +1426,7 @@ function addCharWill() {
                                 }
                             }
                             if(anim.i === anim.speed-1) {
+                                playSound("sword");
                                 for(var i = 0; i < 100; i++) {
                                     var dir = randDir(200)
                                     spawnParticle(anim.max[0] + dir.x, anim.max[1] + dir.y, 0xEE402E, {x:-dir.x/50,y:-dir.y/50}, 0);
@@ -1504,6 +1520,7 @@ function addCharCudd() {
                             }
                             if(anim.i === anim.speed-1) {
                                 for(var i = 0; i < 100; i++) {
+                                    playSound("big-punch");
                                     spawnParticle(anim.max[0] + randInt(-150,150), anim.max[1] + randInt(-150,150), 0xEE402E, false, 0);
                                 }
                             }
@@ -1549,6 +1566,8 @@ function addCharCudd() {
                    
                 },
                 targetAnim: function(target) {
+                    addEmitter(target.x - 100, target.x + 100, target.y - 100, target.y + 100, function(){return randDir(3)}, 0xF2DF0D, 10, 60);
+                    playSound("glisten");
                 }
             },
             "Flamethrower": {
@@ -1588,6 +1607,7 @@ function addCharCudd() {
                                         }
                                     },
                                     cb: function(){
+                                        playSound("fireball");
                                         animMoveTo(char,origX,origY,30);
                                     },
                                     i: 0,
@@ -1643,6 +1663,7 @@ function addCharCudd() {
                         },
                         i: 0,
                         cb: function() {
+                            playSound("fireball");
                             setFrameout(function() {
                                 animations.push({
                                     sprite: char,

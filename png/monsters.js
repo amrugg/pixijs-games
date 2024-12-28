@@ -403,7 +403,6 @@ var monsterpedia = {
             if(rand < 0.25 && char.pp >= 3) {
                 action.action = "special";
                 action.name = "Fire Breath";
-                playSound("fireball");
                 action.targets = activeParty;
                 action.ability = {
                     pp: 5,
@@ -413,6 +412,7 @@ var monsterpedia = {
                     target: "all",
                     animLen: 160,
                     charAnim: function(char, target) {
+                        playSound("fireball");
                         var track1 = {x: 0, y: innerHeight/2};
                         animations.push({
                             sprite: track1,
@@ -738,6 +738,7 @@ var monsterpedia = {
                     charAnim: function(char, target) {
                         playSound("woosh");
                         var dir = direction(10, pointTowards(char.x,char.y,target[0].sprite.x,target[0].sprite.y));
+                        dir.x *= -1;
                         addEmitter(char.x-10, char.x+10, char.y, char.y, dir, 0x77EF3D, 10, 100).fadeSpeed = 0.005;
                     },
                     targetAnim: function(target) {
@@ -761,6 +762,7 @@ var monsterpedia = {
                     animLen: 160,
                     charAnim: function(char, target) {
                         var dir = direction(10, pointTowards(char.x,char.y,target[0].sprite.x,target[0].sprite.y));
+                        dir.x *= -1;
                         addEmitter(char.x-100, char.x+100, char.y, char.y, dir, 0x3B3B3B, 100, 100).fadeSpeed = 0.05;
                     },
                     targetAnim: function(target) {
@@ -818,7 +820,7 @@ var monsterpedia = {
     "Green Robot": {
         atk: 100,
         def: 40,
-        maxHP: 5000,
+        maxHP: 3000,
         maxPP:  3000,
         agl: 100,
         evd: 45,
@@ -877,8 +879,8 @@ var monsterpedia = {
     },
     "Winnie the Hutt": {
         atk: 150,
-        def: 50,
-        maxHP: 2000,
+        def: 70,
+        maxHP: 6000,
         maxPP:  0,
         agl: 60,
         unblockable: true,
