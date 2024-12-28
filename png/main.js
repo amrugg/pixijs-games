@@ -531,7 +531,6 @@ function wait() {
     var userInput = readKeyMappings(keyMappings, keys);
     if(userInput.confirm) {
         startGame();
-        ui.removeChild(menuText);
     } else if (userInput.up && menuState > 0) {
         disableUserInput("up");
         --menuState;
@@ -934,6 +933,7 @@ function attack(atk, attacker, defender, fixedDMG) {
             battleRandom = 1+ (battleRandom -1);
         }
     }
+    debugger;
     if(attacker) {
         if(attacker.agl && defender.evd && !attacker.unblockable) {
             var rand = Math.random();
@@ -1799,6 +1799,7 @@ function runFight(curAction) {
         cb: function() {
             if(curAction.char.name === "Winnie the Hutt") {
                 playSound("big-punch");
+                attack(curAction.char.atk, curAction.char, curAction.targets[0]);
             } else if(attack(curAction.char.atk, curAction.char, curAction.targets[0]) === 0) {
                 playSound("miss");
             } else if(curAction.char.sword) {
@@ -2222,6 +2223,7 @@ addEventListener("paste", function (e){
     }
 });
 function startGame() {
+    ui.removeChild(menuText);
     introMenu = false;
     icon.visible = true;
     state = play;
