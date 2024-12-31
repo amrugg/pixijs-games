@@ -891,7 +891,7 @@ var monsterpedia = {
         items: [{n: "Pancake", r: 1}],
     }
 }
-var random1 = [["Goblin", "Goblin", "Goblin"], ["Dark Goblin"], ["Goblin", "Goblin"]];
+var random1 = [["Goblin", "Goblin", "Goblin"]];
 var random2 = [["Dark Goblin", "Goblin", "Dark Goblin"], ["Dark Goblin"], ["Dark Goblin", "Dark Goblin"]];
 var random3 = [["Bat", "Dark Goblin", "Bat"], ["Goblin", "Dark Goblin", "Goblin"], ["Cobra"], ["Ice Goblin"]];
 var random4 = [["Cobra", "Dark Goblin"], ["Bat","Bat","Ice Goblin","Bat","Bat"], ["Goblin", "Ice Goblin", "Dark Goblin"]];

@@ -122,6 +122,8 @@ var loot = {gold: 0, xp: 0, items: []};
 var partyGold = 0;
 var partyItems = {};
 addPartyItem("Barbecue Sauce");
+addPartyItem("Barbecue Sauce");
+addPartyItem("Barbecue Sauce");
 addPartyItem("Pancake");
 var particles = [];
 var particleContainer = new PIXI.Container();
@@ -2229,7 +2231,7 @@ function startGame() {
     state = play;
     disableUserInput("confirm");
     fadeOut(120);
-    difficultyLevel *= 0.5 + 0.75 * (menuState/(options.length-1));
+    difficultyLevel *= 0.5 + 0.6 * (menuState/(options.length-1));
     setFrameout(function() {
         foreground.removeChild(introLogo);
         foreground.removeChild(introBackground);
