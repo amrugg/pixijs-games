@@ -2229,7 +2229,7 @@ function startGame() {
     state = play;
     disableUserInput("confirm");
     fadeOut(120);
-    difficultyLevel *= 0.5 + 1 * (menuState/(options.length-1));
+    difficultyLevel *= 0.5 + 0.75 * (menuState/(options.length-1));
     setFrameout(function() {
         foreground.removeChild(introLogo);
         foreground.removeChild(introBackground);
