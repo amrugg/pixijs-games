@@ -1,0 +1,944 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Oligarchy Demo</title>
+    <style>
+        .char {
+            width: 50px;
+            height: 50px;
+            border-radius: 100%;
+            position: absolute;
+            left: 100px;
+            top: 100px;
+            z-index: 100;
+        }
+        .sidenav {
+            height: 100%; /* Full-height: remove this if you want "auto" height */
+            width: 250px; /* Set the width of the sidebar */
+            position: fixed; /* Fixed Sidebar (stay in place on scroll) */
+            z-index: 1; /* Stay on top */
+            top: 0; /* Stay at the top */
+            right: 0;
+            background-color: #111; /* Black */
+            overflow-x: hidden; /* Disable horizontal scroll */
+            padding-top: 20px;
+        }
+
+        /* The navigation menu links */
+        .sidenav span {
+            padding: 3px 4px 3px 8px;
+            text-decoration: none;
+            font-size: 20px;
+            color: #818181;
+            display: block;
+        }
+        .sidenav div {
+            padding: 3px 4px 3px 8px;
+            text-decoration: none;
+            font-size: 20px;
+            color: #818181;
+            display: block;
+        }
+        .sidenav input {
+            padding: 3px 4px 3px 8px;
+            text-decoration: none;
+            font-size: 20px;
+            color: #818181;
+            background-color: black;
+            display: block;
+        }
+        .sidenav button {
+            margin: 5px;
+            padding: 3px 4px 3px 8px;
+            text-decoration: none;
+            font-size: 20px;
+            color: #818181;
+            background-color: black;
+            display: block;
+        }
+        .sidenav select {
+            margin: 5px;
+            min-width: 230px;
+            padding: 3px 4px 3px 8px;
+            text-decoration: none;
+            font-size: 20px;
+            color: #818181;
+            background-color: black;
+            display: block;
+        }
+        button :disabled {
+            color: black;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game" hidden>
+        <img src="sprites/board.svg" alt="bored" id="board">
+        <div class="sidenav">
+            <span id="char">Police Diamonds</span>
+            <input type="number" id="money" placeholder="$1000" value="1000">
+            <button id="move">Move (m)</button> <span></span>
+            <button id="buy" disabled>Suggested Action</button> 
+            <select id="cards"></select>
+            <button id="playCard">Play Card</button>
+            <select id="char-props"></select>
+            <button id="sell">Sell Property</button>
+            <button id="build" style="position: absolute; bottom: 160px">Build</button>
+            <button id="permit" style="position: absolute; bottom: 105px">Upgrade Building Permit</button>
+            <button id="passGo" style="position: absolute; bottom: 60px"onclick=passGo()>Pass Go</button>
+            <button id="die" style="position: absolute; bottom: 25px"onclick=rollDie()>Roll Die</button>
+            <div id=data></div>
+        </div>
+    </div>
+    <div id="setup">
+        <span>Add characters:</span><br>
+    </div>
+
+    <script src="usefulFunctions.js"></script>
+    <script type="text/javascript">
+
+        var keys = {};
+        addEventListener("blur", function (){
+            keys = {};
+        });
+        addEventListener("keydown", function (e){
+            if(e.key === "m") {
+                beginMove();
+            } else if(e.key === "b" && !sideMenu.buy.disabled) {
+                sideMenu.buy.onclick();
+            } else if(e.key === "n") {
+                nextChar();
+            }
+            keys[e.key] = true;
+        });
+        addEventListener("keyup", function (e){
+            keys[e.key] = false;
+        });
+        var setupDiv = document.getElementById("setup");
+        var characterNames = ["","Police Diamonds", "Chamberline Sinclair", "Hoffman House", "Madison", "Byron Genoa", "Cheeks the Butler", "Pontiac Flanagan"];
+        var characterCols = [0, "#3C71F7", "#111111", "#E8D600", "#6F277D", "#EEEEEE","#EE402E", "#409614"];
+        var characterExp = ["Not a player",
+`Police Diamonds:
+Building: Big House: Same as jail, except, you pay rent.
+Buff: When passing Home, take the top three cards from the deck and choose any one.`,
+`Chamberline Sinclair:
+Building: Casino: Player pays x20 the die roll in addition to his regular rent.
+Buff: Starts out with $500 extra`,
+`Hoffman House:
+Building: Estate: Decreases building price by 10% on all other buildings.
+Buff: All buildings cheaper.`,
+`Madison:
+Building: Capital: Increases rent by 10% on all other buildings.
+Buff: Gets $100 extra when you pass Home.`,
+`Byron Genoa:
+Building: Power plant: Increases rent and allows Byron to roll again when passing this property.
+Buff: At the beginning and everytime you pass "Go", Byron may optionally roll twice.`,
+`Cheeks the Butler:
+Building: Mansion: Gives Cheeks a lot of money when he lands on it.
+Buff: Gets a $50 bonus whenever he plays a card (not for Events).`,
+`Pontiac Flanagan:
+Building: Signpost: Charges people even if they're just passing by
+Buff: Chooses 5 out of 10 non-event cards at the beginning of the game.`];
+        
+        var startingCash = 1000;
+        var cards = startDeck();
+        var discard = [];
+        var characters = [];
+        var charSelEls = [];
+        var mouseX;
+        var mouseY;
+        function takeFirstCard() {
+            if(!cards.length) {
+                cards = structuredClone(discard);
+                discard = [];
+            }
+            var card = cards.shift();
+            discard.push(card);
+            return card;
+        }
+        function nonEventCard() {
+            do {
+                var card = takeFirstCard();
+            } while(card.type === "EVENT")
+            return card;
+        }
+        var charFuncs = {
+            "Police Diamonds": {
+                begin: function(){},
+                pass: function(c){
+                    var selection = [takeFirstCard(),takeFirstCard(),takeFirstCard()];
+                    var text = "The cards to choose from are:";
+                    selection.forEach(function(e,i) {
+                        text += "\n " + (i+1) + ". " + e.type + " card: "+ e.name + ": " + e.desc;
+                    });
+                    var ans = Number(prompt(text + "\nChoose one card to discard and keep the rest.\nAnswer with 1,2, or 3."));
+                    if(ans) {
+                        ans--;
+                    } else {
+                        ans = 0;
+                        alert("Couldn't parse-- discarding first card");
+                    }
+
+                    selection.splice(ans,1);
+
+                    var text = "You got the cards:";
+                    selection.forEach(function(e,i) {
+                        text += "\n " + (i+1) + ". " + e.type + " card: "+ e.name + ": " + e.desc;
+                        if(e.type !== "EVENT") {
+                            c.cards.push(e);
+                        }
+                    });
+                    c.money += 300;
+                    alert(text);
+                    updateDisp();
+                },
+            },
+            "Chamberline Sinclair": {
+                begin: function(c){c.money += 750},
+                pass: function(c){c.money += 300; drawCard()},
+            },
+            "Hoffman House": {
+                begin: function(){},
+                pass: function(c){c.money += 300; drawCard()},
+            },
+            "Madison": {
+                begin: function(){},
+                pass: function(c){c.money += 450; drawCard()},
+            },
+            "Byron Genoa": {
+                begin: function(){},
+                pass: function(c){c.money += 300; drawCard(); alert("Roll again, if you wish.")},
+            },
+            "Cheeks the Butler": {
+                begin: function(){},
+                play: function(c){c.money += 50; updateDisp()},
+                pass: function(c){c.money += 300; drawCard()},
+            },
+            "Pontiac Flanagan": {
+                begin: function(c){for(var i = 0; i < 10; i++) {
+                    c.cards.push(nonEventCard());
+                };
+                alert("Added 10 cards to Pontiac Flanagan's hand. Discard 5 of them (with the play card button.)");
+            },
+                pass: function(c){c.money += 300; drawCard()},
+            },
+        }
+        addCharEls(10);
+        var gameDiv = document.getElementById("game");
+        var button = document.createElement("button");
+
+        var state = {name:"any"};
+        var sideMenu = {i:0};
+        button.textContent = "Start Game";
+        setupDiv.appendChild(button);
+        var boardSize = innerWidth - 300;
+        button.onclick = startGame;
+        // startGame();
+        function passGo() {
+            charFuncs[state.char.name].pass(state.char);
+        }
+        function startGame()  {
+            setupDiv.hidden = true;
+            charSelEls.forEach(function(e){
+                if(e.selectedIndex > 0) {
+                    characters.push(initChar(e.selectedIndex));
+                }
+            });
+            gameDiv.hidden = false;
+            var board = document.getElementById("board");
+            board.width = boardSize;
+            board.height = boardSize;
+            sideMenu.char = document.getElementById("char");
+            sideMenu.money = document.getElementById("money");
+            sideMenu.move = document.getElementById("move");
+            sideMenu.buy = document.getElementById("buy");
+            sideMenu.cards = document.getElementById("cards");
+            sideMenu.charProps = document.getElementById("char-props");
+            sideMenu.sell = document.getElementById("sell");
+            sideMenu.build = document.getElementById("build");
+            sideMenu.playCard = document.getElementById("playCard");
+            sideMenu.buy.disabled = true;
+            sideMenu.data = document.getElementById("data");
+            sideMenu.permit = document.getElementById("permit");
+            sideMenu.char.onclick = nextChar;
+            sideMenu.playCard.onclick = function() {
+                if(sideMenu.cards.selectedIndex > -1) {
+                    var cardPlayed = state.char.cards[sideMenu.cards.selectedIndex];
+                    state.char.cards.splice(sideMenu.cards.selectedIndex,1);
+                    console.log(cardPlayed);
+                    alert("Played card " + cardPlayed.name + "\n" + cardPlayed.desc);
+                    updateDisp();
+                    if(charFuncs[state.char.name].play) {
+                        charFuncs[state.char.name].play();
+                    }
+                }
+            }
+            sideMenu.sell.onclick = function() {
+                if(sideMenu.charProps.selectedIndex > -1) {
+                    var price = propData[sideMenu.charProps.value][0];
+                    var val = Math.round(price - price/10);
+                    if(confirm("Sell " + sideMenu.charProps.value + " for $" + val + "?")) {
+                        state.char.money += val;
+                        propOwners[sideMenu.charProps.value] = false;
+                        updateDisp();
+                    }
+                }
+            }
+            sideMenu.permit.onclick = function() {
+                if(state.char.name !== "Hoffman House") {
+                    state.char.money -= 300;
+                } else {
+                    state.char.money -= 150;
+                }
+                state.char.permit++;
+                updateDisp();
+            }
+            sideMenu.money.oninput = function() {
+                if(parseInt(sideMenu.money.value)) {
+                    characters[sideMenu.i].money = Number(sideMenu.money.value);
+                }
+            }
+            sideMenu.move.onclick = function(){
+                if(state.name === "any") {
+                    beginMove();
+                }
+            };
+            sideMenu.build.onclick = function(){
+                if(state.name === "any") {
+                    beginBuild();
+                }
+            };
+            sideMenu.i = -1;
+            shuffle(characters);
+            nextChar();
+        }
+        function nextChar() {
+            if(state.name === "any") {
+                sideMenu.i++;
+                if(sideMenu.i >= characters.length) {
+                    sideMenu.i = 0;
+                }
+                var curChar = characters[sideMenu.i];
+                state.char = curChar;
+                sideMenu.char.innerHTML = curChar.name;
+                updateDisp();
+            }
+        }
+        function updateDisp() {
+            sideMenu.money.value = state.char.money;
+            if(state.char.permit < 4) {
+                sideMenu.permit.innerHTML = "Upgrade Building Permit (Level " + (state.char.permit+1) +")";
+                sideMenu.permit.disabled = false;
+            } else {
+                sideMenu.permit.innerHTML = "Full Permit";
+                sideMenu.permit.disabled = true;
+            }
+            if(state.char.permit === 0) {
+                sideMenu.build.disabled = true;
+                sideMenu.build.title = "Buy a permit first";
+            } else {
+                sideMenu.build.disabled = false;
+                sideMenu.build.title = "Click on a tile to upgrade";
+            }
+            updateStack(state.char.cards);
+            updatePropStack(getCharProps(state.char));
+        }
+        function getCharProps(char) {
+            var keys = Object.keys(propOwners);
+            var props = [];
+            for(var i = 0; i < keys.length; i++) {
+                if(propOwners[keys[i]] === char) {
+                    props.push(keys[i]);
+                }
+            }
+            return props;
+        }
+        function updatePropStack(props) {
+            debugger;
+            sideMenu.charProps.innerHTML = "";
+            props.forEach(function(e) {
+                var op = document.createElement("option");
+                op.innerHTML = e;
+                sideMenu.charProps.appendChild(op);
+            });
+        }
+        function updateStack(cards) {
+            sideMenu.cards.innerHTML = "";
+            cards.forEach(function(e) {
+                var op = document.createElement("option");
+                op.innerHTML = e.name;
+                op.title = e.desc;
+                sideMenu.cards.appendChild(op);
+            });
+        }
+        function beginMove() {
+            state.name = "move";
+            state.char = characters[sideMenu.i];
+            state.char.sprite.style.opacity = 0.5;
+        }
+
+        function beginBuild() {
+            state.name = "build";
+        }
+        addEventListener("mousemove",function(e){
+            mouseX = e.pageX;
+            mouseY = e.pageY;
+            if(state.name === "move") {
+                updateMove();
+            } else if(state.name === "build") {
+                updateBuild();
+            }
+        });
+        addEventListener("mousedown",function(e){
+            if(state.name === "move" && state.property) {
+                state.name = "any";
+                state.char.curProperty = state.property;
+                state.char.sprite.style.opacity = 1;
+                if(propData[state.property]) {
+                    var owner = propOwners[state.property];
+                    if(owner) {
+                        if(owner === state.char) {
+                            sideMenu.buy.disabled = true;
+                            sideMenu.buy.innerHTML = "Property owned"
+                        } else {
+                            sideMenu.buy.disabled = false;
+                            sideMenu.buy.innerHTML = "Pay Rent"
+                            sideMenu.buy.onclick = payRent;
+                        }
+                    } else if(propData[state.property]) {
+                        sideMenu.buy.disabled = false;
+                        sideMenu.buy.innerHTML = "Buy property?"
+                        sideMenu.buy.onclick = buyProperty;
+                    }
+                } else if(state.property === "Draw a Card") {
+                    sideMenu.buy.disabled = false;
+                    sideMenu.buy.innerHTML = "Draw a Card"
+                    sideMenu.buy.onclick = drawCard;
+                }
+            } else if(state.name === "build") {
+                if(state.buildValid) {
+                    if(!propUps[state.property]) {
+                        propUps[state.property] = 0;
+                    }
+                    if(++propUps[state.property] === 4) {
+                        var ans = prompt("You built a special building! Would you like to build...\n1.Hotel\n2.Something else (specify)?");
+                        if(ans === "1") {
+                            propUps[state.property] = "Hotel"
+                        } else {
+                            propUps[state.property] = ans
+                        }
+                    } else {
+                        alert("You built a Level " + propUps[state.property] + " house!");
+                        state.char.money -= 100;
+                        updateDisp();
+                    }
+                    sideMenu.data.innerHTML = "";
+                }
+                state.name = "any";
+            }
+        });
+        function payRent() {
+            var prop = state.property;
+            var payer = state.char;
+            var owner = propOwners[prop];
+            if(propUps[prop]) {
+                if(typeof propUps[prop] === "string") {
+                    if(propUps[prop] === "Hotel") {
+                        var amt = propData[prop][5];
+                    } else {
+                        var amt = parseInt(prompt("This building has a " + propUps[prop] +" on it. How much rent should be paid?"));
+                        if(!amt) {
+                            amt = propData[prop][5];
+                            alert("input failed")
+                        }
+                    }
+                } else {
+                    var amt = propData[prop][propUps[prop]+1];
+                }
+            } else {
+                var amt = propData[prop][1]
+            }
+            amt = Number(amt);
+            payer.money = Number(payer.money);
+            owner.money = Number(owner.money);
+            payer.money -= amt;
+            owner.money += amt;
+            sideMenu.buy.innerHTML = "Paid $" +amt;
+            sideMenu.buy.disabled = true;
+            updateDisp();
+        }
+        var propUps = {};
+        function drawCard() {
+            var card = takeFirstCard();
+            alert("You received the " + card.type + " card \"" + card.name + "\":\n" + card.desc);
+            if(card.type !== "EVENT") {
+                state.char.cards.push(card);
+            }
+            updateDisp();
+        }
+        function buyProperty() {
+            if(state.property) {
+                if(propData[state.property]) {
+                    state.char.money -= propData[state.property][0];
+                    propOwners[state.property] = state.char;
+                    updateDisp();
+                    sideMenu.buy.disabled = true;
+                    sideMenu.buy.innerHTML = "Purchased!"
+                }
+            }
+        }
+        function updateMove() {
+            var property = getHoverProperty(mouseX,mouseY,boardSize);
+            state.char.sprite.style.left = mouseX-25 + "px";
+            state.char.sprite.style.top = mouseY-25 + "px";
+            if(property && state.property !== property) {
+                var split = property.split("|");
+                sideMenu.data.innerHTML = split[0];
+                if(split[1]) {
+                    console.log(split);
+                    sideMenu.data.innerHTML += "<br>Costs $" + split[1] + "<br>";
+                    propData[split[0]].forEach(function(e,i) {
+                        if(i === 0) {
+                            return;
+                        } else if(i === 1) {
+                            sideMenu.data.innerHTML += "Rent: ";
+                        } else if(i < 5) {
+                            sideMenu.data.innerHTML += "With "+ (i-1) + " house" + (i-1 > 1 ?"s":"")+": ";
+                        } else {
+                            sideMenu.data.innerHTML += "With Hotel: ";
+                        }
+                        sideMenu.data.innerHTML += "$"+ e +"<br>";
+                    });
+                    var smalltxt = document.createElement("span");
+                    smalltxt.innerHTML = propExps[split[0]];
+                    smalltxt.style.fontSize = "20px"
+                    sideMenu.data.appendChild(smalltxt);
+                }
+                state.property = split[0];
+            } else if(!property) {
+                state.property = false;
+                sideMenu.data.innerHTML = "";
+            }
+        }
+
+        function updateBuild() {
+            var property = getHoverProperty(mouseX,mouseY,boardSize);
+            if(property && state.property !== property) {
+                var split = property.split("|");
+                sideMenu.data.innerHTML = split[0];
+                if(split[1]) {
+                    console.log(split);
+                    sideMenu.data.innerHTML += "<br>Costs $" + split[1] + "<br>";
+                    propData[split[0]].forEach(function(e,i) {
+                        if(i === 0) {
+                            return;
+                        } else if(i === 1) {
+                            sideMenu.data.innerHTML += "Rent: ";
+                        } else if(i < 5) {
+                            sideMenu.data.innerHTML += "With "+ i + " house" + (i > 1 ?"s":"")+": ";
+                        } else {
+                            sideMenu.data.innerHTML += "With Hotel: ";
+                        }
+                        sideMenu.data.innerHTML += "$"+ e +"<br>";
+                    });
+                    var smalltxt = document.createElement("span");
+                    if(propUps[split[0]] >= state.char.permit || typeof propUps[split[0]] === "string") {
+                        console.log(propUps[split[0]], state.char.permit)
+                        smalltxt.innerHTML = "You can't upgrade this property any higher. It already has " + propUps[split[0]] +" on it.";
+                        state.buildValid = false;
+                    } else if (propOwners[split[0]] !== state.char && split[0] !== "Public Property") {
+                        smalltxt.innerHTML = "You don't own this property";
+                        state.buildValid = false;
+                    } else {
+                        state.buildValid = true;
+                        if(propUps[split[0]] === 3) {
+                            smalltxt.innerHTML = "Upgrade to a special building";
+                        } else if(propUps[split[0]]) {
+                            smalltxt.innerHTML = "Upgrade to a Level " + (propUps[split[0]]+1) + " house";
+                        } else {
+                            smalltxt.innerHTML = "Upgrade to a Level 1 house";
+                        }
+                    }
+                    smalltxt.style.fontSize = "20px"
+                    sideMenu.data.appendChild(smalltxt);
+                }
+                state.property = split[0];
+            } else if(!property) {
+                state.property = false;
+                sideMenu.data.innerHTML = "";
+            }
+        }
+        var propOwners = {};
+        var propData = {
+            Ruggabury: [ 300, 92, 350, 1100, 1500, 1800 ],
+            Vector: [ 400, 80, 300, 1000, 1300, 1600 ],
+            'Warp Pipe': [ 50, 17, 67, 200, 270, 350 ],
+            Baron: [ 375, 75, 300, 900, 1200, 1500 ],
+            'Hyrule Castle': [ 350, 70, 280, 800, 1100, 1400 ],
+            'Watery Forest': [ 320, 64, 260, 800, 1000, 1300 ],
+            'Cavernous Cleft': [ 310, 62, 250, 700, 1000, 1200 ],
+            'Plains of Dimm Laite': [ 290, 58, 230, 700, 900, 1200 ],
+            'Greener View': [ 300, 92, 350, 1100, 1500, 1800 ],
+            'Monty Crisco': [ 250, 50, 200, 600, 800, 1000 ],
+            'Purple Village': [ 240, 48, 190, 600, 800, 1000 ],
+            Nobath: [ 240, 48, 190, 600, 800, 1000 ],
+            'Beach Resort': [ 200, 33, 135, 400, 500, 700 ],
+            'Marvin Garvens': [ 190, 48, 190, 600, 800, 1000 ],
+            'Dear Gabby Inc.': [ 230, 46, 185, 600, 700, 900 ],
+            'Valyent Studios': [ 300, 92, 350, 1100, 1500, 1800 ],
+            'Birds vs. Squirrels': [ 170, 43, 170, 500, 700, 900 ],
+            'Warp Pipe ': [ 50, 17, 67, 200, 270, 350 ],
+            Nintendo: [ 150, 38, 150, 450, 600, 800 ],
+            'Rugg Family Game Server': [ 160, 40, 160, 500, 600, 800 ],
+            KFC: [ 130, 33, 130, 400, 500, 700 ],
+            IHOP: [ 120, 30, 120, 350, 500, 600 ],
+            'Happy Tom’s F.A.R': [ 110, 28, 110, 350, 450, 600 ],
+            'Rugg Family Studios': [ 300, 92, 350, 1100, 1500, 1800 ],
+            'The Regime': [ 70, 18, 70, 210, 280, 350 ],
+            'Clover Sites': [ 80, 20, 80, 240, 300, 400 ],
+            "Uncle Ben's": [ 90, 23, 90, 270, 350, 450 ],
+            'Hoffmanhouse Estates': [ 60, 15, 60, 180, 240, 300 ],
+            'Mole Commando': [ 70, 18, 70, 210, 280, 350 ],
+            'Ice Mountain': [ 50, 17, 67, 200, 270, 350 ]
+        }
+        var propExps = {
+            Ruggabury: "Probably where the pilgrims were travelling in The Ruggabury Tales.",
+            'Watery Forest': "From <i>The Romance of Four Kingdoms:</i> \"The second tribe, called Natan Yu, dominated the heights of Watery Forest.\"",
+            'Warp Pipe': "Special property. Rent is paid for both properties if applicable.",
+            'Warp Pipe ': "Special property. Rent is paid for both properties if applicable.",
+            'Cavernous Cleft': "From <i>The Romance of Four Kingdoms:</i> \"The tribe of Liu Benn dwelt in the Cavernous Cleﬅ beyond the arctic sea of Tiles.\"",
+            'Plains of Dimm Laite': "From <i>The Romance of Four Kingdoms:</i> \"Finally, the plains of Dimm Laite were inhabited by the Kao Kaos.\"",
+            'Hyrule Castle': "From the Link series.",
+            Baron: "From Final Fantasy II.",
+            Vector: "From Final Fantasy III.",
+            'Greener View': "One of the four elite properties.",
+            'Monty Crisco': "From <i>The Count of Monty Crisco.</i>",
+            'Purple Village': "From <i>The Romance of Four Kingdoms:</i> \"Another tribe, who lived in the Purple Village, were called Liz Yung Fhang.\"",
+            Nobath: "In <i>The Ruggabury Tales</i>, Uncle Caleb starred as The Boy of Nobath.",
+            'Beach Resort': "Throwback from the original Oligarchy. Can be reached by landing on it, by landing on Airport, or by landing on Go to Airport (which takes you to Airport.)",
+            "Marvin Garvens": "Misspelled property name from Monopoly. Featured in the original Oligarchy.",
+            'Dear Gabby Inc.': "A RFT classic.",
+            'Valyent Studios': "One of the four elite properties.",
+            'Birds vs. Squirrels': "From a game we made where birds and squirrels fight.",
+            Nintendo: "Mario!",
+            'Rugg Family Game Server': "Better than Nintendo cause it has rewind.",
+            KFC: "Part of the classic restaurant series.",
+            IHOP: "This made it into a Police Diamonds story somehow.",
+            'Happy Tom’s F.A.R': "The famous American restaurant.",
+            'Rugg Family Studios': "One of the four elite properties.",
+            'The Regime': "The Regime.",
+            'Clover Sites': "Clover!",
+            "Uncle Ben's": "Hey it has my name on it!",
+            'Hoffmanhouse Estates': "Butler arrested for indecent exposure near Hoffmanhouse estates.",
+            'Mole Commando': "Title of an article by Geoff Ruggario.",
+            'Ice Mountain': "Ice Mountain!"
+        }
+        var properties = {
+            path: [
+                'Home',
+                'Go to Jail',
+                'Ice Mountain|50',
+                'Mole Commando|70',
+                'Draw a Card',
+                'Hoffmanhouse Estates|60',
+                'Charity',
+                "Uncle Ben's|90",
+                'Clover Sites|80',
+                'The Regime|70',
+                'Jail',
+                'Happy Tom’s F.A.R|110',
+                'Go to Airport',
+                'IHOP|120',
+                'KFC|130',
+                'Draw a Card',
+                'Rugg Family Game Server|160',
+                'Nintendo|150',
+                'Warp Pipe |50',
+                'Birds vs. Squirrels|170',
+                'Public Property',
+                'Airport',
+                'Dear Gabby Inc.|230',
+                'Marvin Garvens|190',
+                'Steal a Card',
+                'Beach Resort|200',
+                'Draw a Card',
+                'Nobath|240',
+                'Purple Village|240',
+                'Monty Crisco|250',
+                'ROAD TRIP',
+                'Plains of Dimm Laite|290',
+                'Moldy Applesauce Lose 1 turn',
+                'Cavernous Cleft|310',
+                'Watery Forest|320',
+                'Draw a Card',
+                'Hyrule Castle|350',
+                'Baron|375',
+                'Warp Pipe|50',
+                'Vector|400'
+            ],
+            shortcuts: [
+                [
+                    'Draw a Card',
+                    'Garage Collapses Lose 1 turn',
+                    'Pay everyone $20',
+                    'Rugg Family Studios|300'
+                ],
+                [
+                    'Forgot Pants Lose 1 turn ',
+                    'Reverse turn order',
+                    'Draw a Card',
+                    'Valyent Studios|300'
+                ],
+                [
+                    'Toilet Clogs Lose 1 turn',
+                    'Draw a Card',
+                    'Roll Again! Move backwards',
+                    'Greener View|300'
+                ],
+                [
+                    'Bonus Pickle Collect $50 from bank',
+                    'Lost in Everglades Lose 1 turn',
+                    'Draw a Card',
+                    'Ruggabury|300'
+                ]
+            ]
+        }
+        var s1 = 0;
+        var s2 = 0;
+        var indent = 0.1317365269461078;
+        var tIndent = boardSize * indent;
+        var rowS = 0.0826;
+        var TRS = boardSize * rowS;
+        function getHoverProperty(x,y,size) {
+            var x = x/size;
+            var y = y/size;
+            // ///(Math.floor((mouseX + tIndent/2) / TRS) * TRS)
+            // if(keys.e) {
+            //     s1 = x;
+            // } else if(keys.r) {
+            //     s2 = x;
+            // } else if(keys.t) {
+            //     console.log(s1,s2,s1-s2);
+            // }
+            if(y> 0.883 && y<1) {
+                /// Bottom Row
+                if(x < 0.135) {
+                    return properties.path[10];
+                } else if(x > 1-0.135) {
+                    return properties.path[0];
+                } else {
+                    return properties.path[9 - Math.floor((x-indent) / rowS)];
+                }
+            } else if(y< 1-0.883) {
+                /// Top Row
+                if(x < 0.135) {
+                    return properties.path[20];
+                } else if(x > 1-0.135) {
+                    return properties.path[30];
+                } else {
+                    return properties.path[21 + Math.floor((x-indent) / rowS)];
+                }
+            } else if(x < 1-0.883) {
+                /// Left Row
+                return properties.path[19 -  Math.floor((y-indent) / rowS)];
+            } else if(x > 0.883 && x< 1) {
+                /// Right Row
+                if(31 +  Math.floor((y-indent) / rowS) >= properties.path.length) {
+                    return properties.path[0]
+                }
+                return properties.path[31 +  Math.floor((y-indent) / rowS)];
+            } else if(x > (0.5 - rowS/2) && x < (0.5 + rowS/2)) {
+                if(y > (0.5 - rowS/2) && y < (0.5 + rowS/2)) {
+                    return "Launchpad";
+                } else if (y > 0.5) {
+                    var ans = 3-Math.floor((y-(0.5 + rowS/2)) / rowS)
+                    ans = Math.min(3,ans);
+                    ans = Math.max(0,ans);
+                    return properties.shortcuts[0][ans];
+                } else {
+                    var ans = Math.floor((y-indent) / rowS)
+                    ans = Math.min(3,ans);
+                    ans = Math.max(0,ans);
+                    return properties.shortcuts[2][ans];
+                }
+            } else if(y > (0.5 - rowS/2) && y < (0.5 + rowS/2)) {
+                if(x > (0.5 - rowS/2) && x < (0.5 + rowS/2)) {
+                    return "Launchpad";
+                } else if (x > 0.5) {
+                    var ans = 3-Math.floor((x-(0.5 + rowS/2)) / rowS)
+                    ans = Math.min(3,ans);
+                    ans = Math.max(0,ans);
+                    return properties.shortcuts[3][ans];
+                } else {
+                    var ans = Math.floor((x-indent) / rowS)
+                    ans = Math.min(3,ans);
+                    ans = Math.max(0,ans);
+                    return properties.shortcuts[1][ans];
+                }
+            }
+            return false;
+        }
+        function initChar(id) {
+            var character = {
+                name: characterNames[id],
+                money: 1000,
+                cards: [],
+                jailed: false,
+                permit: 0,
+                props: [],
+                lostTurn: 0,
+            };
+            var sprite = document.createElement("div");
+            sprite.className = "char";
+            sprite.style.backgroundColor = characterCols[id];
+            gameDiv.appendChild(sprite);
+            character.sprite = sprite;
+            sprite.style.left = boardSize * (0.97 - id/30) + "px";
+            sprite.style.top = boardSize * 0.93  + "px";
+            charFuncs[character.name].begin(character);
+            return character;
+        }
+        function addCharEls(num) {
+            for(var i = 0; i < num; i++) {
+                var select = document.createElement("select");
+                characterNames.forEach(function(e,j) {
+                    var op = document.createElement("option");
+                    op.textContent = e;
+                    op.title = characterExp[j];
+                    select.appendChild(op);
+                });
+                setupDiv.appendChild(select);
+                setupDiv.appendChild(document.createElement("br"));
+
+                if(i === 0) {
+                    select.selectedIndex = 1;       
+                } else if (i === 1) {
+                    select.selectedIndex = 2;
+                }
+                select.title = characterExp.slice(1).join("\n");
+                charSelEls.push(select);
+            }
+        }
+        function rollDie() {
+            document.getElementById("die").textContent = "Roll Die (" + (Math.floor(Math.random()*6)+1)+","+(Math.floor(Math.random()*6)+1)+ ")"
+        }
+        function startDeck() {
+            var deck = [];
+            var cards = `INVENTORY
+Do Oily - Move any amount less than what you rolled - high quanitity
+Butter Bread - Get Out of Jail Free - one card
+Bottle Smash - Instantly win a fight - Medium quanitity
+Replacement Ben (pirate) - Pillage $100 from another player - one card
+Replacement Ben (homework) - Do your homework. You only have to pay half the rent. - one card
+Replacement Ben (housemaid) - Builds a house for you. - one card
+Replacement Ben (Hobbit) - ignore effects of tile you land on - one card
+Replacement Ben (Gangsta) - make someone else lose a turn. - one card
+Replacement Ben (Hitler) - takes another person's house and puts it on your property. - one card
+Replacement Ben - Send Replacement Ben to jail instead of you - one card
+Skydive - go to any square on the board - low quantity
+Big fart - move everyone within six spaces of you five spaces away - high quantity
+Moldy Applesauce - make another player lose a turn. - medium quantity.
+Crime - Choose not to pay any bill, go to jail instead - high quanity
+Pet Rock Morty - Send another Person to jail - medium quantity
+Little Ninja - Steal a card from anyone who's not on a property- one card
+Geoff Ruggario - Reverse the bill! They pay YOU money. - one card
+Noris - Ignore anything that would make you move - one card
+Calico - Get a property for free - one card
+Teddy - Ignore any event - one card
+Whiskers- Negate a card played on you. - one card
+EVENT
+Mysterious Blue Hat - Police Diamonds is sending you to Jail. - medium quantity
+The Great Toad Race - move everyone 4 tiles forward - one card
+Replacement Ben (Santa) - Santa Ben gives everyone $70 - one card
+Prairie Dog - you lose a turn - high quanitity
+Buy lots of chinese shirts, - lose $100 - low quantity
+Alexis - Take two more cards, ignore any events you don't like - one card
+Try to pocket the Jack Ruby - Roll a die. If you roll a six, get $250, otherwise go to jail. - low quantity
+Tornado - Choose one of your buildings to get destroyed - low quantity
+T-rex - Everyone chooses a building to be destroyed. - one card
+Vegetarian - Sell your steak to the player on your left, collect $50 from him - High quantity
+Bent Thumbs - The player on your right is so impressed by your bent thumbs that he pays you $50! - High quantity
+Family Reunion - everybody goes home and gets a card. - high quantity
+Centurion - The centurion's inspiration inspires you to inspiringly roll again! - High quanity
+The Grandpa Wins Card - Grandpa wins! - one card
+QUEST
+Impatience: Use the launchpad. $100 - medium quanity
+Jailbird: Get out of jail. 1 house - low quantity
+Big Spender: Spend $X in a single turn.  (10% back) - high quantity, varying prices
+Jackpot: Hold $X in cash - $X discount on a property - high quantity, varing prices
+Lord of the Manor: Hold X properties - Free upgrade - medium quantity
+Bounty Mission: Fight and beat the richest player (besides you) - $500 - medium quantity
+Goomba Jumping: Fight two fights in a row and win - $500 - low quantity
+King's Quest: Be the richest player in the game - One free property - medium quantity`
+            cards = cards.split("\n");
+            var type = "INVENTORY";
+            for(var i = 0; i < cards.length; i++) {
+                var cur = cards[i];
+                if(cur.split(" ").length === 1) {
+                    type = cur;
+                    continue;
+                }
+                if(type === "QUEST") {
+                    deck.push({
+                        type,
+                        name: cur,
+                        desc: "",
+                    });
+                } else {
+                    var data = cur.split("-");
+                    var count = 1;
+                    if(data[2]) {
+                        if(data[2].trim().split(" ")[0].toLowerCase() === "high") {
+                            count = 7;
+                        } else if(data[2].trim().split(" ")[0].toLowerCase() === "medium") {
+                            count = 5;
+                        } else if(data[2].trim().split(" ")[0].toLowerCase() === "low") {
+                            count = 3;
+                        }
+                    }
+                    for(var j = 0; j < count; j++) {
+                        var card = {
+                            type,
+                            name: data[0].trim(),
+                            desc: data[1].trim(),
+                        }
+                        deck.push(card);
+                    }
+                }
+            }
+            shuffle(deck);
+            return deck;
+        }
+        function shuffle(arr, from, to)
+        {
+            var i,
+                rand,
+                tmp;
+            
+            if (!arr) {
+                return;
+            }
+            
+            if (typeof from === "undefined") {
+                from = 0;
+            }
+            
+            if (typeof to === "undefined") {
+                to = arr.length - 1;
+            }
+            
+            for (i = from; i < to; i += 1) {
+                rand = Math.floor(Math.random() * (to - from + 1)) + from;
+                if (rand !== i) {
+                    tmp = arr[i];
+                    arr[i] = arr[rand];
+                    arr[rand] = tmp;
+                }
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,118 @@
+<html>
+  <head>
+    <title></title>
+    <meta content="">
+    <style></style>
+  </head>
+  <body>
+    <div id="central">
+
+    </div>
+    <button style = "bottom: 0; position: absolute;"; onclick="alert(rollDie())">Roll Die</button>
+    <script>
+        var count = (prompt("Number of players?") || 1)* 3;
+        var birds = confirm("If you're a bird, select yes.");
+        if(!birds) {
+            count *= 2/3;
+        }
+        var centralDiv = document.getElementById("central");
+        if(birds) {
+            var data = ["In Plain Sight|12", "Wings of Fury|9", "Jetstream|12", "Over the Rooftops|6", "Petal Power|9", "Braveheart|9", "Out of Focus|9"];
+        } else {
+            var data = ["Telephoto|2", "Fresh Planting|1", "Back to Roost|1", "Grounded|2", "Feathered Frenzy|3", "Homeward Bloom|3", "Yard Dash|1"]
+        }
+        var base = parseData(data);
+        var cur = parseData(data);
+        var inHand = [];
+        for(var i = 0; i < count; i++) {
+            if(i % 3 === 0) {
+                var div = document.createElement("div");
+                div.innerHTML = "Player " + i/3;
+                centralDiv.appendChild(div);
+            }
+            var newButton = document.createElement("button");
+            var rand = chooseRandom();
+            newButton.innerHTML = rand;
+            centralDiv.appendChild(newButton);
+            centralDiv.appendChild(document.createElement("br"));
+            inHand.push(newButton);
+            armNewButton(newButton);
+        }
+        function armNewButton(newButton) {
+            newButton.onclick = function() {
+                newButton.innerHTML = chooseRandom(newButton);
+            }
+        }
+        function chooseRandom(newButton) {
+            if(!cur.length) {
+                shuffle(base);
+                cur = base.slice(0);
+                for(var i = 0; i < inHand.length; i++) {
+                    if(inHand[i] === newButton) {
+                        console.log("Defend");
+                        continue;
+                    }
+                    var curH = inHand[i].innerHTML;
+                    var j = 0;
+                    while(cur[j] !== curH) {
+                        ++j;
+                    }
+                    console.log(cur.splice(j,1));
+                }
+            }
+            return cur.shift();
+        }
+        function parseData(data) {
+            var obj = parseData1(data);
+            var keys = Object.keys(obj);
+            var arr = [];
+            keys.forEach(function(e) {
+                for(var i = 0; i < obj[e]; i++) {
+                    arr.push(e);
+                }
+            })
+            shuffle(arr);
+            return arr;
+        }
+        function parseData1(data) {
+            var obj = {};
+            for(var i = 0; i < data.length; i++) {
+                var cur = data[i].split("|");
+                obj[cur[0]] = Number(cur[1]);
+            }
+            return obj;
+        }
+        function rollDie() {
+            var dieSides = [2,3,4,4,4,6];
+            return dieSides[Math.floor(Math.random()*6)]
+        }
+        function shuffle(arr, from, to)
+{
+    var i,
+        rand,
+        tmp;
+    
+    if (!arr) {
+        return;
+    }
+    
+    if (typeof from === "undefined") {
+        from = 0;
+    }
+    
+    if (typeof to === "undefined") {
+        to = arr.length - 1;
+    }
+    
+    for (i = from; i < to; i += 1) {
+        rand = Math.floor(Math.random() * (to - from + 1)) + from;
+        if (rand !== i) {
+            tmp = arr[i];
+            arr[i] = arr[rand];
+            arr[rand] = tmp;
+        }
+    }
+}
+    </script>
+  </body>
+</html>
