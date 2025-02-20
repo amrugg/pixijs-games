@@ -90,11 +90,24 @@
             <button id="permit" style="position: absolute; bottom: 105px">Upgrade Building Permit</button>
             <button id="passGo" style="position: absolute; bottom: 60px"onclick=passGo()>Pass Go</button>
             <button id="die" style="position: absolute; bottom: 25px"onclick=rollDie()>Roll Die</button>
+            <div>
+                <select id="items">
+                    <option>Selected Card</option>
+                    <option>Selected Property</option>
+                    <option>$50</option>
+                    <option>$100</option>
+                    <option>$200</option>
+                    <option>$400</option>
+                </select>
+                <button id="give">Give to</button>
+                <select id="enemyChars"></select>
+            </div>
             <div id=data></div>
         </div>
     </div>
     <div id="setup">
         <span>Add characters:</span><br>
+
     </div>
 
     <script src="usefulFunctions.js"></script>
@@ -132,13 +145,13 @@ Building: Estate: Decreases building price by 10% on all other buildings.
 Buff: All buildings cheaper.`,
 `Madison:
 Building: Capital: Increases rent by 10% on all other buildings.
-Buff: Gets $100 extra when you pass Home.`,
+Buff: Gets $150 extra when you pass Home.`,
 `Byron Genoa:
 Building: Power plant: Increases rent and allows Byron to roll again when passing this property.
 Buff: At the beginning and everytime you pass "Go", Byron may optionally roll twice.`,
 `Cheeks the Butler:
-Building: Mansion: Gives Cheeks a lot of money when he lands on it.
-Buff: Gets a $50 bonus whenever he plays a card (not for Events).`,
+Building: Mansion: Gives Cheeks $200 when he lands on it.
+Buff: Gets a $100 bonus whenever he plays a card (not for Events).`,
 `Pontiac Flanagan:
 Building: Signpost: Charges people even if they're just passing by
 Buff: Chooses 5 out of 10 non-event cards at the beginning of the game.`];
@@ -167,7 +180,7 @@ Buff: Chooses 5 out of 10 non-event cards at the beginning of the game.`];
         }
         var charFuncs = {
             "Police Diamonds": {
-                begin: function(){},
+                begin: function(c){c.cards.push(nonEventCard());},
                 pass: function(c){
                     var selection = [takeFirstCard(),takeFirstCard(),takeFirstCard()];
                     var text = "The cards to choose from are:";
@@ -197,24 +210,24 @@ Buff: Chooses 5 out of 10 non-event cards at the beginning of the game.`];
                 },
             },
             "Chamberline Sinclair": {
-                begin: function(c){c.money += 750},
+                begin: function(c){c.money += 750;c.cards.push(nonEventCard())},
                 pass: function(c){c.money += 300; drawCard()},
             },
             "Hoffman House": {
-                begin: function(){},
+                begin: function(c){c.cards.push(nonEventCard());},
                 pass: function(c){c.money += 300; drawCard()},
             },
             "Madison": {
-                begin: function(){},
+                begin: function(c){c.cards.push(nonEventCard());},
                 pass: function(c){c.money += 450; drawCard()},
             },
             "Byron Genoa": {
-                begin: function(){},
+                begin: function(c){c.cards.push(nonEventCard());},
                 pass: function(c){c.money += 300; drawCard(); alert("Roll again, if you wish.")},
             },
             "Cheeks the Butler": {
-                begin: function(){},
-                play: function(c){c.money += 50; updateDisp()},
+                begin: function(c){c.cards.push(nonEventCard());},
+                play: function(c){c.money += 100; updateDisp()},
                 pass: function(c){c.money += 300; drawCard()},
             },
             "Pontiac Flanagan": {
@@ -263,6 +276,7 @@ Buff: Chooses 5 out of 10 non-event cards at the beginning of the game.`];
             sideMenu.buy.disabled = true;
             sideMenu.data = document.getElementById("data");
             sideMenu.permit = document.getElementById("permit");
+            sideMenu.give = document.getElementById("give");
             sideMenu.char.onclick = nextChar;
             sideMenu.playCard.onclick = function() {
                 if(sideMenu.cards.selectedIndex > -1) {
@@ -275,6 +289,36 @@ Buff: Chooses 5 out of 10 non-event cards at the beginning of the game.`];
                         charFuncs[state.char.name].play();
                     }
                 }
+            }
+            sideMenu.give.onclick = function() {
+                var target = characters[document.getElementById("enemyChars").selectedIndex];
+                debugger;
+                if(document.getElementById("items").selectedIndex === 0) {
+                    if(sideMenu.cards.selectedIndex > -1) {
+                        var cardPlayed = state.char.cards[sideMenu.cards.selectedIndex];
+                        state.char.cards.splice(sideMenu.cards.selectedIndex,1);
+                        target.cards.push(cardPlayed)
+                        alert("Gave card " + cardPlayed.name + " to " + target.name);
+                        updateDisp();
+                    } else {
+                        alert("No cards!");
+                    }
+                } else if(document.getElementById("items").selectedIndex === 1) {
+                    if(sideMenu.charProps.selectedIndex > -1) {
+                        propOwners[sideMenu.charProps.value] = target;
+                        alert("Gave property " + sideMenu.charProps.value + " to " + target.name);
+                        updateDisp();
+                    } else {
+                        alert("No properties!");
+                    }
+                } else {
+                    var amt = 50* 2**(document.getElementById("items").selectedIndex - 2);
+                    target.money += amt;
+                    state.char.money -= amt;
+                    alert("Gave $" + amt + " to " + target.name);
+                    updateDisp();
+                }
+                
             }
             sideMenu.sell.onclick = function() {
                 if(sideMenu.charProps.selectedIndex > -1) {
@@ -313,7 +357,18 @@ Buff: Chooses 5 out of 10 non-event cards at the beginning of the game.`];
             };
             sideMenu.i = -1;
             shuffle(characters);
+            characters.forEach(function(e,i) {
+                if(i === 0) {
+                    return;
+                }
+            })
             nextChar();
+
+            characters.forEach(function(e) {
+                var opt = document.createElement("option");
+                opt.textContent = e.name;
+                document.getElementById("enemyChars").appendChild(opt);
+            });
         }
         function nextChar() {
             if(state.name === "any") {
@@ -357,7 +412,6 @@ Buff: Chooses 5 out of 10 non-event cards at the beginning of the game.`];
             return props;
         }
         function updatePropStack(props) {
-            debugger;
             sideMenu.charProps.innerHTML = "";
             props.forEach(function(e) {
                 var op = document.createElement("option");
@@ -862,30 +916,29 @@ Noris - Ignore anything that would make you move - one card
 Calico - Get a property for free - one card
 Teddy - Ignore any event - one card
 Whiskers- Negate a card played on you. - one card
+Mimic Shrike - Play along with another card; discard Mimic Shrike and keep the other card. - one card
+
+
 EVENT
 Mysterious Blue Hat - Police Diamonds is sending you to Jail. - medium quantity
 The Great Toad Race - move everyone 4 tiles forward - one card
 Replacement Ben (Santa) - Santa Ben gives everyone $70 - one card
 Prairie Dog - you lose a turn - high quanitity
-Buy lots of chinese shirts, - lose $100 - low quantity
+Buy lots of chinese shirts - lose $50 - one card
 Alexis - Take two more cards, ignore any events you don't like - one card
-Try to pocket the Jack Ruby - Roll a die. If you roll a six, get $250, otherwise go to jail. - low quantity
-Tornado - Choose one of your buildings to get destroyed - low quantity
-T-rex - Everyone chooses a building to be destroyed. - one card
+Try to pocket the Jack Ruby - Roll the dice. If you roll a seven, get $250, otherwise go to jail. - low quantity
 Vegetarian - Sell your steak to the player on your left, collect $50 from him - High quantity
 Bent Thumbs - The player on your right is so impressed by your bent thumbs that he pays you $50! - High quantity
 Family Reunion - everybody goes home and gets a card. - high quantity
 Centurion - The centurion's inspiration inspires you to inspiringly roll again! - High quanity
-The Grandpa Wins Card - Grandpa wins! - one card
+The Grandpa Wins Card - Grandpa wins! (joke card from original Oligarchy) - one card
+
 QUEST
 Impatience: Use the launchpad. $100 - medium quanity
 Jailbird: Get out of jail. 1 house - low quantity
-Big Spender: Spend $X in a single turn.  (10% back) - high quantity, varying prices
-Jackpot: Hold $X in cash - $X discount on a property - high quantity, varing prices
-Lord of the Manor: Hold X properties - Free upgrade - medium quantity
-Bounty Mission: Fight and beat the richest player (besides you) - $500 - medium quantity
-Goomba Jumping: Fight two fights in a row and win - $500 - low quantity
-King's Quest: Be the richest player in the game - One free property - medium quantity`
+Big Spender: Spend $500 in a single turn. $100. - one card
+Lord of the Manor: Hold 10 properties - Free building - medium quantity
+King's Quest: Be the richest player in the game based on money in the bank at any point in time - One free property - medium quantity`
             cards = cards.split("\n");
             var type = "INVENTORY";
             for(var i = 0; i < cards.length; i++) {
@@ -904,11 +957,11 @@ King's Quest: Be the richest player in the game - One free property - medium qua
                     var data = cur.split("-");
                     var count = 1;
                     if(data[2]) {
-                        if(data[2].trim().split(" ")[0].toLowerCase() === "high") {
+                        if(data[2].trim().split(" ")[0].toLowerCase().trim() === "high") {
                             count = 7;
-                        } else if(data[2].trim().split(" ")[0].toLowerCase() === "medium") {
+                        } else if(data[2].trim().split(" ")[0].toLowerCase().trim() === "medium") {
                             count = 5;
-                        } else if(data[2].trim().split(" ")[0].toLowerCase() === "low") {
+                        } else if(data[2].trim().split(" ")[0].toLowerCase().trim() === "low") {
                             count = 3;
                         }
                     }
