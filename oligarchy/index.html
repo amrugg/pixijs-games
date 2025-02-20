@@ -504,6 +504,9 @@ Buff: Chooses 5 out of 10 non-event cards at the beginning of the game.`];
             if(property && state.property !== property) {
                 var split = property.split("|");
                 sideMenu.data.innerHTML = split[0];
+                if(propUps[split[0]]) {
+                    sideMenu.data.innerHTML += " (" + propUps[split[0]] +")"
+                }
                 if(split[1]) {
                     console.log(split);
                     sideMenu.data.innerHTML += "<br>Costs $" + split[1] + "<br>";
