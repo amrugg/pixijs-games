@@ -323,7 +323,7 @@ Buff: Chooses 5 out of 10 non-event cards at the beginning of the game.`];
             sideMenu.sell.onclick = function() {
                 if(sideMenu.charProps.selectedIndex > -1) {
                     var price = propData[sideMenu.charProps.value][0];
-                    var val = Math.round(price - price/10);
+                    var val = Math.round(price/2);
                     if(confirm("Sell " + sideMenu.charProps.value + " for $" + val + "?")) {
                         state.char.money += val;
                         propOwners[sideMenu.charProps.value] = false;
@@ -917,7 +917,6 @@ Calico - Get a property for free - one card
 Teddy - Ignore any event - one card
 Whiskers- Negate a card played on you. - one card
 Mimic Shrike - Play along with another card; discard Mimic Shrike and keep the other card. - one card
-
 
 EVENT
 Mysterious Blue Hat - Police Diamonds is sending you to Jail. - medium quantity
