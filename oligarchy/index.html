@@ -286,7 +286,7 @@ Buff: Chooses 5 out of 10 non-event cards at the beginning of the game.`];
                     alert("Played card " + cardPlayed.name + "\n" + cardPlayed.desc);
                     updateDisp();
                     if(charFuncs[state.char.name].play) {
-                        charFuncs[state.char.name].play();
+                        charFuncs[state.char.name].play(state.char);
                     }
                 }
             }
