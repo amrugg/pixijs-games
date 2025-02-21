@@ -614,9 +614,9 @@ Buff: Chooses 5 out of 10 non-event cards at the beginning of the game.`];
                     var smalltxt = document.createElement("span");
                     if(propUps[split[0]] >= state.char.permit || typeof propUps[split[0]] === "string") {
                         console.log(propUps[split[0]], state.char.permit)
-                        smalltxt.innerHTML = "You can't upgrade this property any higher. It already has " + propUps[split[0]] +" on it.";
-                        state.buildValid = false;
-                    } else if (propOwners[split[0]] !== state.char && split[0] !== "Public Property") {
+                        smalltxt.innerHTML = "You can't upgrade this property any higher unless you own the full color set. " + propUps[split[0]] +" on it.";
+                        state.buildValid = true;
+                    } else if (propOwners[split[0]] !== state.char) {
                         smalltxt.innerHTML = "You don't own this property";
                         state.buildValid = false;
                     } else {
@@ -701,7 +701,8 @@ Buff: Chooses 5 out of 10 non-event cards at the beginning of the game.`];
             "Uncle Ben's": "Hey it has my name on it!",
             'Hoffmanhouse Estates': "Butler arrested for indecent exposure near Hoffmanhouse estates.",
             'Mole Commando': "Title of an article by Geoff Ruggario.",
-            'Ice Mountain': "Ice Mountain!"
+            'Ice Mountain': "Ice Mountain!",
+            'Milton Edgerton\'s Cubes of Fortune': "Player receives 10x the amount shown on dice from the bank. If it's doubles, receive 20x."
         }
         var properties = {
             path: [
@@ -725,7 +726,7 @@ Buff: Chooses 5 out of 10 non-event cards at the beginning of the game.`];
                 'Nintendo|150',
                 'Warp Pipe |50',
                 'Birds vs. Squirrels|170',
-                'Public Property',
+                'Milton Edgerton\'s Cubes of Fortune',
                 'Airport',
                 'Dear Gabby Inc.|230',
                 'Marvin Garvens|190',
