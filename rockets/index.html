@@ -27,9 +27,10 @@
         <option>Insane</option>
     </select>
     <input type="text" value="1-4" style="position:absolute; top: 40px", id="range">
-    <input type="checkbox" style="position: absolute; top: 60px; z-index: 100;" id="gauntlet"> <span style="position: absolute; left: 15px; top: 60px; z-index: 100; color:white;" id="gauntletT">Gauntlet</span>
-    <input type="checkbox" style="position: absolute; top: 80px; z-index: 100;" id="reverse"> <span style="position: absolute; left: 15px; top: 80px; z-index: 100; color:white;" id="reverseT">Reverse (fire weapons with 1, 2, 3)</span>
-    <button id="start", style="position: absolute; top: 100px">&nbsp;Start&nbsp;</button>
+    <input type="text" value="" placeholder="Password" style="position:absolute; top: 60px", id="password">
+    <input type="checkbox" style="position: absolute; top: 80px; z-index: 100;" id="gauntlet"> <span style="position: absolute; left: 15px; top: 80px; z-index: 100; color:white;" id="gauntletT">Gauntlet</span>
+    <input type="checkbox" style="position: absolute; top: 100px; z-index: 100;" id="reverse"> <span style="position: absolute; left: 15px; top: 100px; z-index: 100; color:white;" id="reverseT">Reverse (fire weapons with 1, 2, 3)</span>
+    <button id="start", style="position: absolute; top: 120px">&nbsp;Start&nbsp;</button>
 <body>
   <script type="text/javascript">
     "use strict";
@@ -65,6 +66,7 @@
     var levelEl = document.getElementById("level");
     levelEl.selectedIndex = 3;
     var inputEl = document.getElementById("range");
+    var passwordEl = document.getElementById("password");
     var buttonStartEl = document.getElementById("start");
     var invincible = false;
     var verseTracking = {"1.1": {correct:0,incorrect:0}};
@@ -72,10 +74,25 @@
     var toCrack = false;
     var reverse = false;
     chapterEl.style.zIndex = "100";
+    passwordEl.style.zIndex = "100";
+
     levelEl.style.zIndex = "100";
     inputEl.style.zIndex = "100";
     buttonStartEl.style.zIndex = "100";
     buttonStartEl.addEventListener("click", function() {
+        if(passwordEl.value === "FAITH") {
+            loadBuff(1);
+            level=7;
+        } else if(passwordEl.value === "SALVATION") {
+            loadBuff(1);
+            loadBuff(2);
+            level=12;
+        } else if(passwordEl.value === "TRUTH") {
+            loadBuff(1);
+            loadBuff(2);
+            loadBuff(3);
+            level=17;
+        }
         if(chapterEl.selectedIndex === 6) {
             chapter = false;
         } else {
@@ -102,10 +119,13 @@
         } else if(levelEl.selectedIndex === 5) {
             difficulty = 1.25;
         }
+        difficulty += 0.05 * level;
+
         chapterEl.remove();
         levelEl.remove();
         inputEl.remove();
         buttonStartEl.remove();
+        passwordEl.remove();
         reverse = document.getElementById("reverse").checked;
         if(!reverse) {
             toCrack = document.getElementById("gauntlet").checked;
@@ -125,14 +145,18 @@
         } else {
             textDiv.innerHTML = curVerse;
         }
-        alert("Welcome to RA Blaster!\nUse the arrow keys to move. Spacebar fires a plasma bolt.");
-        setTimeout(function() {
-            if(reverse) {
-                alert("A verse number will appear in the upper-right of the screen. Type in the initials of the first 5 words of the verse.");
-            } else {
-                alert("A verse will appear at the top of the screen. Type in the corresponding number with the number pad or number row, then press Enter to submit your answer.\nCorrect answers restore your energy or health.");
-            }
-        }, 3000);
+        if(!localStorage.getItem("seen") && !passwordEl.value) {
+            alert("Welcome to RA Blaster!\nUse the arrow keys to move. Spacebar fires a plasma bolt.");
+            setTimeout(function() {
+                if(reverse) {
+                    alert("A verse number will appear in the upper-right of the screen. Type in the initials of the first 5 words of the verse.");
+                } else {
+                    alert("A verse will appear at the top of the screen. Type in the corresponding number with the number pad or number row, then press Enter to submit your answer.\nCorrect answers restore your energy or health.");
+                }
+            }, 3000);
+        }
+        localStorage.setItem("seen", "true");
+
         intro.fade(0.5,0, 3000);
         setTimeout(function() {
             music.play();
@@ -379,7 +403,7 @@
     var scaleFactor = innerWidth/1920;
     var rocketIndicator;
     function setup() {
-        spawnNewEnemy(1,"easy");
+        // spawnNewEnemy(1,"easy");
         rocket = new Sprite(resources["sprites/rocket.png"].texture);
         app.stage.addChild(rocket);
         rocket.anchor.set(0.5,0.5);
@@ -422,7 +446,7 @@
     function gameLoop(delta) {
       state(delta)
     }
-    var level = 1;
+    var level = 0;
     function explode(amount, position, magnitude) {
         for(var i = 0; i < amount; i++) {
             if(magnitude) {
@@ -1378,39 +1402,38 @@
                 if (enemy.alpha <= 0) {
                     if(enemy.level === "boss1" && enemies[0].level !== "bossattack") {
                         healthBar.width = 200;
-                        healthToHit -= 2;
-                        energyToFire--;
                         energyBar.width = 200;
                         boss1.fade(0.5,0, 3000);
                         setTimeout(function() {
                             music.fade(0, 0.5, 3000);
                         },3000);
-                        canUseMissiles = true;
+
+                        loadBuff(1);
+
                         if(reverse) {
                             var key = "1";
                         } else {
                             var key = "M"
                         }
-                        alert(`You got missiles! Hit ${key} to launch a missile.\nMissiles target the nearest enemy and the explosion damages nearby enemies.`);
+                        alert(`You got missiles! Hit ${key} to launch a missile.\nMissiles target the nearest enemy and the explosion damages nearby enemies.\n\nYou reached a new level! Your password is: FAITH`);
                     }
                     if(enemy.level === "boss2" && enemies[0].level !== "bossattack") {
                         healthBar.width = 200;
-                        healthToHit -= 2;
-                        energyToFire--;
+                        
                         energyBar.width = 200;
                         boss2.fade(0.5,0, 3000);
                         setTimeout(function() {
                             music.fade(0, 0.5, 3000);
                         },3000);
-                        canUseEMP = true;
 
+                        loadBuff(2);
                         
                         if(reverse) {
                             var key = "2";
                         } else {
                             var key = "E"
                         }
-                        alert(`You got the EMP! Hold ${key} to activate the EMP.\nThe EMP does damage to anything it touches but drains your energy quickly.`);
+                        alert(`You got the EMP! Hold ${key} to activate the EMP.\nThe EMP does damage to anything it touches but drains your energy quickly.\n\nYou reached a new level! Your password is: SALVATION`);
                     } else if(enemy.level === "boss3" && enemy.xOffset === 0 && enemies[0].level !== "bossattack") {
                         var foundEnemy1 = false;
                         var foundEnemy2 = false;
@@ -1427,20 +1450,20 @@
                             foundEnemy2.xOffset = 0;
                         } else {
                             healthBar.width = 200;
-                            reloadTime /= 2;
                             energyBar.width = 200;
                             boss3.fade(0.5,0, 3000);
                             setTimeout(function() {
                                 music.fade(0, 0.5, 3000);
                             },3000);
+
+                            loadBuff(3);
+                            if(reverse) {
+                                var key = "3";
+                            } else {
+                                var key = "L"
+                            }
+                            alert(`You got the Laser! Hold ${key} to activate the Laser.\nThe Laser does damage to anything it touches but drains your energy quickly.\n\nYou reached a new level! Your password is: TRUTH`);
                         }
-                        canUseLaser = true;
-                        if(reverse) {
-                            var key = "3";
-                        } else {
-                            var key = "L"
-                        }
-                        alert(`You got the Laser! Hold ${key} to activate the Laser.\nThe Laser does damage to anything it touches but drains your energy quickly.`);
                     }
                     if(enemy.laser) {
                         enemy.laser.visible = false;
@@ -2047,6 +2070,20 @@
         keys.shift = e.shiftKey;
         keys.alt = e.altKey;
     });
+    function loadBuff(num) {
+        if(num === 1) {
+            canUseMissiles = true;
+            healthToHit -= 2;
+            energyToFire--;
+        } else if (num === 2) {
+            canUseEMP = true;
+            healthToHit -= 2;
+            energyToFire--;
+        } else if(num === 3) {
+            reloadTime /= 2;
+            canUseLaser = true;
+        }
+    }
   </script>
 </body>
 </html>
