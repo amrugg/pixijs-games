@@ -729,7 +729,7 @@ function handleLasers() {
                                 }
                             });
                             if(!laser.target) {
-                                enemy.health -= laser.bounce;
+                                enemy.health -= laser.damage;
                             }
                             --laser.bounce;
                         }
@@ -1032,7 +1032,6 @@ function fireLaser(x, y, direction, speed, type, damage, target) {
     return laser;
 }
 function launchMissile(x, y, dir, type, target) {
-    debugger;
     var missile = new Sprite(keysOfSprites[type]);
     missile.scale.set(scalar);
     missile.x = x;

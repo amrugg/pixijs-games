@@ -983,7 +983,7 @@ function handleFrameouts(frame) {
 function play() {
     playAnimations(animations);
     handleFrameouts(++globalFrameCount);
-    handleEmitters(particleEmitters)
+    handleEmitters(particleEmitters);
     handleParticles(particles);
     var userInput = readKeyMappings(keyMappings, keys);
     if(gameState === "actions") {

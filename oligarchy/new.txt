@@ -1,0 +1,293 @@
+Title Deed
+Ruggabury
+Cost	$300
+Rent	$92
+With 1 House:	$350
+With 2 Houses:	$1100
+With 3 Houses:	$1500
+With Hotel:	$1800
+Probably where the pilgrims were travelling in The Ruggabury Tales.
+
+Title Deed
+Vector
+Cost	$400
+Rent	$80
+With 1 House:	$300
+With 2 Houses:	$1000
+With 3 Houses:	$1300
+With Hotel:	$1600
+From Final Fantasy III. Vector is the seat of the Emperor Gestahl's power.
+
+Title Deed
+Warp Pipe
+Cost	$50
+Rent	$17
+NO DEVELOPMENT ALLOWED
+Special property. Rent is paid for both properties if applicable.
+
+Title Deed
+Baron
+Cost	$375
+Rent	$75
+With 1 House:	$300
+With 2 Houses:	$900
+With 3 Houses:	$1200
+With Hotel:	$1500
+From Final Fantasy II. Baron, a nation slowly changing its ways...
+
+Title Deed
+Hyrule Castle
+Cost	$350
+Rent	$70
+With 1 House:	$280
+With 2 Houses:	$800
+With 3 Houses:	$1100
+With Hotel:	$1400
+From the Link series. Home of Princess Zelda.
+
+Title Deed
+Watery Forest
+Cost	$320
+Rent	$64
+With 1 House:	$260
+With 2 Houses:	$800
+With 3 Houses:	$1000
+With Hotel:	$1300
+From The Romance of Four Kingdoms: "The second tribe, called Natan Yu, dominated the heights of Watery Forest."
+
+Title Deed
+Cavernous Cleft
+Cost	$310
+Rent	$62
+With 1 House:	$250
+With 2 Houses:	$700
+With 3 Houses:	$1000
+With Hotel:	$1200
+From The Romance of Four Kingdoms: "The tribe of Liu Benn dwelt in the Cavernous Cleft beyond the arctic sea of Tiles."
+
+Title Deed
+Plains of Dimm Laite
+Cost	$290
+Rent	$58
+With 1 House:	$230
+With 2 Houses:	$700
+With 3 Houses:	$900
+With Hotel:	$1200
+From The Romance of Four Kingdoms: "Finally, the plains of Dimm Laite were inhabited by the Kao Kaos."
+
+Title Deed
+Greener View
+Cost	$300
+Rent	$92
+With 1 House:	$350
+With 2 Houses:	$1100
+With 3 Houses:	$1500
+With Hotel:	$1800
+One of the four elite properties.
+
+Title Deed
+Monty Crisco
+Cost	$250
+Rent	$50
+With 1 House:	$200
+With 2 Houses:	$600
+With 3 Houses:	$800
+With Hotel:	$1000
+From The Count of Monty Crisco.
+
+Title Deed
+Purple Village
+Cost	$240
+Rent	$48
+With 1 House:	$190
+With 2 Houses:	$600
+With 3 Houses:	$800
+With Hotel:	$1000
+From The Romance of Four Kingdoms: "Another tribe, who lived in the Purple Village, were called Liz Yung Fhang."
+
+Title Deed
+Nobath
+Cost	$240
+Rent	$48
+With 1 House:	$190
+With 2 Houses:	$600
+With 3 Houses:	$800
+With Hotel:	$1000
+In The Ruggabury Tales, Uncle Caleb starred as The Boy of Nobath.
+
+Title Deed
+Beach Resort
+Cost	$200
+Rent	$33
+With 1 House:	$135
+With 2 Houses:	$400
+With 3 Houses:	$500
+With Hotel:	$700
+Throwback from the original Oligarchy. Can be reached by landing on it, by landing on Airport, or by landing on Go to Airport (which takes you to Airport.)
+
+Title Deed
+Marvin Garvens
+Cost	$190
+Rent	$48
+With 1 House:	$190
+With 2 Houses:	$600
+With 3 Houses:	$800
+With Hotel:	$1000
+Misspelled property name from Monopoly. Featured in the original Oligarchy.
+
+Title Deed
+Dear Gabby Inc.
+Cost	$230
+Rent	$46
+With 1 House:	$185
+With 2 Houses:	$600
+With 3 Houses:	$700
+With Hotel:	$900
+A RFT classic.
+
+Title Deed
+Valyent Studios
+Cost	$300
+Rent	$92
+With 1 House:	$350
+With 2 Houses:	$1100
+With 3 Houses:	$1500
+With Hotel:	$1800
+One of the four elite properties.
+
+Title Deed
+Birds vs. Squirrels
+Cost	$170
+Rent	$43
+With 1 House:	$170
+With 2 Houses:	$500
+With 3 Houses:	$700
+With Hotel:	$900
+From a game we made where birds and squirrels fight.
+
+Title Deed
+Warp Pipe 
+Cost	$50
+Rent	$17
+NO DEVELOPMENT ALLOWED
+Special property. Rent is paid for both properties if applicable.
+
+Title Deed
+Nintendo
+Cost	$150
+Rent	$38
+With 1 House:	$150
+With 2 Houses:	$450
+With 3 Houses:	$600
+With Hotel:	$800
+Mario!
+
+Title Deed
+Rugg Family Game Server
+Cost	$160
+Rent	$40
+With 1 House:	$160
+With 2 Houses:	$500
+With 3 Houses:	$600
+With Hotel:	$800
+Better than Nintendo cause it has rewind.
+
+Title Deed
+KFC
+Cost	$130
+Rent	$33
+With 1 House:	$130
+With 2 Houses:	$400
+With 3 Houses:	$500
+With Hotel:	$700
+Part of the classic restaurant series.
+
+Title Deed
+IHOP
+Cost	$120
+Rent	$30
+With 1 House:	$120
+With 2 Houses:	$350
+With 3 Houses:	$500
+With Hotel:	$600
+This made it into a Police Diamonds story somehow.
+
+Title Deed
+Happy Tom’s F.A.R
+Cost	$110
+Rent	$28
+With 1 House:	$110
+With 2 Houses:	$350
+With 3 Houses:	$450
+With Hotel:	$600
+The famous American restaurant.
+
+Title Deed
+Rugg Family Studios
+Cost	$300
+Rent	$92
+With 1 House:	$350
+With 2 Houses:	$1100
+With 3 Houses:	$1500
+With Hotel:	$1800
+One of the four elite properties.
+
+Title Deed
+The Regime
+Cost	$70
+Rent	$18
+With 1 House:	$70
+With 2 Houses:	$210
+With 3 Houses:	$280
+With Hotel:	$350
+The Regime.
+
+Title Deed
+Clover Sites
+Cost	$80
+Rent	$20
+With 1 House:	$80
+With 2 Houses:	$240
+With 3 Houses:	$300
+With Hotel:	$400
+Clover!
+
+Title Deed
+Uncle Ben's
+Cost	$90
+Rent	$23
+With 1 House:	$90
+With 2 Houses:	$270
+With 3 Houses:	$350
+With Hotel:	$450
+"Hey it has my name on it!"
+
+Title Deed
+Hoffmanhouse Estates
+Cost	$60
+Rent	$15
+With 1 House:	$60
+With 2 Houses:	$180
+With 3 Houses:	$240
+With Hotel:	$300
+There once was a butler arrested for indecent exposure near Hoffmanhouse estates.
+
+Title Deed
+Mole Commando
+Cost	$70
+Rent	$18
+With 1 House:	$70
+With 2 Houses:	$210
+With 3 Houses:	$280
+With Hotel:	$350
+Title of an article by Geoff Ruggario. There is a poison will kill the mole the different animal and must do the dog.
+
+Title Deed
+Ice Mountain
+Cost	$50
+Rent	$17
+With 1 House:	$67
+With 2 Houses:	$200
+With 3 Houses:	$270
+With Hotel:	$350
+While the cheapest property in the game, any player who lands on it has to make an Ice Mountain face as well as paying rent.
